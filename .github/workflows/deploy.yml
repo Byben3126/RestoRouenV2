@@ -21,7 +21,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /home/ubuntu/projects/hcr
+            cd /home/ubuntu/projects/RestoRouenV2
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
 
