@@ -13,4 +13,4 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   await app.listen();
 }
-bootstrap();
+void bootstrap();

@@ -14,8 +14,8 @@ async function bootstrap() {
 
   const orm = app.get(MikroORM);
 
-  app.use((req, res, next) => {
-    RequestContext.create(orm.em, next); // ✅ fork par requête
+  app.use((req: unknown, res: unknown, next: () => void) => {
+    RequestContext.create(orm.em, next);
   });
 
   await app.listen(process.env.PORT_AUTH ?? 3001);

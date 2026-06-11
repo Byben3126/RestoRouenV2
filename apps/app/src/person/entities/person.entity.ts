@@ -39,8 +39,6 @@ export class Person {
   updatedAt: Date = new Date();
 
   getFullName(): string {
-    return this.lastName
-      ? `${this.firstName} ${this.lastName}`
-      : this.firstName;
+    return this.lastName ? `${this.firstName} ${this.lastName}` : this.firstName;
   }
 }

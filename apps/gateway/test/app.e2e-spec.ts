@@ -19,7 +19,6 @@ describe('AppController (e2e)', () => {
   });
 
   it('/ (GET)', () => {
-    // eslint-disable-next-line
     return request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
   });
 });

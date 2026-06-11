@@ -1,4 +1,5 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { CreateOptions, RequiredEntityData } from '@mikro-orm/postgresql';
 

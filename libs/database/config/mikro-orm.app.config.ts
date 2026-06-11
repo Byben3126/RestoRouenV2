@@ -15,7 +15,9 @@ export default defineConfig({
     path: 'libs/database/migrations',
   },
   debug: process.env.NODE_ENV !== 'production',
-  logger: console.log.bind(console),
+  logger: (message: string) => {
+    console.log(message);
+  },
   highlighter: process.env.NODE_ENV !== 'production' ? new SqlHighlighter() : undefined,
   metadataProvider: TsMorphMetadataProvider,
   extensions: [Migrator, SeedManager],
