@@ -1,0 +1,78 @@
+name: CI - Tests and Lint
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Unit Tests
+        run: npm run test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db?schema=public
+
+      - name: Run E2E Tests
+        run: npm run test:e2e
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db?schema=public
+          BETTER_AUTH_SECRET: test-secret-key
+          API_URL: http://localhost:3000
+          PORT_GATEWAY: 3000
+          PORT_AUTH: 3001
+          FRONTEND_URL: http://localhost:3000
+
+      - name: Discord notification
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_CI }}
+          noprefix: true
+          title: "🧪 Tests CI ${{ job.status == 'success' && 'réussi' || 'échoué' }}"
+          description: |
+            **Branche: ** `${{ github.ref_name }}`
+            **Commit:** ${{ github.event.head_commit.message }}
+            **Auteur:** ${{ github.actor }}
+          color: ${{ job.status == 'success' && '0x15e286' || '0xff0000' }}
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

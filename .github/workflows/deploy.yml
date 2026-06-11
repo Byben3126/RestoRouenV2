@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/ubuntu/projects/hcr
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
+
+            cat > .env << EOF
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_DB=${{ vars.POSTGRES_DB }}
+            DATABASE_URL="postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ vars.POSTGRES_DB }}?schema=public"
+            API_URL=${{ vars.API_URL }}
+            BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
+            FRONTEND_URL=${{ vars.FRONTEND_URL }}
+            PORT_GATEWAY=3000
+            PORT_AUTH=3001
+            EOF
+
+            docker compose down
+            docker compose up --build -d
+
+      - name: Discord notification
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
+          noprefix: true
+          title: "🚀 Déploiement ${{ job.status == 'success' && 'réussi' || 'échoué' }}"
+          description: |
+            **Branche: ** `${{ github.ref_name }}`
+            **Commit:** ${{ github.event.head_commit.message }}
+            **Auteur:** ${{ github.actor }}
+          color: ${{ job.status == 'success' && '0x15e286' || '0xff0000' }}
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

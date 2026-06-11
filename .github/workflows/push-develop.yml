@@ -1,0 +1,22 @@
+name: Deploy on develop push
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  ci:
+    name: Run CI Tests
+    uses: ./.github/workflows/ci.yml
+    with:
+      environment: development
+    secrets: inherit
+
+  deploy:
+    name: Deploy to Development
+    needs: ci
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: development
+    secrets: inherit

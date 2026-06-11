@@ -1,0 +1,27 @@
+name: PR Notification
+
+on:
+  pull_request:
+    types: [opened, reopened]
+    branches:
+      - develop
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          noprefix: true
+          title: '📝 Nouvelle PR en attente'
+          description: |
+            **Titre:** ${{ github.event.pull_request.title }}
+            **Auteur:** ${{ github.event.pull_request.user.login }}
+            **Branche:** `${{ github.event.pull_request.head.ref }}` → `${{ github.event.pull_request.base.ref }}`
+          color: 0xffa500
+          url: ${{ github.event.pull_request.html_url }}
+          username: 'GitHub - PR Bot'
+          avatar_url: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
