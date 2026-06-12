@@ -16,6 +16,7 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
+    "types": ["jest", "node"],
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
@@ -25,7 +26,9 @@
       "@app/database": ["libs/database"],
       "@app/database/*": ["libs/database/*"],
       "@app/shared": ["libs/shared/src"],
-      "@app/shared/*": ["libs/shared/src/*"]
+      "@app/shared/*": ["libs/shared/src/*"],
+      "@app/auth": ["apps/auth/src"],
+      "@app/auth/*": ["apps/auth/src/*"]
     }
   }
 }

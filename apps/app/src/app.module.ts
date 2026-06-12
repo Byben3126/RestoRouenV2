@@ -5,10 +5,10 @@ import { DatabaseModule } from '@app/database';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { WorkerModule } from './workers/worker.module';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [DatabaseModule, EventEmitterModule.forRoot(), WorkerModule],
+  imports: [DatabaseModule, EventEmitterModule.forRoot(), UserModule],
   controllers: [AppController],
   providers: [AppService],
 })

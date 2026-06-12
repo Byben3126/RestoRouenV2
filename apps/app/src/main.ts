@@ -1,16 +1,13 @@
 import 'dotenv/config';
 
 import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
-    transport: Transport.TCP,
-  });
+  const app = await NestFactory.create(AppModule);
   app.useGlobalInterceptors(new TransformInterceptor());
-  await app.listen();
+  await app.listen(process.env.PORT_APP ?? 3002);
 }
 void bootstrap();
