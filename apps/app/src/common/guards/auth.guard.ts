@@ -1,31 +1,29 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+
 import { MikroORM } from '@mikro-orm/core';
+import { betterAuth } from 'better-auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { IncomingMessage } from 'http';
 
 import { auth } from '@app/auth/auth';
 
+type BetterAuthInstance = ReturnType<typeof betterAuth>;
+type SessionResult = Awaited<ReturnType<BetterAuthInstance['api']['getSession']>>;
+
 @Injectable()
 export class AuthGuard implements CanActivate {
-  private readonly betterAuth;
+  private readonly betterAuth: BetterAuthInstance;
 
   constructor(private readonly orm: MikroORM) {
     this.betterAuth = auth(this.orm);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest<IncomingMessage & { userId: string }>();
+    const request = context.switchToHttp().getRequest<IncomingMessage & { userId: string }>();
 
-    const session = await this.betterAuth.api.getSession({
+    const session = (await this.betterAuth.api.getSession({
       headers: fromNodeHeaders(request.headers),
-    });
+    })) as SessionResult;
 
     if (!session) throw new UnauthorizedException();
 
