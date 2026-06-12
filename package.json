@@ -18,6 +18,10 @@
     "migration:create": "npx mikro-orm migration:create",
     "migration:up": "npx mikro-orm migration:up",
     "migration:down": "npx mikro-orm migration:down",
+    "migration:status": "npx mikro-orm migration:status",
+    "migration:fresh": "npx mikro-orm schema:drop --run && npm run migration:up",
+    "seed": "npx mikro-orm seeder:run",
+    "seed:fresh": "npx mikro-orm schema:fresh --run --seed",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -50,6 +54,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@faker-js/faker": "^10.4.0",
     "@mikro-orm/cli": "^6.6.7",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",

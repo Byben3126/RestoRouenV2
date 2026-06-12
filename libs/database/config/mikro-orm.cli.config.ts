@@ -10,8 +10,8 @@ export default defineConfig({
   entities: ['apps/**/src/**/entities/*.entity.ts', 'apps/**/src/entities/*.entity.ts'],
   entitiesTs: ['apps/**/src/**/entities/*.entity.ts', 'apps/**/src/entities/*.entity.ts'],
   seeder: {
-    path: 'apps/**/src/**/seeders/*.seed.ts',
-    pathTs: 'apps/**/src/**/seeders/*.seed.ts',
+    path: 'libs/database/seeders',
+    pathTs: 'libs/database/seeders',
     defaultSeeder: 'DatabaseSeeder',
     emit: 'ts',
   },

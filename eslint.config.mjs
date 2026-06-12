@@ -37,4 +37,12 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+  {
+    // MikroORM génère des méthodes async sans await — on désactive ces règles uniquement sur les migrations
+    files: ['libs/database/migrations/**/*.ts'],
+    rules: {
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
+  },
 );

@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 
-import { UserProfile } from './entities';
+import { Person, UserProfile } from './entities';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([UserProfile])],
+  imports: [MikroOrmModule.forFeature([Person, UserProfile])],
   providers: [],
   controllers: [],
 })
-export class UserProfileModule {}
+export class UserModule {}

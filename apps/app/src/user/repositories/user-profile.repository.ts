@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { CreateOptions, RequiredEntityData } from '@mikro-orm/postgresql';
 
-import { UserProfile } from '../entities/user-profile.entity';
+import { UserProfile } from '../entities';
 import { UserProfileCreatedEvent } from '../events/user-profile-created.event';
 
 export class UserProfileRepository extends EntityRepository<UserProfile> {
