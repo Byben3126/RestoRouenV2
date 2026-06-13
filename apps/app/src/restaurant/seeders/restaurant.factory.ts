@@ -14,7 +14,9 @@ export class RestaurantFactory extends Factory<Restaurant> {
       country: faker.location.country(),
       city: faker.location.city(),
       formattedAddress: faker.location.streetAddress({ useFullAddress: true }),
-      averageRating: parseFloat(faker.number.float({ min: 0, max: 5, fractionDigits: 1 }).toFixed(1)),
+      averageRating: parseFloat(
+        faker.number.float({ min: 0, max: 5, fractionDigits: 1 }).toFixed(1),
+      ),
       reviewCount: faker.number.int({ min: 0, max: 500 }),
       isActive: true,
     };

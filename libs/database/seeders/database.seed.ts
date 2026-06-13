@@ -2,6 +2,7 @@ import { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
 import { CustomerDataSeeder } from '../../../apps/app/src/customer/seeders/customer-data.seed';
+import { PromotionDataSeeder } from '../../../apps/app/src/promotion/seeders/promotion-data.seed';
 import { RestaurantDataSeeder } from '../../../apps/app/src/restaurant/seeders/restaurant-data.seed';
 import { RewardDataSeeder } from '../../../apps/app/src/reward/seeders/reward-data.seed';
 import { UserDataSeeder } from '../../../apps/app/src/user/seeders/user-data.seed';
@@ -15,6 +16,7 @@ export class DatabaseSeeder extends Seeder {
       RestaurantDataSeeder,
       CustomerDataSeeder,
       RewardDataSeeder,
+      PromotionDataSeeder,
     ]);
   }
 }

@@ -19,12 +19,12 @@ export class UserProfileRepository extends EntityRepository<UserProfile> {
     options?: CreateOptions<Convert>,
   ): UserProfile {
     const profile = super.create(data, options);
-    this.eventEmitter.emit('user-profile.created', new UserProfileCreatedEvent(profile.userId));
+    this.eventEmitter.emit('user-profile.created', new UserProfileCreatedEvent(profile.user.id));
     return profile;
   }
 
   async findByUserId(userId: string): Promise<UserProfile | null> {
-    return this.findOne({ userId });
+    return this.findOne({ user: userId });
   }
 
   async findByLinkCode(linkCode: string): Promise<UserProfile | null> {

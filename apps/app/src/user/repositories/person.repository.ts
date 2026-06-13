@@ -19,11 +19,11 @@ export class PersonRepository extends EntityRepository<Person> {
     options?: CreateOptions<Convert>,
   ): Person {
     const person = super.create(data, options);
-    this.eventEmitter.emit('person.created', new PersonCreatedEvent(person.userId));
+    this.eventEmitter.emit('person.created', new PersonCreatedEvent(person.user.id));
     return person;
   }
 
   async findByUserId(userId: string): Promise<Person | null> {
-    return this.findOne({ userId });
+    return this.findOne({ user: userId });
   }
 }
