@@ -1,6 +1,7 @@
-import { Entity, Enum, PrimaryKey, Property } from '@mikro-orm/core';
-import { randomUUID } from 'crypto';
-import { randomBytes } from 'crypto';
+import { Entity, Enum, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { randomBytes, randomUUID } from 'crypto';
+
+import { User } from '@app/auth/entities/user.entity';
 
 export enum Language {
   FRENCH = 'fr',
@@ -13,8 +14,8 @@ export class UserProfile {
   @PrimaryKey({ type: 'uuid' })
   id: string = randomUUID();
 
-  @Property({ unique: true })
-  userId!: string;
+  @OneToOne(() => User)
+  user!: User;
 
   @Enum({ items: () => Language })
   language: Language = Language.FRENCH;

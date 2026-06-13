@@ -1,6 +1,8 @@
 import { Dictionary, EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
+import { User } from '@app/auth/entities/user.entity';
+
 import { PersonFactory } from './person.factory';
 import { UserProfileFactory } from './user-profile.factory';
 
@@ -10,8 +12,10 @@ export class UserDataSeeder extends Seeder {
     const restaurantOwnerIds: string[] = [];
 
     for (const userId of userIds) {
-      await new PersonFactory(em).createOne({ userId });
-      const profile = await new UserProfileFactory(em).createOne({ userId });
+      const user = em.getReference(User, userId);
+
+      await new PersonFactory(em).createOne({ user });
+      const profile = await new UserProfileFactory(em).createOne({ user });
 
       if (profile.isRestaurantOwner) {
         restaurantOwnerIds.push(userId);

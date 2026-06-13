@@ -1,6 +1,9 @@
 import { Dictionary, EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
+import { User } from '@app/auth/entities/user.entity';
+
+import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 import { CustomerFactory } from './customer.factory';
 
 export class CustomerDataSeeder extends Seeder {
@@ -9,13 +12,14 @@ export class CustomerDataSeeder extends Seeder {
     const restaurantIds: string[] = context.restaurantIds as string[];
 
     for (const restaurantId of restaurantIds) {
-      // Chaque restaurant reçoit entre 3 et 8 clients aléatoires
+      const restaurant = em.getReference(Restaurant, restaurantId);
       const shuffled = [...userIds].sort(() => Math.random() - 0.5);
       const count = faker_count(userIds.length);
       const selectedUserIds = shuffled.slice(0, count);
 
       for (const userId of selectedUserIds) {
-        await new CustomerFactory(em).createOne({ userId, restaurantId });
+        const user = em.getReference(User, userId);
+        await new CustomerFactory(em).createOne({ user, restaurant });
       }
     }
   }

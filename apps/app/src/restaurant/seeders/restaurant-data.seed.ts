@@ -1,6 +1,8 @@
 import { Dictionary, EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
+import { User } from '@app/auth/entities/user.entity';
+
 import { RestaurantFactory } from './restaurant.factory';
 
 export class RestaurantDataSeeder extends Seeder {
@@ -9,7 +11,8 @@ export class RestaurantDataSeeder extends Seeder {
     const restaurantIds: string[] = [];
 
     for (const userId of restaurantOwnerIds) {
-      const restaurant = await new RestaurantFactory(em).createOne({ userId });
+      const user = em.getReference(User, userId);
+      const restaurant = await new RestaurantFactory(em).createOne({ user });
       restaurantIds.push(restaurant.id);
     }
 

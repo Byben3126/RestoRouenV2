@@ -1,5 +1,7 @@
-import { Entity, Enum, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, Enum, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
+
+import { User } from '@app/auth/entities/user.entity';
 
 export enum Gender {
   MALE = 'male',
@@ -11,8 +13,8 @@ export class Person {
   @PrimaryKey({ type: 'uuid' })
   id: string = randomUUID();
 
-  @Property({ unique: true })
-  userId!: string;
+  @OneToOne(() => User)
+  user!: User;
 
   @Property()
   firstName!: string;

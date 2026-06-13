@@ -1,33 +1,21 @@
-import { Entity, Index, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
-
-import { User } from '@app/auth/entities/user.entity';
 
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 
 @Entity()
-@Index({ properties: ['user', 'restaurant'], options: { unique: true } })
-export class Customer {
+export class Reward {
   @PrimaryKey({ type: 'uuid' })
   id: string = randomUUID();
-
-  @ManyToOne(() => User)
-  user!: User;
 
   @ManyToOne(() => Restaurant)
   restaurant!: Restaurant;
 
   @Property()
-  points: number = 0;
+  name!: string;
 
   @Property()
-  totalPointsGained: number = 0;
-
-  @Property()
-  canSubmitRating: boolean = false;
-
-  @Property({ nullable: true, type: 'date' })
-  lastVisitDate?: Date;
+  pointRequired!: number;
 
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();

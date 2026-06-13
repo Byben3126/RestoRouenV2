@@ -1,13 +1,15 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
+
+import { User } from '@app/auth/entities/user.entity';
 
 @Entity()
 export class Restaurant {
   @PrimaryKey({ type: 'uuid' })
   id: string = randomUUID();
 
-  @Property({ unique: true })
-  userId!: string;
+  @OneToOne(() => User)
+  user!: User;
 
   @Property()
   name!: string;

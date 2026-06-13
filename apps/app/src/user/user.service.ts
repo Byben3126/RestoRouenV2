@@ -18,10 +18,10 @@ export class UserService {
   async getMe(userId: string): Promise<UserDto> {
     const user = await this.em.findOneOrFail(User, { id: userId });
 
-    const person = await this.em.findOne(Person, { userId });
+    const person = await this.em.findOne(Person, { user: userId });
     if (!person) throw new PersonNotFoundException(userId);
 
-    const profile = await this.em.findOne(UserProfile, { userId });
+    const profile = await this.em.findOne(UserProfile, { user: userId });
     if (!profile) throw new UserProfileNotFoundException(userId);
 
     return UserMapper.toDto(user, person, profile);
