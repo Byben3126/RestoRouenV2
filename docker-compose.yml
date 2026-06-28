@@ -31,6 +31,39 @@ services:
       - PORT_AUTH=${PORT_AUTH}
       - FRONTEND_URL=${FRONTEND_URL}
 
+  # --- MICROSERVICE APP ---
+  app-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: app
+    container_name: app-service
+    command: node dist/apps/app/main.js
+    depends_on:
+      - db
+      - auth-service
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT_APP=${PORT_APP}
+      - PORT_AUTH=${PORT_AUTH}
+      - FRONTEND_URL=${FRONTEND_URL}
+
+  # --- MICROSERVICE MEDIA ---
+  media-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: media
+    container_name: media-service
+    command: node dist/apps/media/main.js
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT_MEDIA=${PORT_MEDIA}
+
   # --- GATEWAY ---
   gateway:
     build:
@@ -39,18 +72,21 @@ services:
       args:
         SERVICE_NAME: gateway
     container_name: gateway-service
-    command: sh -c "npx prisma migrate deploy && node dist/apps/gateway/main.js"
+    command: node dist/apps/gateway/main.js
     depends_on:
       - db
       - auth-service
+      - app-service
+      - media-service
     environment:
-      - DATABASE_URL=${WORKER_DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL}
       - PORT_GATEWAY=${PORT_GATEWAY}
-      - PORT_AUTH=${GATEWAY_DATABASE_URL}
+      - PORT_AUTH=${PORT_AUTH}
+      - PORT_APP=${PORT_APP}
+      - PORT_MEDIA=${PORT_MEDIA}
       - FRONTEND_URL=${FRONTEND_URL}
-
     ports:
-      - '3080:${PORT_GATEWAY}'
+      - '127.0.0.1:3080:${PORT_GATEWAY}'
 
 volumes:
   postgres_data:
