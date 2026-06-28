@@ -5,5 +5,12 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@app/database(|/.*)$": "<rootDir>/../../../libs/database/$1",
+    "^@app/auth(|/.*)$": "<rootDir>/../../auth/src/$1",
+    "^better-auth$": "<rootDir>/../../auth/src/__mocks__/better-auth.js",
+    "^better-auth/node$": "<rootDir>/../../auth/src/__mocks__/better-auth-node.js",
+    "^better-auth-mikro-orm$": "<rootDir>/../../auth/src/__mocks__/better-auth-mikro-orm.js"
   }
 }
