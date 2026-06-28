@@ -5,6 +5,10 @@ on:
     branches:
       - develop
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   ci:
     name: Run CI Tests
