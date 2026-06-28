@@ -36,6 +36,7 @@ export class AppUser {
   isActive: boolean = true;
 
   @Formula(
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     (alias) => `(select count(*)::int > 0 from restaurant r where r.user_id = ${alias}.id)`,
     { lazy: false },
   )

@@ -18,6 +18,7 @@ export class CustomerDto {
   @Type(() => UserDto)
   @Expose()
   @Transform(({ obj }) =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     plainToInstance(UserDto, { ...obj.user, ...obj.user?.authUser, ...obj.user?.person }),
   )
   user!: UserDto;
@@ -28,6 +29,7 @@ export class PaginatedCustomersDto {
   @ApiProperty({ type: () => CustomerDto, isArray: true })
   @Type(() => CustomerDto)
   @Expose()
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   @Transform(({ obj }) => plainToInstance(CustomerDto, obj.items))
   items!: CustomerDto[];
 

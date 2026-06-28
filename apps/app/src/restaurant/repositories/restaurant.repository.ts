@@ -9,6 +9,7 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
     userId: string,
     data: Pick<Restaurant, 'name' | 'latitude' | 'longitude'>,
   ): Promise<Restaurant> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const restaurant = this.em.create(Restaurant, { user: userId as any, ...data } as any);
     await this.em.flush();
     return restaurant;

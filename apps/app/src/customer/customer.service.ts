@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 
 import { InjectRepository } from '@mikro-orm/nestjs';
 
-import { PaginatedCustomersDto } from './dto/customer.dto';
 import { GetCustomersQueryDto } from './dto/get-customers-query.dto';
 import { Customer } from './entities/customer.entity';
 import { PaginatedCustomers } from './repositories/customer.repository';

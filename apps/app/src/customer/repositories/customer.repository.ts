@@ -1,8 +1,5 @@
 import { EntityManager, EntityRepository, FilterQuery } from '@mikro-orm/postgresql';
 
-import { AppUser } from '../../user/entities/app-user.entity';
-import { Person } from '../../user/entities/person.entity';
-import { PaginatedCustomersDto } from '../dto/customer.dto';
 import { CustomerSortBy, GetCustomersQueryDto } from '../dto/get-customers-query.dto';
 import { Customer } from '../entities/customer.entity';
 

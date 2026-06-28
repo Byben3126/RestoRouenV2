@@ -12,13 +12,13 @@ function makeReward(overrides: Record<string, unknown> = {}): Partial<Reward> {
   return {
     id: 'reward-1',
     name: 'Café offert',
-    pointsCost: 100,
+    pointRequired: 100,
     status: RewardStatus.DRAFT,
     ...overrides,
   };
 }
 
-const CREATE_DTO = { name: 'Café offert', pointsCost: 100 };
+const CREATE_DTO = { name: 'Café offert', pointRequired: 100 };
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 

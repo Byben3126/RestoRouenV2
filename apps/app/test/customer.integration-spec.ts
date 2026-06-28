@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { INestApplication } from '@nestjs/common';
 
 import { EntityManager } from '@mikro-orm/postgresql';
@@ -7,12 +8,7 @@ import { User } from '@app/auth/entities/user.entity';
 
 import { Customer } from '../src/customer/entities/customer.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
-import {
-  TEST_USER_ID,
-  cleanBaseFixtures,
-  createTestApp,
-  seedBaseFixtures,
-} from './helpers/app.helper';
+import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
 const CUSTOMER_USER_ID = 'test-customer-user';
 
@@ -34,16 +30,16 @@ describe('CustomerController (integration)', () => {
       name: 'Customer User',
       email: 'customer@test.com',
       emailVerified: false,
-    });
-    fork.create(AppUser, { authUser: fork.getReference(User, CUSTOMER_USER_ID) });
+    } as any);
+    fork.create(AppUser, { authUser: fork.getReference(User, CUSTOMER_USER_ID) } as any);
     await fork.flush();
 
     fork.create(Customer, {
       user: fork.getReference(AppUser, CUSTOMER_USER_ID),
-      restaurant: restaurantId as any,
+      restaurant: restaurantId,
       points: 50,
       totalPointsGained: 100,
-    });
+    } as any);
     await fork.flush();
   });
 

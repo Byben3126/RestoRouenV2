@@ -32,7 +32,8 @@ export class PromotionRepository extends EntityRepository<Promotion> {
 
   async createForRestaurant(restaurantId: string, dto: CreatePromotionDto): Promise<Promotion> {
     return this.em.transactional(async () => {
-      const { status, customerIds, ...rest } = dto;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { status, customerIds: _customerIds, ...rest } = dto;
       const promotion = this.create({
         ...rest,
         restaurant: restaurantId,

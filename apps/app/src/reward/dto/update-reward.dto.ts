@@ -1,4 +1,3 @@
-import { Transform } from 'class-transformer';
 import { IsArray, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class UpdateRewardDto {

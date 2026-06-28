@@ -1,7 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-
 import { Transform } from 'class-transformer';
-import { IsArray, IsDate, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { PromotionAudience, PromotionInternalStatus } from '../entities/promotion.entity';
 
@@ -28,6 +26,7 @@ export class CreatePromotionDto {
   customerIds?: string[];
 
   @IsEnum([PromotionInternalStatus.ACTIVE, PromotionInternalStatus.DRAFT])
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   @Transform(({ value }) => value ?? PromotionInternalStatus.ACTIVE)
   status: PromotionInternalStatus = PromotionInternalStatus.ACTIVE;
 }

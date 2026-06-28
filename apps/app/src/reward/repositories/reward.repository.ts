@@ -43,6 +43,7 @@ export class RewardRepository extends EntityRepository<Reward> {
 
     await this.em.flush();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const id of removed) {
       //await this.mediaClient.delete(id); // le service media supprime sa ligne + le fichier S3
     }

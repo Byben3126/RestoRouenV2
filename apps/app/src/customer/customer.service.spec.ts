@@ -11,7 +11,7 @@ function makeCustomer(overrides: Record<string, unknown> = {}): Partial<Customer
   return {
     id: 'customer-1',
     points: 0,
-    totalVisits: 1,
+    totalPointsGained: 0,
     ...overrides,
   };
 }

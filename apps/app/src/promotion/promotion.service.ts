@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 
 import { CreatePromotionDto } from './dto/create-promotion.dto';
-import { PromotionDto } from './dto/promotion.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { Promotion, PromotionInternalStatus } from './entities/promotion.entity';
 import { PromotionRepository } from './repositories/promotion.repository';

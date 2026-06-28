@@ -7,6 +7,7 @@ export class MediaDto {
   @Expose() size?: number;
 
   @Expose()
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   @Transform(({ obj }) => `https://${process.env.CLOUDFRONT_DOMAIN}/${obj.key}`)
   url!: string;
 }

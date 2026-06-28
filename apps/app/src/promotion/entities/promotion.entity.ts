@@ -9,7 +9,7 @@ import {
   Property,
 } from '@mikro-orm/core';
 import { Formula } from '@mikro-orm/core';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 import { randomUUID } from 'crypto';
 
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
@@ -75,6 +75,7 @@ export class Promotion {
   updatedAt: Date = new Date();
 
   @Formula(
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     (alias) => `(select count(*)::int from promotion_used pu where pu.promotion_id = ${alias}.id)`,
     { lazy: true },
   )
@@ -82,6 +83,7 @@ export class Promotion {
 
   @Formula(
     (alias) =>
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `(select count(*)::int from promotion_target pt where pt.promotion_id = ${alias}.id)`,
     { lazy: true },
   )

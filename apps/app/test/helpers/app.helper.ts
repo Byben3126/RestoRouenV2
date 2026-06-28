@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 
@@ -59,8 +60,8 @@ export async function seedUserOnly(em: EntityManager): Promise<void> {
     name: 'Integration Test User',
     email: 'integration@test.com',
     emailVerified: true,
-  });
-  fork.create(AppUser, { authUser: fork.getReference(User, TEST_USER_ID) });
+  } as any);
+  fork.create(AppUser, { authUser: fork.getReference(User, TEST_USER_ID) } as any);
   await fork.flush();
 }
 
@@ -72,7 +73,7 @@ export async function seedBaseFixtures(em: EntityManager): Promise<{ restaurantI
     name: 'Test Restaurant',
     latitude: 49.44,
     longitude: 1.09,
-  });
+  } as any);
   await fork.flush();
   return { restaurantId: restaurant.id };
 }

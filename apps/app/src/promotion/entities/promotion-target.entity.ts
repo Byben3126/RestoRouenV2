@@ -1,5 +1,5 @@
 import { Entity, Index, ManyToOne, PrimaryKey } from '@mikro-orm/core';
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 import { randomUUID } from 'crypto';
 
 import { Customer } from '../../customer/entities/customer.entity';

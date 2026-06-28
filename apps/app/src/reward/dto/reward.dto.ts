@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
 
 import { MediaDto } from '../../common/dto/media.dto';

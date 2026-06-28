@@ -47,6 +47,7 @@ export class Reward {
   status: RewardStatus = RewardStatus.ACTIVE;
 
   @Formula(
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     (alias) => `(select count(*)::int from reward_used ru where ru.reward_id = ${alias}.id)`,
     { lazy: true },
   )

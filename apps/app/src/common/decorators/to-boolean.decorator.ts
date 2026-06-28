@@ -9,6 +9,7 @@ export function ToBoolean() {
     Transform(({ value }) => {
       if (value === true || value === 'true' || value === '1') return true;
       if (value === false || value === 'false' || value === '0') return false;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return value;
     }),
   );
