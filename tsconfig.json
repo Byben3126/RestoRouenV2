@@ -28,7 +28,9 @@
       "@app/shared": ["libs/shared/src"],
       "@app/shared/*": ["libs/shared/src/*"],
       "@app/auth": ["apps/auth/src"],
-      "@app/auth/*": ["apps/auth/src/*"]
+      "@app/auth/*": ["apps/auth/src/*"],
+      "@app/media/*": ["apps/media/src"],
+      "@main/*": ["apps/app/src/*"]
     }
   }
 }

@@ -2,9 +2,12 @@ import 'dotenv/config';
 
 import { NestFactory } from '@nestjs/core';
 
+import { MikroORM } from '@mikro-orm/core';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import { AppModule } from './app.module';
+import { createAuthMiddleware } from './common/middlewares/auth.middleware';
+import { mediaMiddleware } from './common/middlewares/media.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +19,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
+  const orm = app.get(MikroORM);
+  const authMiddleware = createAuthMiddleware(orm);
+
   app.use(
     '/auth/',
     createProxyMiddleware({
@@ -25,8 +31,22 @@ async function bootstrap() {
     }),
   );
 
+
+  app.use(
+    '/media',
+    authMiddleware,
+    mediaMiddleware,
+    createProxyMiddleware({
+      target: `http://localhost:${process.env.PORT_MEDIA}`,
+      changeOrigin: true,
+      xfwd: true,
+      pathRewrite: { '^': '/media' },
+    }),
+  );
+
   app.use(
     '/',
+    authMiddleware,
     createProxyMiddleware({
       target: `http://localhost:${process.env.PORT_APP}`,
       changeOrigin: true,

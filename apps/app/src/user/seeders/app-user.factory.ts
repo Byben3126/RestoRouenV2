@@ -1,12 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { Factory } from '@mikro-orm/seeder';
 
-import { Language, UserProfile } from '../entities/user-profile.entity';
+import { AppUser, Language } from '../entities/app-user.entity';
 
-export class UserProfileFactory extends Factory<UserProfile> {
-  model = UserProfile;
+export class AppUserFactory extends Factory<AppUser> {
+  model = AppUser;
 
-  definition(): Partial<UserProfile> {
+  definition(): Partial<AppUser> {
     return {
       language: faker.helpers.enumValue(Language),
       isActive: true,

@@ -2,16 +2,15 @@ import { Module } from '@nestjs/common';
 
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 
-import { User } from '@app/auth/entities/user.entity';
-
 import { AuthGuard } from '../common/guards/auth.guard';
-import { Person, UserProfile } from './entities';
+import { AppUser, Person } from './entities';
+import { AppUserRepository } from './repositories/app-user.repository';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([Person, UserProfile, User])],
+  imports: [MikroOrmModule.forFeature([AppUser, Person])],
   controllers: [UserController],
-  providers: [UserService, AuthGuard],
+  providers: [UserService, AuthGuard, AppUserRepository],
 })
 export class UserModule {}

@@ -17,13 +17,13 @@ export class Account {
   @ManyToOne(() => User, { deleteRule: 'cascade' })
   user!: User;
 
-  @Property({ nullable: true })
+  @Property({ nullable: true, type: 'text' })
   accessToken?: string;
 
-  @Property({ nullable: true })
+  @Property({ nullable: true, type: 'text' })
   refreshToken?: string;
 
-  @Property({ nullable: true })
+  @Property({ nullable: true, type: 'text' })
   idToken?: string;
 
   @Property({ nullable: true })

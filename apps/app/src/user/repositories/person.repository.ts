@@ -22,8 +22,4 @@ export class PersonRepository extends EntityRepository<Person> {
     this.eventEmitter.emit('person.created', new PersonCreatedEvent(person.user.id));
     return person;
   }
-
-  async findByUserId(userId: string): Promise<Person | null> {
-    return this.findOne({ user: userId });
-  }
 }

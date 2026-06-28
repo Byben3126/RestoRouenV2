@@ -22,11 +22,12 @@ export class PromotionDataSeeder extends Seeder {
       );
 
       for (const promotion of promotions) {
-        const targets = promotion.forEveryone
-          ? customers
-          : faker.helpers.arrayElements(customers, { min: 1, max: customers.length });
+        const isTargeted = promotion.audience === 'targeted';
+        const targets = isTargeted
+          ? faker.helpers.arrayElements(customers, { min: 1, max: customers.length })
+          : customers;
 
-        if (!promotion.forEveryone) {
+        if (isTargeted) {
           for (const customer of targets) {
             em.create(PromotionTarget, { customer, promotion });
           }

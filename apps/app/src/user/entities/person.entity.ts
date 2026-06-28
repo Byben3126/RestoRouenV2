@@ -1,7 +1,7 @@
-import { Entity, Enum, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
-import { randomUUID } from 'crypto';
+import { Entity, Enum, OneToOne, Property } from '@mikro-orm/core';
+import { Exclude } from 'class-transformer';
 
-import { User } from '@app/auth/entities/user.entity';
+import { AppUser } from './app-user.entity';
 
 export enum Gender {
   MALE = 'male',
@@ -10,11 +10,9 @@ export enum Gender {
 
 @Entity()
 export class Person {
-  @PrimaryKey({ type: 'uuid' })
-  id: string = randomUUID();
-
-  @OneToOne(() => User)
-  user!: User;
+  @Exclude()
+  @OneToOne(() => AppUser, { primary: true })
+  user!: AppUser;
 
   @Property()
   firstName!: string;

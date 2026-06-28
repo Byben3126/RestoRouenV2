@@ -1,4 +1,5 @@
 import { Entity, Index, ManyToOne, PrimaryKey } from '@mikro-orm/core';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { randomUUID } from 'crypto';
 
 import { Customer } from '../../customer/entities/customer.entity';
@@ -10,9 +11,11 @@ export class PromotionTarget {
   @PrimaryKey({ type: 'uuid' })
   id: string = randomUUID();
 
+  @Exclude()
   @ManyToOne(() => Customer)
   customer!: Customer;
 
+  @Exclude()
   @ManyToOne(() => Promotion)
   promotion!: Promotion;
 }

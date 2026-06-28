@@ -1,20 +1,24 @@
-import { Gender } from '../entities/person.entity';
-import { Language } from '../entities/user-profile.entity';
+import { Exclude, Expose } from 'class-transformer';
 
+import { Language } from '../entities/app-user.entity';
+import { Gender } from '../entities/person.entity';
+
+@Exclude()
 export class UserDto {
-  id: string;
-  email: string;
-  name: string;
-  emailVerified: boolean;
-  image?: string;
-  firstName: string;
-  lastName?: string;
-  dateOfBirth?: Date;
-  gender?: Gender;
-  city?: string;
-  country?: string;
-  language: Language;
-  linkCode: string;
-  isActive: boolean;
-  isRestaurantOwner: boolean;
+  @Expose() id!: string;
+  @Expose() email!: string;
+  @Expose() name!: string;
+  @Expose() emailVerified!: boolean;
+  @Expose() image?: string;
+  @Expose() firstName!: string;
+  @Expose() lastName?: string;
+  @Expose() dateOfBirth?: Date;
+  @Expose() gender?: Gender;
+  @Expose() city?: string;
+  @Expose() country?: string;
+  @Expose() language!: Language;
+  @Expose() linkCode!: string;
+  @Expose() isActive!: boolean;
+  @Expose() isRestaurantOwner!: boolean;
+  @Expose() stripeCustomerId?: string;
 }

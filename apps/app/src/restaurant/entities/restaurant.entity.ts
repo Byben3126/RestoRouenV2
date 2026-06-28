@@ -1,15 +1,18 @@
-import { Entity, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, EntityRepositoryType, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
 
-import { User } from '@app/auth/entities/user.entity';
+import type { Media } from '../../../../media/src/media/entities/media.entity';
+import { AppUser } from '../../user/entities/app-user.entity';
+import { RestaurantRepository } from '../repositories/restaurant.repository';
 
-@Entity()
+@Entity({ repository: () => RestaurantRepository })
 export class Restaurant {
+  [EntityRepositoryType]?: RestaurantRepository;
   @PrimaryKey({ type: 'uuid' })
   id: string = randomUUID();
 
-  @OneToOne(() => User)
-  user!: User;
+  @OneToOne(() => AppUser)
+  user!: AppUser;
 
   @Property()
   name!: string;
@@ -35,8 +38,10 @@ export class Restaurant {
   @Property({ nullable: true })
   googleMyBusinessLink?: string;
 
-  @Property({ nullable: true, type: 'json' })
-  images?: string[];
+  @Property({ type: 'json', nullable: true })
+  mediaIds: string[] = [];
+
+  medias?: Media[];
 
   @Property({ type: 'double' })
   averageRating: number = 0;

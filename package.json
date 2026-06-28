@@ -12,6 +12,7 @@
     "gateway:dev": "nest start gateway --watch --env-file .env",
     "auth:dev": "nest start auth --watch --env-file .env",
     "app:dev": "nest start app --watch --env-file .env",
+    "media:dev": "nest start media --watch --env-file .env",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/gateway/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -29,6 +30,8 @@
     "test:e2e": "jest --config ./apps/gateway/test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@mikro-orm/core": "^6.6.7",
     "@mikro-orm/migrations": "^6.6.7",
     "@mikro-orm/nestjs": "^6.1.1",
@@ -44,10 +47,13 @@
     "@nestjs/swagger": "^11.2.6",
     "@thallesp/nestjs-better-auth": "^2.4.0",
     "better-auth-mikro-orm": "^0.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.4",
     "dotenv": "^17.3.1",
     "http-proxy-middleware": "^3.0.5",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "stripe": "^22.3.0",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0"
   },

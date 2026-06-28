@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Gateway",
+      "type": "shell",
+      "command": "npm run gateway:dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Auth",
+      "type": "shell",
+      "command": "npm run auth:dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start App",
+      "type": "shell",
+      "command": "npm run app:dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Media",
+      "type": "shell",
+      "command": "npm run media:dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start All Services",
+      "dependsOn": ["Start Gateway", "Start Auth", "Start Media", "Start App"],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

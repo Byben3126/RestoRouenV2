@@ -6,7 +6,7 @@ import { UserFactory } from './user.factory';
 
 export class UserSeeder extends Seeder {
   async run(em: EntityManager, context: Dictionary): Promise<void> {
-    const users = await new UserFactory(em).create(10);
+    const users = await new UserFactory(em).create(100);
 
     for (const user of users) {
       await new AccountFactory(em).createOne({

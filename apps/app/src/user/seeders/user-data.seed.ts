@@ -3,25 +3,27 @@ import { Seeder } from '@mikro-orm/seeder';
 
 import { User } from '@app/auth/entities/user.entity';
 
+import { AppUserFactory } from './app-user.factory';
 import { PersonFactory } from './person.factory';
-import { UserProfileFactory } from './user-profile.factory';
 
 export class UserDataSeeder extends Seeder {
   async run(em: EntityManager, context: Dictionary): Promise<void> {
     const userIds: string[] = context.userIds as string[];
     const restaurantOwnerIds: string[] = [];
+    const appUserIds: string[] = [];
 
     for (const userId of userIds) {
-      const user = em.getReference(User, userId);
+      const authUser = em.getReference(User, userId);
+      const appUser = await new AppUserFactory(em).createOne({ authUser });
+      await new PersonFactory(em).createOne({ user: appUser });
 
-      await new PersonFactory(em).createOne({ user });
-      const profile = await new UserProfileFactory(em).createOne({ user });
-
-      if (profile.isRestaurantOwner) {
-        restaurantOwnerIds.push(userId);
+      appUserIds.push(appUser.authUser.id);
+      if (appUser.isRestaurantOwner) {
+        restaurantOwnerIds.push(appUser.authUser.id);
       }
     }
 
+    context.appUserIds = appUserIds;
     context.restaurantOwnerIds = restaurantOwnerIds;
   }
 }

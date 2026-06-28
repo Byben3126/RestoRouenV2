@@ -54,7 +54,18 @@
       "entryFile": "main",
       "sourceRoot": "apps/app/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/app/tsconfig.app.json"
+        "tsConfigPath": "apps/app/tsconfig.app.json",
+        "plugins": ["@nestjs/swagger"]
+      }
+    },
+    "media": {
+      "type": "application",
+      "root": "apps/media",
+      "entryFile": "main",
+      "sourceRoot": "apps/media/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/media/tsconfig.app.json",
+        "plugins": ["@nestjs/swagger"]
       }
     }
   }

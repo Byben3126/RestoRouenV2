@@ -1,29 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { EntityManager } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
 
-import { User } from '@app/auth/entities/user.entity';
-
+import { AppUser } from './entities/app-user.entity';
 import { UserDto } from './dto/user.dto';
-import { Person } from './entities/person.entity';
-import { UserProfile } from './entities/user-profile.entity';
-import { PersonNotFoundException } from './exceptions/person-not-found.exception';
-import { UserProfileNotFoundException } from './exceptions/user-profile-not-found.exception';
+import { AppUserRepository } from './repositories/app-user.repository';
 import { UserMapper } from './mappers/user.mapper';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    @InjectRepository(AppUser) private readonly appUserRepo: AppUserRepository,
+  ) {}
 
   async getMe(userId: string): Promise<UserDto> {
-    const user = await this.em.findOneOrFail(User, { id: userId });
-
-    const person = await this.em.findOne(Person, { user: userId });
-    if (!person) throw new PersonNotFoundException(userId);
-
-    const profile = await this.em.findOne(UserProfile, { user: userId });
-    if (!profile) throw new UserProfileNotFoundException(userId);
-
-    return UserMapper.toDto(user, person, profile);
+    const appUser = await this.appUserRepo.findByAuthUserId(userId);
+    if (!appUser) throw new NotFoundException(`AppUser not found for auth user ${userId}`);
+    return UserMapper.toDto(appUser);
   }
 }
