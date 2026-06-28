@@ -1,9 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
-import { RewardService } from './reward.service';
 import { Reward, RewardStatus } from './entities/reward.entity';
+import { RewardService } from './reward.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,10 +36,7 @@ describe('RewardService', () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        RewardService,
-        { provide: getRepositoryToken(Reward), useValue: mockRepo },
-      ],
+      providers: [RewardService, { provide: getRepositoryToken(Reward), useValue: mockRepo }],
     }).compile();
 
     service = module.get(RewardService);
@@ -107,9 +105,9 @@ describe('RewardService', () => {
     it('throws NotFoundException when reward does not exist', async () => {
       mockRepo.setStatusForRestaurant.mockResolvedValue(null);
 
-      await expect(
-        service.setStatus('resto-1', 'reward-x', RewardStatus.ACTIVE),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.setStatus('resto-1', 'reward-x', RewardStatus.ACTIVE)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('publishes a reward (sets status to ACTIVE)', async () => {

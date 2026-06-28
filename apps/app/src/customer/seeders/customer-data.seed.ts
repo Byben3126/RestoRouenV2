@@ -2,8 +2,8 @@ import { faker } from '@faker-js/faker';
 import { Dictionary, EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
-import { AppUser } from '../../user/entities/app-user.entity';
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
+import { AppUser } from '../../user/entities/app-user.entity';
 import { CustomerFactory } from './customer.factory';
 
 export class CustomerDataSeeder extends Seeder {

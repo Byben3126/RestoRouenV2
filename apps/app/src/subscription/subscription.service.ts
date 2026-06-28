@@ -158,7 +158,8 @@ export class SubscriptionService {
     let subscription = await this.subscriptionRepository.findOne({ stripeSubscriptionId });
 
     if (!subscription) {
-      const stripeCustomerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+      const stripeCustomerId =
+        typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
       if (!stripeCustomerId) return;
 
       const appUser = await this.em.findOne(AppUser, { stripeCustomerId });

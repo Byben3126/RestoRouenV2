@@ -18,10 +18,12 @@ export function createAuthMiddleware(orm: MikroORM) {
   ) => {
     delete req.headers['x-user-id'];
 
-    const session = await RequestContext.create(orm.em, () =>
-      betterAuthInstance.api.getSession({
-        headers: fromNodeHeaders(req.headers),
-      }) as Promise<SessionResult>,
+    const session = await RequestContext.create(
+      orm.em,
+      () =>
+        betterAuthInstance.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        }) as Promise<SessionResult>,
     );
 
     if (!session) {

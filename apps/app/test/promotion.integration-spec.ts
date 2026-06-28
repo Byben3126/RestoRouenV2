@@ -1,18 +1,15 @@
 import { INestApplication } from '@nestjs/common';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import {
-  createTestApp,
-  seedBaseFixtures,
-  cleanBaseFixtures,
-} from './helpers/app.helper';
 import {
   Promotion,
   PromotionAudience,
   PromotionInternalStatus,
   PromotionStatus,
 } from '../src/promotion/entities/promotion.entity';
+import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
 describe('PromotionController (integration)', () => {
   let app: INestApplication;
@@ -62,10 +59,7 @@ describe('PromotionController (integration)', () => {
 
   describe('POST /promotions', () => {
     it('creates a promotion and returns 201', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/promotions')
-        .send(BASE_DTO)
-        .expect(201);
+      const res = await request(app.getHttpServer()).post('/promotions').send(BASE_DTO).expect(201);
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.id).toBeDefined();

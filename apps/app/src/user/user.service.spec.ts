@@ -1,10 +1,11 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
-import { UserService } from './user.service';
 import { AppUser } from './entities/app-user.entity';
 import { Language } from './entities/app-user.entity';
+import { UserService } from './user.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,10 +45,7 @@ describe('UserService', () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UserService,
-        { provide: getRepositoryToken(AppUser), useValue: mockRepo },
-      ],
+      providers: [UserService, { provide: getRepositoryToken(AppUser), useValue: mockRepo }],
     }).compile();
 
     service = module.get(UserService);

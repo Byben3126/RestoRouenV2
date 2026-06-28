@@ -1,8 +1,17 @@
-import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 
 import { EntityManager } from '@mikro-orm/core';
 
-import { Subscription, SubscriptionStatus } from '../../subscription/entities/subscription_restaurant.entity';
+import {
+  Subscription,
+  SubscriptionStatus,
+} from '../../subscription/entities/subscription_restaurant.entity';
 
 const ACTIVE_STATUSES = [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING];
 
@@ -18,7 +27,8 @@ export class SubscriptionGuard implements CanActivate {
       status: { $in: ACTIVE_STATUSES },
     });
 
-    if (!subscription) throw new HttpException('No active subscription', HttpStatus.PAYMENT_REQUIRED);
+    if (!subscription)
+      throw new HttpException('No active subscription', HttpStatus.PAYMENT_REQUIRED);
 
     return true;
   }

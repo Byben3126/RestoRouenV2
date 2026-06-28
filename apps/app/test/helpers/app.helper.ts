@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
+
 import { MikroORM } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 
@@ -24,13 +25,15 @@ export async function createTestApp(options?: {
 }): Promise<AppTestContext> {
   let builder: TestingModuleBuilder = Test.createTestingModule({
     imports: [AppModule],
-  }).overrideGuard(AuthGuard).useValue({
-    canActivate: (ctx: any) => {
-      const req = ctx.switchToHttp().getRequest();
-      req.userId = TEST_USER_ID;
-      return true;
-    },
-  });
+  })
+    .overrideGuard(AuthGuard)
+    .useValue({
+      canActivate: (ctx: any) => {
+        const req = ctx.switchToHttp().getRequest();
+        req.userId = TEST_USER_ID;
+        return true;
+      },
+    });
 
   if (options?.extraOverrides) {
     builder = options.extraOverrides(builder);
@@ -74,10 +77,7 @@ export async function seedBaseFixtures(em: EntityManager): Promise<{ restaurantI
   return { restaurantId: restaurant.id };
 }
 
-export async function cleanBaseFixtures(
-  em: EntityManager,
-  restaurantId?: string,
-): Promise<void> {
+export async function cleanBaseFixtures(em: EntityManager, restaurantId?: string): Promise<void> {
   const fork = em.fork();
   if (restaurantId) {
     await fork.nativeDelete(Restaurant, { id: restaurantId });

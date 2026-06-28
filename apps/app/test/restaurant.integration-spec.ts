@@ -1,15 +1,11 @@
 import { INestApplication } from '@nestjs/common';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import {
-  TEST_USER_ID,
-  createTestApp,
-  seedUserOnly,
-  cleanBaseFixtures,
-} from './helpers/app.helper';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { SubscriptionService } from '../src/subscription/subscription.service';
+import { TEST_USER_ID, cleanBaseFixtures, createTestApp, seedUserOnly } from './helpers/app.helper';
 
 const mockSubscriptionService = {
   ensureStripeCustomer: jest.fn().mockResolvedValue('cus_test123'),

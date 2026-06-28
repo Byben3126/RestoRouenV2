@@ -1,13 +1,10 @@
 import { INestApplication } from '@nestjs/common';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import {
-  createTestApp,
-  seedBaseFixtures,
-  cleanBaseFixtures,
-} from './helpers/app.helper';
 import { Reward, RewardStatus } from '../src/reward/entities/reward.entity';
+import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
 describe('RewardController (integration)', () => {
   let app: INestApplication;
@@ -79,10 +76,7 @@ describe('RewardController (integration)', () => {
     });
 
     it('returns 400 when name is missing', async () => {
-      await request(app.getHttpServer())
-        .post('/rewards')
-        .send({ pointRequired: 100 })
-        .expect(400);
+      await request(app.getHttpServer()).post('/rewards').send({ pointRequired: 100 }).expect(400);
     });
 
     it('returns 400 when pointRequired is less than 1', async () => {

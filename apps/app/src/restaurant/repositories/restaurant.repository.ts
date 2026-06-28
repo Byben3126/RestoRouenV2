@@ -5,7 +5,10 @@ import { UpdateRestaurantDto } from '../dto/update-restaurant.dto';
 import { Restaurant } from '../entities/restaurant.entity';
 
 export class RestaurantRepository extends EntityRepository<Restaurant> {
-  async createOne(userId: string, data: Pick<Restaurant, 'name' | 'latitude' | 'longitude'>): Promise<Restaurant> {
+  async createOne(
+    userId: string,
+    data: Pick<Restaurant, 'name' | 'latitude' | 'longitude'>,
+  ): Promise<Restaurant> {
     const restaurant = this.em.create(Restaurant, { user: userId as any, ...data } as any);
     await this.em.flush();
     return restaurant;

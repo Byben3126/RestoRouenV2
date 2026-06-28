@@ -31,7 +31,6 @@ async function bootstrap() {
     }),
   );
 
-
   app.use(
     '/media',
     authMiddleware,

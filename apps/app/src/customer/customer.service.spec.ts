@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
 import { CustomerService } from './customer.service';
@@ -32,10 +33,7 @@ describe('CustomerService', () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CustomerService,
-        { provide: getRepositoryToken(Customer), useValue: mockRepo },
-      ],
+      providers: [CustomerService, { provide: getRepositoryToken(Customer), useValue: mockRepo }],
     }).compile();
 
     service = module.get(CustomerService);

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { IsNumber, IsOptional, IsString, Max } from 'class-validator';
 
 const MB = 1024 * 1024;

@@ -1,13 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@mikro-orm/nestjs';
 
+import { RequiredEntityData } from '@mikro-orm/core';
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { randomUUID } from 'crypto';
 
 import { ConfirmResponseDto } from './dto/confirm-response.dto';
 import { RequestUploadDto } from './dto/request-upload.dto';
 import { UploadResponseDto } from './dto/upload-response.dto';
-import { RequiredEntityData } from '@mikro-orm/core';
-
 import { Media, MediaStatus } from './entities/media.entity';
 import { MediaRepository } from './repositories/media.repository';
 import { S3Service } from './s3.service';
@@ -39,7 +38,11 @@ export class MediaService {
   }
 
   async confirm(ownerId: string, mediaId: string): Promise<ConfirmResponseDto> {
-    const media = await this.mediaRepository.findOne({ id: mediaId, ownerId, status: MediaStatus.PENDING });
+    const media = await this.mediaRepository.findOne({
+      id: mediaId,
+      ownerId,
+      status: MediaStatus.PENDING,
+    });
 
     if (!media) throw new NotFoundException('Media not found');
 

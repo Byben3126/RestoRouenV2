@@ -1,4 +1,11 @@
-import { Entity, EntityRepositoryType, Enum, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import {
+  Entity,
+  EntityRepositoryType,
+  Enum,
+  ManyToOne,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
 
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';

@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
-import { PromotionService } from './promotion.service';
 import { Promotion, PromotionInternalStatus } from './entities/promotion.entity';
+import { PromotionService } from './promotion.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,10 +34,7 @@ describe('PromotionService', () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PromotionService,
-        { provide: getRepositoryToken(Promotion), useValue: mockRepo },
-      ],
+      providers: [PromotionService, { provide: getRepositoryToken(Promotion), useValue: mockRepo }],
     }).compile();
 
     service = module.get(PromotionService);
@@ -85,9 +83,13 @@ describe('PromotionService', () => {
       const updated = makePromotion({ name: 'Happy Hour v2' });
       mockRepo.updateForRestaurant.mockResolvedValue(updated);
 
-      const result = await service.updatePromotion('resto-1', 'promo-1', { name: 'Happy Hour v2' } as any);
+      const result = await service.updatePromotion('resto-1', 'promo-1', {
+        name: 'Happy Hour v2',
+      } as any);
 
-      expect(mockRepo.updateForRestaurant).toHaveBeenCalledWith('resto-1', 'promo-1', { name: 'Happy Hour v2' });
+      expect(mockRepo.updateForRestaurant).toHaveBeenCalledWith('resto-1', 'promo-1', {
+        name: 'Happy Hour v2',
+      });
       expect(result).toBe(updated);
     });
 

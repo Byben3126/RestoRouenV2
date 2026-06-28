@@ -1,12 +1,13 @@
 import { INestApplication } from '@nestjs/common';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
 import {
   TEST_USER_ID,
+  cleanBaseFixtures,
   createTestApp,
   seedBaseFixtures,
-  cleanBaseFixtures,
 } from './helpers/app.helper';
 
 describe('UserController (integration)', () => {

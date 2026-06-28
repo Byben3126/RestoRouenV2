@@ -1,14 +1,15 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/postgresql';
 
-import { SubscriptionService } from './subscription.service';
 import {
   Subscription,
   SubscriptionPlan,
   SubscriptionStatus,
 } from './entities/subscription_restaurant.entity';
+import { SubscriptionService } from './subscription.service';
 
 // ─── Stripe mock ──────────────────────────────────────────────────────────────
 
@@ -133,9 +134,9 @@ describe('SubscriptionService', () => {
         makeSubscription({ status: SubscriptionStatus.ACTIVE }),
       );
 
-      await expect(
-        service.createCheckoutSession('user-1', restaurantId, plan),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.createCheckoutSession('user-1', restaurantId, plan)).rejects.toThrow(
+        ConflictException,
+      );
 
       expect(mockStripe.checkout.sessions.create).not.toHaveBeenCalled();
     });
@@ -145,9 +146,9 @@ describe('SubscriptionService', () => {
         makeSubscription({ status: SubscriptionStatus.TRIALING }),
       );
 
-      await expect(
-        service.createCheckoutSession('user-1', restaurantId, plan),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.createCheckoutSession('user-1', restaurantId, plan)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('creates checkout session and returns URL when no active subscription', async () => {
@@ -217,7 +218,7 @@ describe('SubscriptionService', () => {
       const sub = makeSubscription({ stripeSubscriptionId: undefined });
 
       mockEm.findOne
-        .mockResolvedValueOnce(appUser)     // AppUser lookup
+        .mockResolvedValueOnce(appUser) // AppUser lookup
         .mockResolvedValueOnce(restaurant); // Restaurant lookup
       mockRepo.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(sub);
 

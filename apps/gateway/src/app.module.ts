@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { MikroOrmModule } from '@mikro-orm/nestjs';
+
 import { DatabaseModule } from '@app/database';
 
 import { Account } from '../../auth/src/entities/account.entity';

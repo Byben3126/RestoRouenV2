@@ -1,10 +1,11 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
-import { RestaurantService } from './restaurant.service';
-import { Restaurant } from './entities/restaurant.entity';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { Restaurant } from './entities/restaurant.entity';
+import { RestaurantService } from './restaurant.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
