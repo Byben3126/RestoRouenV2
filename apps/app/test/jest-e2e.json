@@ -3,14 +3,18 @@
   "rootDir": "../../../",
   "testEnvironment": "node",
   "testRegex": "apps/app/test/.+\\.integration-spec\\.ts$",
+  "maxWorkers": 1,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1",
+    "^@app/database(|/.*)$": "<rootDir>/libs/database/$1",
     "^@app/shared(|/.*)$": "<rootDir>/libs/shared/src/$1",
     "^@app/auth(|/.*)$": "<rootDir>/apps/auth/src/$1",
+    "^@app/media/(.*)$": "<rootDir>/apps/media/src/$1",
+    "^@main/(.*)$": "<rootDir>/apps/app/src/$1",
     "^better-auth$": "<rootDir>/apps/auth/src/__mocks__/better-auth.js",
+    "^better-auth/node$": "<rootDir>/apps/auth/src/__mocks__/better-auth-node.js",
     "^better-auth-mikro-orm$": "<rootDir>/apps/auth/src/__mocks__/better-auth-mikro-orm.js"
   }
 }
