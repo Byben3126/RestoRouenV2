@@ -26,15 +26,30 @@ jobs:
             git reset --hard origin/${{ github.ref_name }}
 
             cat > .env << EOF
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ vars.POSTGRES_DB }}
-            DATABASE_URL="postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ vars.POSTGRES_DB }}?schema=public"
             API_URL=${{ vars.API_URL }}
-            BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
             FRONTEND_URL=${{ vars.FRONTEND_URL }}
-            PORT_GATEWAY=3000
-            PORT_AUTH=3001
+            BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
+            PORT_GATEWAY=${{ vars.PORT_GATEWAY }}
+            PORT_AUTH=${{ vars.PORT_AUTH }}
+            PORT_APP=${{ vars.PORT_APP }}
+            PORT_MEDIA=${{ vars.PORT_MEDIA }}
+            GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            STRIPE_PRODUCT_STARTER=${{ vars.STRIPE_PRODUCT_STARTER }}
+            STRIPE_PRODUCT_GROWTH=${{ vars.STRIPE_PRODUCT_GROWTH }}
+            STRIPE_PRODUCT_PRO=${{ vars.STRIPE_PRODUCT_PRO }}
+            MEDIA_SECRET=${{ secrets.MEDIA_SECRET }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION=${{ vars.AWS_REGION }}
+            S3_BUCKET=${{ vars.S3_BUCKET }}
+            CLOUDFRONT_DOMAIN=${{ vars.CLOUDFRONT_DOMAIN }}
+            INACTIVE_THRESHOLD_DAYS=${{ vars.INACTIVE_THRESHOLD_DAYS }}
             EOF
 
             docker compose down
