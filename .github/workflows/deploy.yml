@@ -35,7 +35,7 @@ jobs:
           context: .
           push: true
           build-args: SERVICE_NAME=${{ matrix.service }}
-          tags: ghcr.io/${{ github.repository_owner }}/restorouen-${{ matrix.service }}:latest
+          tags: ghcr.io/byben3126/restorouen-${{ matrix.service }}:latest
 
   deploy:
     name: Deploy to ${{ inputs.environment }}
