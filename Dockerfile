@@ -23,4 +23,4 @@ COPY --from=builder /app/package*.json ./
 # COPY --from=builder /app/libs ./libs
 
 
-CMD ["node", "dist/main.js"]
+CMD ["dist/main.js"]
