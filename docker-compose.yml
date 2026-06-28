@@ -1,3 +1,6 @@
+x-database-url: &database-url
+  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
 services:
   # --- BASE DE DONNÉES ---
   db:
@@ -23,12 +26,13 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-      - API_URL=${API_URL}
-      - PORT_GATEWAY=${PORT_GATEWAY}
-      - PORT_AUTH=${PORT_AUTH}
-      - FRONTEND_URL=${FRONTEND_URL}
+      <<: *database-url
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      API_URL: ${API_URL}
+      PORT_AUTH: ${PORT_AUTH}
+      FRONTEND_URL: ${FRONTEND_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
 
   # --- MICROSERVICE APP ---
   app-service:
@@ -42,10 +46,17 @@ services:
       - db
       - auth-service
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - PORT_APP=${PORT_APP}
-      - PORT_AUTH=${PORT_AUTH}
-      - FRONTEND_URL=${FRONTEND_URL}
+      <<: *database-url
+      PORT_APP: ${PORT_APP}
+      PORT_AUTH: ${PORT_AUTH}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CLOUDFRONT_DOMAIN: ${CLOUDFRONT_DOMAIN}
+      INACTIVE_THRESHOLD_DAYS: ${INACTIVE_THRESHOLD_DAYS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRODUCT_STARTER: ${STRIPE_PRODUCT_STARTER}
+      STRIPE_PRODUCT_GROWTH: ${STRIPE_PRODUCT_GROWTH}
+      STRIPE_PRODUCT_PRO: ${STRIPE_PRODUCT_PRO}
 
   # --- MICROSERVICE MEDIA ---
   media-service:
@@ -58,8 +69,14 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - PORT_MEDIA=${PORT_MEDIA}
+      <<: *database-url
+      PORT_MEDIA: ${PORT_MEDIA}
+      MEDIA_SECRET: ${MEDIA_SECRET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      CLOUDFRONT_DOMAIN: ${CLOUDFRONT_DOMAIN}
 
   # --- GATEWAY ---
   gateway:
@@ -75,12 +92,13 @@ services:
       - app-service
       - media-service
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - PORT_GATEWAY=${PORT_GATEWAY}
-      - PORT_AUTH=${PORT_AUTH}
-      - PORT_APP=${PORT_APP}
-      - PORT_MEDIA=${PORT_MEDIA}
-      - FRONTEND_URL=${FRONTEND_URL}
+      <<: *database-url
+      PORT_GATEWAY: ${PORT_GATEWAY}
+      PORT_AUTH: ${PORT_AUTH}
+      PORT_APP: ${PORT_APP}
+      PORT_MEDIA: ${PORT_MEDIA}
+      MEDIA_SECRET: ${MEDIA_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - '127.0.0.1:3080:${PORT_GATEWAY}'
 
