@@ -17,7 +17,11 @@ services:
 
   # --- MICROSERVICE AUTH ---
   auth-service:
-    image: ghcr.io/byben3126/restorouen-auth:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: auth
     container_name: auth-service
     depends_on:
       - db
@@ -32,7 +36,11 @@ services:
 
   # --- MICROSERVICE APP ---
   app-service:
-    image: ghcr.io/byben3126/restorouen-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: app
     container_name: app-service
     depends_on:
       - db
@@ -52,7 +60,11 @@ services:
 
   # --- MICROSERVICE MEDIA ---
   media-service:
-    image: ghcr.io/byben3126/restorouen-media:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: media
     container_name: media-service
     depends_on:
       - db
@@ -68,7 +80,11 @@ services:
 
   # --- GATEWAY ---
   gateway:
-    image: ghcr.io/byben3126/restorouen-gateway:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: gateway
     container_name: gateway-service
     depends_on:
       - db
