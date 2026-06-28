@@ -13,7 +13,8 @@ module.exports = {
   moduleNameMapper: {
     '^@app/database(|/.*)$': '<rootDir>/libs/database/src/$1',
     '^@app/shared(|/.*)$': '<rootDir>/libs/shared/src/$1',
-    '^better-auth$': '<rootDir>/__mocks__/better-auth.js',
-    '^better-auth-mikro-orm$': '<rootDir>/__mocks__/better-auth-mikro-orm.js',
+    '^@app/auth(|/.*)$': '<rootDir>/apps/auth/src/$1',
+    '^better-auth$': '<rootDir>/apps/auth/src/__mocks__/better-auth.js',
+    '^better-auth-mikro-orm$': '<rootDir>/apps/auth/src/__mocks__/better-auth-mikro-orm.js',
   },
 };
