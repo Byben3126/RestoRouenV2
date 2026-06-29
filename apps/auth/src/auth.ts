@@ -8,9 +8,7 @@ export const auth = (orm: MikroORM) =>
     basePath: '/',
     database: mikroOrmAdapter(orm),
 
-    trustedOrigins: [
-      process.env.FRONTEND_URL || '',
-    ],
+    trustedOrigins: [process.env.FRONTEND_URL || ''],
     advanced: {
       crossSubdomainCookies: {
         enabled: false,

@@ -1,10 +1,9 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { Serialize } from '@main/common/decorators/serialize.decorator';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { CreateRestaurantDto, RestaurantDto, UpdateRestaurantDto } from './dto';
 import { RestaurantService } from './restaurant.service';
 
