@@ -16,5 +16,6 @@ module.exports = {
     '^@app/auth(|/.*)$': '<rootDir>/apps/auth/src/$1',
     '^better-auth$': '<rootDir>/apps/auth/src/__mocks__/better-auth.js',
     '^better-auth-mikro-orm$': '<rootDir>/apps/auth/src/__mocks__/better-auth-mikro-orm.js',
+    '^better-auth/plugins$': '<rootDir>/apps/auth/src/__mocks__/better-auth-plugins.js',
   },
 };
