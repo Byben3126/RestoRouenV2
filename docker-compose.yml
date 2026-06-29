@@ -81,6 +81,9 @@ services:
       PORT_AUTH: ${PORT_AUTH}
       PORT_APP: ${PORT_APP}
       PORT_MEDIA: ${PORT_MEDIA}
+      AUTH_HOST: auth-service
+      APP_HOST: app-service
+      MEDIA_HOST: media-service
       MEDIA_SECRET: ${MEDIA_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
     ports:

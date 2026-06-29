@@ -22,10 +22,14 @@ async function bootstrap() {
   const orm = app.get(MikroORM);
   const authMiddleware = createAuthMiddleware(orm);
 
+  const authHost = process.env.AUTH_HOST ?? 'localhost';
+  const appHost = process.env.APP_HOST ?? 'localhost';
+  const mediaHost = process.env.MEDIA_HOST ?? 'localhost';
+
   app.use(
     '/auth/',
     createProxyMiddleware({
-      target: `http://localhost:${process.env.PORT_AUTH}`,
+      target: `http://${authHost}:${process.env.PORT_AUTH}`,
       changeOrigin: true,
       xfwd: true,
     }),
@@ -36,7 +40,7 @@ async function bootstrap() {
     authMiddleware,
     mediaMiddleware,
     createProxyMiddleware({
-      target: `http://localhost:${process.env.PORT_MEDIA}`,
+      target: `http://${mediaHost}:${process.env.PORT_MEDIA}`,
       changeOrigin: true,
       xfwd: true,
       pathRewrite: { '^': '/media' },
@@ -47,7 +51,7 @@ async function bootstrap() {
     '/',
     authMiddleware,
     createProxyMiddleware({
-      target: `http://localhost:${process.env.PORT_APP}`,
+      target: `http://${appHost}:${process.env.PORT_APP}`,
       changeOrigin: true,
       xfwd: true,
     }),
