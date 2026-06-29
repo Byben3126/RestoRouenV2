@@ -47,6 +47,15 @@ async function bootstrap() {
   );
 
   app.use(
+    '/webhook',
+    createProxyMiddleware({
+      target: `http://${appHost}:${process.env.PORT_APP}`,
+      changeOrigin: true,
+      xfwd: true,
+    }),
+  );
+
+  app.use(
     '/',
     authMiddleware,
     createProxyMiddleware({
