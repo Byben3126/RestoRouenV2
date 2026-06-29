@@ -9,8 +9,17 @@ export const auth = (orm: MikroORM) =>
     database: mikroOrmAdapter(orm),
 
     trustedOrigins: [
-      process.env.FRONTEND_URL || '', // frontend Next.js
+      process.env.FRONTEND_URL || '',
     ],
+    advanced: {
+      crossSubdomainCookies: {
+        enabled: false,
+      },
+      defaultCookieAttributes: {
+        sameSite: 'none',
+        secure: true,
+      },
+    },
     // Ajoute ici tes stratégies (email, google, etc.)
     emailAndPassword: {
       enabled: true,
