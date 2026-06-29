@@ -2,10 +2,11 @@ import 'dotenv/config';
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+
 import { json, urlencoded } from 'express';
 
-import { AppModule } from './app.module';
 import { setupAdmin } from './admin/admin.setup';
+import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { setupSwagger } from './config/swagger.config';
 

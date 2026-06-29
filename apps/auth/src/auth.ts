@@ -1,7 +1,7 @@
 import { MikroORM } from '@mikro-orm/core';
 import { betterAuth } from 'better-auth';
-import { admin } from 'better-auth/plugins';
 import { mikroOrmAdapter } from 'better-auth-mikro-orm';
+import { admin } from 'better-auth/plugins';
 
 export const auth = (orm: MikroORM) =>
   betterAuth({
@@ -34,7 +34,5 @@ export const auth = (orm: MikroORM) =>
         redirectURI: `${process.env.API_URL}/auth/callback/google`,
       },
     },
-    plugins: [
-      admin(),
-    ],
+    plugins: [admin()],
   });

@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+
 import { MikroORM } from '@mikro-orm/core';
 
 export async function setupAdmin(app: INestApplication): Promise<void> {

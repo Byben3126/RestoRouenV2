@@ -18,8 +18,6 @@ export function createAuthMiddleware(orm: MikroORM) {
   ) => {
     delete req.headers['x-user-id'];
 
-    console.log('[auth.middleware] cookie:', req.headers['cookie']);
-
     let session: SessionResult | null = null;
     try {
       session = await RequestContext.create(
@@ -33,8 +31,6 @@ export function createAuthMiddleware(orm: MikroORM) {
       console.error('[auth.middleware] getSession threw:', err);
     }
 
-    console.log('[auth.middleware] session result:', JSON.stringify(session));
-
     if (!session) {
       res.statusCode = 401;
       res.setHeader('Content-Type', 'application/json');
@@ -43,7 +39,7 @@ export function createAuthMiddleware(orm: MikroORM) {
     }
 
     req.headers['x-user-id'] = session.user.id;
-    req.headers['x-user-role'] = (session.user as any).role ?? 'user';
+    req.headers['x-user-role'] = (session.user as { role?: string }).role ?? 'user';
     next();
   };
 }
