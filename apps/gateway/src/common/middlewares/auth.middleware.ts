@@ -18,13 +18,22 @@ export function createAuthMiddleware(orm: MikroORM) {
   ) => {
     delete req.headers['x-user-id'];
 
-    const session = await RequestContext.create(
-      orm.em,
-      () =>
-        betterAuthInstance.api.getSession({
-          headers: fromNodeHeaders(req.headers),
-        }) as Promise<SessionResult>,
-    );
+    console.log('[auth.middleware] cookie:', req.headers['cookie']);
+
+    let session: SessionResult | null = null;
+    try {
+      session = await RequestContext.create(
+        orm.em,
+        () =>
+          betterAuthInstance.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+          }) as Promise<SessionResult>,
+      );
+    } catch (err) {
+      console.error('[auth.middleware] getSession threw:', err);
+    }
+
+    console.log('[auth.middleware] session result:', JSON.stringify(session));
 
     if (!session) {
       res.statusCode = 401;
