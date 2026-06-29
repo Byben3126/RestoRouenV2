@@ -15,12 +15,9 @@ export const auth = (orm: MikroORM) =>
       skipStateCookieCheck: true,
     },
     advanced: {
-      crossSubdomainCookies: {
-        enabled: false,
-      },
-      defaultCookieAttributes: {
-        sameSite: 'none',
-        secure: true,
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: 'clement-guilloux.fr',
       },
     },
     // Ajoute ici tes stratégies (email, google, etc.)
