@@ -9,7 +9,6 @@ import { UploadResponseDto } from './dto/upload-response.dto';
 import { MediaService } from './media.service';
 
 @ApiTags('Media')
-@UseGuards(AuthGuard)
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}

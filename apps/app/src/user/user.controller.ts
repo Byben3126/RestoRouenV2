@@ -8,7 +8,6 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(AuthGuard)
   @Get('me')
   getMe(@CurrentUser() userId: string) {
     return this.userService.getMe(userId);

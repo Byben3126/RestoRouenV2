@@ -9,7 +9,6 @@ import { CreateRestaurantDto, RestaurantDto, UpdateRestaurantDto } from './dto';
 import { RestaurantService } from './restaurant.service';
 
 @ApiTags('Restaurant')
-@UseGuards(AuthGuard)
 @Controller('restaurant')
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
