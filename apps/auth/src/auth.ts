@@ -9,6 +9,10 @@ export const auth = (orm: MikroORM) =>
     database: mikroOrmAdapter(orm),
 
     trustedOrigins: [process.env.FRONTEND_URL || ''],
+    account: {
+      storeStateStrategy: 'database',
+      skipStateCookieCheck: true,
+    },
     advanced: {
       crossSubdomainCookies: {
         enabled: false,
