@@ -86,6 +86,8 @@ services:
       MEDIA_HOST: media-service
       MEDIA_SECRET: ${MEDIA_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
+      API_URL: ${API_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
     ports:
       - '127.0.0.1:3080:${PORT_GATEWAY}'
 
