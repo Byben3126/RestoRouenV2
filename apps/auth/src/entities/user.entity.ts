@@ -22,6 +22,9 @@ export class User {
   @Property({ nullable: true })
   image?: string;
 
+  @Property({ nullable: true })
+  role?: string;
+
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();
 

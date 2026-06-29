@@ -6,6 +6,7 @@ import { MikroORM } from '@mikro-orm/core';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import { AppModule } from './app.module';
+import { adminMiddleware } from './common/middlewares/admin.middleware';
 import { createAuthMiddleware } from './common/middlewares/auth.middleware';
 import { mediaMiddleware } from './common/middlewares/media.middleware';
 
@@ -43,6 +44,18 @@ async function bootstrap() {
       changeOrigin: true,
       xfwd: true,
       pathRewrite: { '^': '/media' },
+    }),
+  );
+
+  app.use(
+    '/admin',
+    authMiddleware,
+    adminMiddleware,
+    createProxyMiddleware({
+      target: `http://${appHost}:${process.env.PORT_APP}`,
+      changeOrigin: true,
+      xfwd: true,
+      pathRewrite: { '^': '/admin' },
     }),
   );
 

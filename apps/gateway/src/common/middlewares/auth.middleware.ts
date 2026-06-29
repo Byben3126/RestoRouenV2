@@ -43,6 +43,7 @@ export function createAuthMiddleware(orm: MikroORM) {
     }
 
     req.headers['x-user-id'] = session.user.id;
+    req.headers['x-user-role'] = (session.user as any).role ?? 'user';
     next();
   };
 }
