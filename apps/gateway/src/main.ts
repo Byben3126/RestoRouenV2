@@ -52,6 +52,7 @@ async function bootstrap() {
       target: `http://${appHost}:${process.env.PORT_APP}`,
       changeOrigin: true,
       xfwd: true,
+      pathRewrite: { '^': '/webhook' },
     }),
   );
 
