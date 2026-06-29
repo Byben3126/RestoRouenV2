@@ -31,7 +31,6 @@ async function bootstrap() {
     createProxyMiddleware({
       target: `http://${authHost}:${process.env.PORT_AUTH}`,
       changeOrigin: true,
-      xfwd: true,
     }),
   );
 
