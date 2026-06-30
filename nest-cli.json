@@ -55,6 +55,8 @@
       "sourceRoot": "apps/app/src",
       "compilerOptions": {
         "tsConfigPath": "apps/app/tsconfig.app.json",
+        "webpack": true,
+        "webpackConfigPath": "webpack.config.js",
         "plugins": ["@nestjs/swagger"]
       }
     },
