@@ -19,6 +19,7 @@ export class UserMapper {
       linkCode: appUser.linkCode,
       isActive: appUser.isActive,
       isRestaurantOwner: appUser.isRestaurantOwner,
+      role: appUser.authUser.role,
     };
   }
 }
