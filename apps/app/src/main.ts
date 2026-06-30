@@ -25,7 +25,7 @@ async function bootstrap() {
   );
 
   // 1. AdminJS en premier — monte son router AVANT les body parsers
-  await setupAdmin(app);
+  setupAdmin(app);
 
   // 2. Body parsers pour les routes NestJS (après AdminJS)
   app.use(json());

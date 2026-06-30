@@ -1,11 +1,11 @@
 import type { INestApplication } from '@nestjs/common';
 
+import AdminJSExpress from '@adminjs/express';
+import { Database, Resource } from '@adminjs/mikroorm';
 import { MikroORM } from '@mikro-orm/core';
 import AdminJS from 'adminjs';
-import { Database, Resource } from '@adminjs/mikroorm';
-import AdminJSExpress from '@adminjs/express';
 
-export async function setupAdmin(app: INestApplication): Promise<void> {
+export function setupAdmin(app: INestApplication): void {
   const orm = app.get(MikroORM);
 
   AdminJS.registerAdapter({ Database, Resource });
