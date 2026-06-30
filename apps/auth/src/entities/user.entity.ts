@@ -25,6 +25,15 @@ export class User {
   @Property({ nullable: true })
   role?: string;
 
+  @Property({ nullable: true })
+  banned?: boolean;
+
+  @Property({ nullable: true })
+  banReason?: string;
+
+  @Property({ nullable: true })
+  banExpires?: Date;
+
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();
 
