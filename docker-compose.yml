@@ -29,6 +29,9 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      APP_SERVICE_HOST: app-service
+      PORT_APP_TCP: ${PORT_APP_TCP}
 
   # --- MICROSERVICE APP ---
   app-service:
@@ -40,6 +43,7 @@ services:
     environment:
       <<: *database-url
       PORT_APP: ${PORT_APP}
+      PORT_APP_TCP: ${PORT_APP_TCP}
       PORT_AUTH: ${PORT_AUTH}
       FRONTEND_URL: ${FRONTEND_URL}
       API_URL: ${API_URL}

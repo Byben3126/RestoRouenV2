@@ -81,6 +81,8 @@ jobs:
             S3_BUCKET=${{ vars.S3_BUCKET }}
             CLOUDFRONT_DOMAIN=${{ vars.CLOUDFRONT_DOMAIN }}
             INACTIVE_THRESHOLD_DAYS=${{ vars.INACTIVE_THRESHOLD_DAYS }}
+            COOKIE_DOMAIN=${{ vars.COOKIE_DOMAIN }}
+            PORT_APP_TCP=${{ vars.PORT_APP_TCP }}
             EOF
 
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin

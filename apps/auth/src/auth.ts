@@ -1,9 +1,11 @@
+import { ClientProxy } from '@nestjs/microservices';
+
 import { MikroORM } from '@mikro-orm/core';
 import { betterAuth } from 'better-auth';
 import { mikroOrmAdapter } from 'better-auth-mikro-orm';
 import { admin } from 'better-auth/plugins';
 
-export const auth = (orm: MikroORM) =>
+export const auth = (orm: MikroORM, client?: ClientProxy) =>
   betterAuth({
     baseURL: process.env.API_URL,
     basePath: '/',
@@ -16,11 +18,10 @@ export const auth = (orm: MikroORM) =>
     },
     advanced: {
       crossSubDomainCookies: {
-        enabled: true,
-        domain: 'clement-guilloux.fr',
+        enabled: !!process.env.COOKIE_DOMAIN,
+        domain: process.env.COOKIE_DOMAIN || 'localhost',
       },
     },
-    // Ajoute ici tes stratégies (email, google, etc.)
     emailAndPassword: {
       enabled: true,
     },
@@ -32,4 +33,20 @@ export const auth = (orm: MikroORM) =>
       },
     },
     plugins: [admin()],
+
+    ...(client && {
+      databaseHooks: {
+        user: {
+          create: {
+            after: async (user) => {
+              client.emit('user.created', {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+              });
+            },
+          },
+        },
+      },
+    }),
   });

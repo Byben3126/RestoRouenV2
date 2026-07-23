@@ -38,6 +38,13 @@
         "isDefault": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Stripe: listen webhook",
+      "type": "shell",
+      "command": "stripe listen --forward-to localhost:3000/webhook/stripe",
+      "isBackground": true,
+      "problemMatcher": []
     }
   ]
 }

@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 
 import { MikroORM } from '@mikro-orm/core';
+import { raw } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import { AppModule } from './app.module';
@@ -11,7 +12,9 @@ import { createAuthMiddleware } from './common/middlewares/auth.middleware';
 import { mediaMiddleware } from './common/middlewares/media.middleware';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false,
+  });
 
   app.enableCors({
     origin: process.env.FRONTEND_URL,
@@ -58,9 +61,17 @@ async function bootstrap() {
       pathRewrite: { '^': '/admin' },
     }),
   );
-
   app.use(
     '/webhook',
+    // raw({ type: '*/*' }), // consomme le stream avant le proxy -> le body n'est jamais forwardé, la requête reste bloquée jusqu'au timeout
+    // (req, res, next) => {
+    //   console.log('--- DEBUG WEBHOOK (gateway) ---');
+    //   console.log('Content-Type:', req.headers['content-type']);
+    //   console.log('stripe-signature:', req.headers['stripe-signature']);
+    //   console.log('raw body (buffer):', req.body); // Buffer
+    //   console.log('raw body (string):', req.body?.toString('utf8'));
+    //   next();
+    // },
     createProxyMiddleware({
       target: `http://${appHost}:${process.env.PORT_APP}`,
       changeOrigin: true,

@@ -16,4 +16,8 @@ export class UserService {
     if (!appUser) throw new NotFoundException(`AppUser not found for auth user ${userId}`);
     return UserMapper.toDto(appUser);
   }
+
+  async createFromAuthUser(payload: { userId: string; name: string; email: string }): Promise<void> {
+    await this.appUserRepo.createFromAuthUser(payload);
+  }
 }

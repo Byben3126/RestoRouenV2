@@ -17,6 +17,7 @@ export class WebhookController {
     @RawBody() rawBody: Buffer,
     @Headers('stripe-signature') signature: string,
   ) {
+    console.log('Received Stripe webhook event:', { signature, rawBody: rawBody });
     let event: Stripe.Event;
 
     console.log('Received Stripe webhook event:', { signature, rawBody: rawBody.toString() });

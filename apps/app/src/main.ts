@@ -2,8 +2,8 @@ import 'dotenv/config';
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-
-import { json, urlencoded } from 'express';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 import { setupAdmin } from './admin/admin.setup';
 import { AppModule } from './app.module';
@@ -11,11 +11,11 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { setupSwagger } from './config/swagger.config';
 
 async function bootstrap() {
-  // bodyParser: false — AdminJS doit monter son router AVANT les body parsers
-  // pour que express-formidable puisse lire le body du login form
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+    rawBody: true, // <-- AJOUTÉ : indispensable pour que Stripe puisse lire le body brut
+  });
   app.useGlobalInterceptors(new TransformInterceptor());
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -24,17 +24,18 @@ async function bootstrap() {
     }),
   );
 
-  // 1. AdminJS en premier — monte son router AVANT les body parsers
   setupAdmin(app);
-
-  // 2. Body parsers pour les routes NestJS (après AdminJS)
-  app.use(json());
-  app.use(urlencoded({ extended: true }));
-
-  // 3. Raw body pour Stripe webhooks
-  app.use('/webhook', json({ type: 'application/json' }));
-
+  app.useBodyParser('json'); // <-- CORRIGÉ : plus de "true" en 2e argument
+  app.useBodyParser('urlencoded', { extended: true }); // <-- CORRIGÉ : plus de "false" en 2e argument
   setupSwagger(app);
+
+  // 👇 volet microservice : écoute les events TCP
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.TCP,
+    options: { host: '0.0.0.0', port: parseInt(process.env.PORT_APP_TCP ?? '3102') },
+  });
+  await app.startAllMicroservices();
+
   await app.listen(process.env.PORT_APP ?? 3002);
 }
 void bootstrap();
