@@ -49,6 +49,7 @@ export class CustomerRepository extends EntityRepository<Customer> {
             },
           },
           { user: { authUser: { email: { $ilike: `%${search}%` } } } },
+          { user: { linkCode: { $ilike: `%${search}%` } } },
         ],
       });
     }
