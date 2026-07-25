@@ -5,6 +5,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { AddCustomerPointsDto } from './dto/add-customer-points.dto';
 import { GetCustomersQueryDto } from './dto/get-customers-query.dto';
 import { Customer } from './entities/customer.entity';
+import { PointsTransaction } from './entities/points-transaction.entity';
 import { PaginatedCustomers } from './repositories/customer.repository';
 import { CustomerRepository } from './repositories/customer.repository';
 
@@ -34,5 +35,17 @@ export class CustomerService {
     );
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
+  }
+
+  async getPointsTransactions(
+    restaurantId: string,
+    customerId: string,
+  ): Promise<PointsTransaction[]> {
+    const transactions = await this.customerRepository.findPointsTransactions(
+      restaurantId,
+      customerId,
+    );
+    if (!transactions) throw new NotFoundException('Customer not found');
+    return transactions;
   }
 }

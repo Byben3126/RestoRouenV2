@@ -101,4 +101,18 @@ export class CustomerRepository extends EntityRepository<Customer> {
     await this.em.flush();
     return customer;
   }
+
+  async findPointsTransactions(
+    restaurantId: string,
+    customerId: string,
+  ): Promise<PointsTransaction[] | null> {
+    const customer = await this.findOne({ id: customerId, restaurant: restaurantId });
+    if (!customer) return null;
+
+    return this.em.find(
+      PointsTransaction,
+      { customer: customerId },
+      { orderBy: { createdAt: 'DESC' } },
+    );
+  }
 }

@@ -7,7 +7,13 @@ import { CurrentRestaurant } from '../common/decorators/current-restaurant.decor
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
 import { CustomerService } from './customer.service';
-import { AddCustomerPointsDto, CustomerDto, GetCustomersQueryDto, PaginatedCustomersDto } from './dto';
+import {
+  AddCustomerPointsDto,
+  CustomerDto,
+  GetCustomersQueryDto,
+  PaginatedCustomersDto,
+  PointsTransactionDto,
+} from './dto';
 
 @ApiTags('Customers')
 @UseGuards(AuthGuard, RestaurantOwnerGuard)
@@ -34,5 +40,15 @@ export class CustomerController {
     @Body() dto: AddCustomerPointsDto,
   ) {
     return this.customerService.addPoints(restaurantId, customerId, dto);
+  }
+
+  @Get(':id/points-transactions')
+  @Serialize(PointsTransactionDto, ['owner'])
+  @ApiOkResponse({ type: PointsTransactionDto, isArray: true })
+  getPointsTransactions(
+    @CurrentRestaurant() restaurantId: string,
+    @Param('id') customerId: string,
+  ) {
+    return this.customerService.getPointsTransactions(restaurantId, customerId);
   }
 }
