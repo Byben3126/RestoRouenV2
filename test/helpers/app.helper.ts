@@ -78,8 +78,6 @@ export async function seedBaseFixtures(em: EntityManager): Promise<{ restaurantI
   const restaurant = fork.create(Restaurant, {
     user: fork.getReference(AppUser, TEST_USER_ID),
     name: 'Test Restaurant',
-    latitude: 49.44,
-    longitude: 1.09,
   } as any);
   await fork.flush();
   return { restaurantId: restaurant.id };

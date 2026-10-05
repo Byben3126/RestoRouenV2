@@ -13,14 +13,12 @@ function makeRestaurant(overrides: Record<string, unknown> = {}): Partial<Restau
   return {
     id: 'resto-1',
     name: 'Le Bistrot',
-    latitude: 49.44,
-    longitude: 1.09,
     mediaIds: [],
     ...overrides,
   };
 }
 
-const CREATE_DTO = { name: 'Le Bistrot', latitude: 49.44, longitude: 1.09 };
+const CREATE_DTO = { name: 'Le Bistrot' };
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
