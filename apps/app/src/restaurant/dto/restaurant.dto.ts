@@ -2,18 +2,12 @@
 import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
 
 import { MediaDto } from '../../common/dto/media.dto';
+import { OutletDto } from './outlet.dto';
 
 @Exclude()
 export class RestaurantDto {
   @Expose() id!: string;
   @Expose() name!: string;
-  @Expose() latitude?: number;
-  @Expose() longitude?: number;
-  @Expose() country?: string;
-  @Expose() city?: string;
-  @Expose() formattedAddress?: string;
-  @Expose() placeId?: string;
-  @Expose() googleMyBusinessLink?: string;
   @Expose() averageRating!: number;
   @Expose() reviewCount!: number;
   @Expose() isActive!: boolean;
@@ -27,4 +21,12 @@ export class RestaurantDto {
     plainToInstance(MediaDto, obj.medias ?? [], { excludeExtraneousValues: true }),
   )
   medias!: MediaDto[];
+
+  @Expose()
+  @Transform(({ obj }) =>
+    plainToInstance(OutletDto, obj.outlets?.isInitialized?.() ? obj.outlets.getItems() : [], {
+      excludeExtraneousValues: true,
+    }),
+  )
+  outlets!: OutletDto[];
 }

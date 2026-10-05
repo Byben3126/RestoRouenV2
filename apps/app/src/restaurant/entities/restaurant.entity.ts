@@ -1,9 +1,10 @@
-import { Entity, EntityRepositoryType, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { Collection, Entity, EntityRepositoryType, OneToMany, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
 
 import type { Media } from '../../../../media/src/media/entities/media.entity';
 import { AppUser } from '../../user/entities/app-user.entity';
 import { RestaurantRepository } from '../repositories/restaurant.repository';
+import { Outlet } from './outlet.entity';
 
 @Entity({ repository: () => RestaurantRepository })
 export class Restaurant {
@@ -17,26 +18,8 @@ export class Restaurant {
   @Property()
   name!: string;
 
-  @Property({ nullable: true, type: 'double' })
-  latitude?: number;
-
-  @Property({ nullable: true, type: 'double' })
-  longitude?: number;
-
-  @Property({ nullable: true })
-  country?: string;
-
-  @Property({ nullable: true })
-  city?: string;
-
-  @Property({ nullable: true })
-  formattedAddress?: string;
-
-  @Property({ nullable: true })
-  placeId?: string;
-
-  @Property({ nullable: true })
-  googleMyBusinessLink?: string;
+  @OneToMany(() => Outlet, (outlet) => outlet.restaurant)
+  outlets = new Collection<Outlet>(this);
 
   @Property({ type: 'json', nullable: true })
   mediaIds: string[] = [];

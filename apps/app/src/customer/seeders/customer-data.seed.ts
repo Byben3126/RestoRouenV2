@@ -48,7 +48,7 @@ export class CustomerDataSeeder extends Seeder {
           points: 0,
           totalPointsGained: 0,
           canSubmitRating: faker.datatype.boolean({ probability: 0.5 }),
-        });
+        } as any);
 
         const isReactivated = Math.random() < 0.3;
         let balance = 0;
