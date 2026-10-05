@@ -1,6 +1,3 @@
-x-database-url: &database-url
-  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-
 services:
   # --- BASE DE DONNÉES ---
   db:
@@ -15,39 +12,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # --- MICROSERVICE AUTH ---
-  auth-service:
-    image: ghcr.io/byben3126/restorouen-auth:latest
-    container_name: auth-service
+  # --- API ---
+  api:
+    image: ghcr.io/byben3126/restorouen-api:latest
+    # `docker compose up --build` construit l'image en local ; en prod elle est tirée depuis ghcr.io
+    build: .
+    container_name: api
+    restart: always
     depends_on:
       - db
     environment:
-      <<: *database-url
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      PORT: ${PORT}
       API_URL: ${API_URL}
-      PORT_AUTH: ${PORT_AUTH}
       FRONTEND_URL: ${FRONTEND_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
-      APP_SERVICE_HOST: app-service
-      PORT_APP_TCP: ${PORT_APP_TCP}
-
-  # --- MICROSERVICE APP ---
-  app-service:
-    image: ghcr.io/byben3126/restorouen-app:latest
-    container_name: app-service
-    depends_on:
-      - db
-      - auth-service
-    environment:
-      <<: *database-url
-      PORT_APP: ${PORT_APP}
-      PORT_APP_TCP: ${PORT_APP_TCP}
-      PORT_AUTH: ${PORT_AUTH}
-      FRONTEND_URL: ${FRONTEND_URL}
-      API_URL: ${API_URL}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       CLOUDFRONT_DOMAIN: ${CLOUDFRONT_DOMAIN}
       INACTIVE_THRESHOLD_DAYS: ${INACTIVE_THRESHOLD_DAYS}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
@@ -55,47 +37,12 @@ services:
       STRIPE_PRODUCT_STARTER: ${STRIPE_PRODUCT_STARTER}
       STRIPE_PRODUCT_GROWTH: ${STRIPE_PRODUCT_GROWTH}
       STRIPE_PRODUCT_PRO: ${STRIPE_PRODUCT_PRO}
-
-  # --- MICROSERVICE MEDIA ---
-  media-service:
-    image: ghcr.io/byben3126/restorouen-media:latest
-    container_name: media-service
-    depends_on:
-      - db
-    environment:
-      <<: *database-url
-      PORT_MEDIA: ${PORT_MEDIA}
-      MEDIA_SECRET: ${MEDIA_SECRET}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION}
       S3_BUCKET: ${S3_BUCKET}
-      CLOUDFRONT_DOMAIN: ${CLOUDFRONT_DOMAIN}
-
-  # --- GATEWAY ---
-  gateway:
-    image: ghcr.io/byben3126/restorouen-gateway:latest
-    container_name: gateway-service
-    depends_on:
-      - db
-      - auth-service
-      - app-service
-      - media-service
-    environment:
-      <<: *database-url
-      PORT_GATEWAY: ${PORT_GATEWAY}
-      PORT_AUTH: ${PORT_AUTH}
-      PORT_APP: ${PORT_APP}
-      PORT_MEDIA: ${PORT_MEDIA}
-      AUTH_HOST: auth-service
-      APP_HOST: app-service
-      MEDIA_HOST: media-service
-      MEDIA_SECRET: ${MEDIA_SECRET}
-      FRONTEND_URL: ${FRONTEND_URL}
-      API_URL: ${API_URL}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
     ports:
-      - '127.0.0.1:3080:${PORT_GATEWAY}'
+      - '127.0.0.1:3080:${PORT}'
 
 volumes:
   postgres_data:

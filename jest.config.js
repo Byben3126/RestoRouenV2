@@ -1,21 +1,18 @@
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
-  rootDir: '.',
+  rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
   transformIgnorePatterns: [],
   collectCoverageFrom: ['**/*.(t|j)s'],
-  coverageDirectory: './coverage',
+  coverageDirectory: '../coverage',
   testEnvironment: 'node',
-  roots: ['<rootDir>/apps/', '<rootDir>/libs/'],
   moduleNameMapper: {
-    '^@app/database(|/.*)$': '<rootDir>/libs/database/src/$1',
-    '^@app/shared(|/.*)$': '<rootDir>/libs/shared/src/$1',
-    '^@app/auth(|/.*)$': '<rootDir>/apps/auth/src/$1',
-    '^better-auth$': '<rootDir>/apps/auth/src/__mocks__/better-auth.js',
-    '^better-auth-mikro-orm$': '<rootDir>/apps/auth/src/__mocks__/better-auth-mikro-orm.js',
-    '^better-auth/plugins$': '<rootDir>/apps/auth/src/__mocks__/better-auth-plugins.js',
+    '^better-auth$': '<rootDir>/auth/__mocks__/better-auth.js',
+    '^better-auth-mikro-orm$': '<rootDir>/auth/__mocks__/better-auth-mikro-orm.js',
+    '^better-auth/plugins$': '<rootDir>/auth/__mocks__/better-auth-plugins.js',
+    '^better-auth/node$': '<rootDir>/auth/__mocks__/better-auth-node.js',
   },
 };

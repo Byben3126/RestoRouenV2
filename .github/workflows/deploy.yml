@@ -14,9 +14,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix:
-        service: [auth, app, gateway, media]
 
     steps:
       - name: Checkout code
@@ -29,13 +26,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push ${{ matrix.service }}
+      - name: Build and push api
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          build-args: SERVICE_NAME=${{ matrix.service }}
-          tags: ghcr.io/byben3126/restorouen-${{ matrix.service }}:latest
+          tags: ghcr.io/byben3126/restorouen-api:latest
 
   deploy:
     name: Deploy to ${{ inputs.environment }}
@@ -63,10 +59,7 @@ jobs:
             API_URL=${{ vars.API_URL }}
             FRONTEND_URL=${{ vars.FRONTEND_URL }}
             BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
-            PORT_GATEWAY=${{ vars.PORT_GATEWAY }}
-            PORT_AUTH=${{ vars.PORT_AUTH }}
-            PORT_APP=${{ vars.PORT_APP }}
-            PORT_MEDIA=${{ vars.PORT_MEDIA }}
+            PORT=${{ vars.PORT_GATEWAY }}
             GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
@@ -74,7 +67,6 @@ jobs:
             STRIPE_PRODUCT_STARTER=${{ vars.STRIPE_PRODUCT_STARTER }}
             STRIPE_PRODUCT_GROWTH=${{ vars.STRIPE_PRODUCT_GROWTH }}
             STRIPE_PRODUCT_PRO=${{ vars.STRIPE_PRODUCT_PRO }}
-            MEDIA_SECRET=${{ secrets.MEDIA_SECRET }}
             AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
             AWS_REGION=${{ vars.AWS_REGION }}
@@ -82,7 +74,6 @@ jobs:
             CLOUDFRONT_DOMAIN=${{ vars.CLOUDFRONT_DOMAIN }}
             INACTIVE_THRESHOLD_DAYS=${{ vars.INACTIVE_THRESHOLD_DAYS }}
             COOKIE_DOMAIN=${{ vars.COOKIE_DOMAIN }}
-            PORT_APP_TCP=${{ vars.PORT_APP_TCP }}
             EOF
 
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin

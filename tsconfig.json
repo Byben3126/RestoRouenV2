@@ -21,16 +21,6 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false,
-    "paths": {
-      "@app/database": ["libs/database"],
-      "@app/database/*": ["libs/database/*"],
-      "@app/shared": ["libs/shared/src"],
-      "@app/shared/*": ["libs/shared/src/*"],
-      "@app/auth": ["apps/auth/src"],
-      "@app/auth/*": ["apps/auth/src/*"],
-      "@app/media/*": ["apps/media/src"],
-      "@main/*": ["apps/app/src/*"]
-    }
+    "noFallthroughCasesInSwitch": false
   }
 }

@@ -59,8 +59,7 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test_db?schema=public
           BETTER_AUTH_SECRET: test-secret-key
           API_URL: http://localhost:3000
-          PORT_GATEWAY: 3000
-          PORT_AUTH: 3001
+          PORT: 3000
           FRONTEND_URL: http://localhost:3000
 
       - name: Discord notification

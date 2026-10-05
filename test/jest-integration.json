@@ -1,0 +1,16 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": "test/.+\\.integration-spec\\.ts$",
+  "maxWorkers": 1,
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^better-auth$": "<rootDir>/src/auth/__mocks__/better-auth.js",
+    "^better-auth/node$": "<rootDir>/src/auth/__mocks__/better-auth-node.js",
+    "^better-auth/plugins$": "<rootDir>/src/auth/__mocks__/better-auth-plugins.js",
+    "^better-auth-mikro-orm$": "<rootDir>/src/auth/__mocks__/better-auth-mikro-orm.js"
+  }
+}
