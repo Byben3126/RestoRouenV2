@@ -30,3 +30,16 @@ export class RestaurantDto {
   )
   outlets!: OutletDto[];
 }
+
+@Exclude()
+export class PaginatedRestaurantsDto {
+  @Expose()
+  @Transform(({ obj }) =>
+    plainToInstance(RestaurantDto, obj.items ?? [], { excludeExtraneousValues: true }),
+  )
+  items!: RestaurantDto[];
+
+  @Expose() total!: number;
+  @Expose() page!: number;
+  @Expose() limit!: number;
+}

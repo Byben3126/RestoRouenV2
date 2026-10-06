@@ -4,9 +4,11 @@ import { INestApplication } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
+import { User } from '../src/auth/entities/user.entity';
 import { Outlet } from '../src/restaurant/entities/outlet.entity';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { SubscriptionService } from '../src/subscription/subscription.service';
+import { AppUser } from '../src/user/entities/app-user.entity';
 import { TEST_USER_ID, cleanBaseFixtures, createTestApp, seedUserOnly } from './helpers/app.helper';
 
 const mockSubscriptionService = {
@@ -143,6 +145,82 @@ describe('RestaurantController (integration)', () => {
 
       expect(res.body.data.name).toBe('Autre Nom');
       expect(res.body.data.medias).toEqual([]);
+    });
+  });
+
+  // ── GET /restaurant/search ──────────────────────────────────────────────────
+
+  describe('GET /restaurant/search', () => {
+    const fixtures = [
+      { name: 'Le Café des Arts' },
+      { name: 'Pizzeria Napoli' },
+      { name: 'La Cafétéria' },
+      { name: 'Sushi Bar' },
+      { name: 'Café Fermé', isActive: false },
+    ];
+    const userIds = fixtures.map((_, i) => `search-user-${i}`);
+
+    beforeAll(async () => {
+      const fork = em.fork();
+      fixtures.forEach((fixture, i) => {
+        const user = fork.create(User, {
+          id: userIds[i],
+          name: `Search User ${i}`,
+          email: `search-${i}@test.com`,
+          emailVerified: true,
+        } as any);
+        const appUser = fork.create(AppUser, { authUser: user } as any);
+        fork.create(Restaurant, { user: appUser, ...fixture } as any);
+      });
+      await fork.flush();
+    });
+
+    afterAll(async () => {
+      const fork = em.fork();
+      await fork.nativeDelete(Restaurant, { user: { $in: userIds } });
+      await fork.nativeDelete(AppUser, { authUser: { $in: userIds } });
+      await fork.nativeDelete(User, { id: { $in: userIds } });
+    });
+
+    const search = (query: Record<string, unknown>) =>
+      request(app.getHttpServer()).get('/restaurant/search').query(query);
+    const namesOf = (res: request.Response) =>
+      (res.body.data.items as { name: string }[]).map((r) => r.name);
+
+    it('ignores accents and case, and excludes inactive restaurants', async () => {
+      const res = await search({ q: 'CAFE' }).expect(200);
+
+      const found = namesOf(res);
+      expect(found).toEqual(expect.arrayContaining(['Le Café des Arts', 'La Cafétéria']));
+      expect(found).not.toContain('Café Fermé');
+      expect(res.body.data.total).toBe(2);
+    });
+
+    it('ranks names starting with the query first', async () => {
+      const res = await search({ q: 'la caf' }).expect(200);
+
+      expect(res.body.data.items[0].name).toBe('La Cafétéria');
+    });
+
+    it('tolerates typos', async () => {
+      const res = await search({ q: 'pizeria' }).expect(200);
+
+      expect(namesOf(res)).toContain('Pizzeria Napoli');
+    });
+
+    it('paginates the results', async () => {
+      const res = await search({ q: 'cafe', limit: 1, page: 2 }).expect(200);
+
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data).toMatchObject({ total: 2, page: 2, limit: 1 });
+    });
+
+    it('returns 400 when the query is too short', async () => {
+      await search({ q: ' a ' }).expect(400);
+    });
+
+    it('returns 400 when limit exceeds 50', async () => {
+      await search({ q: 'cafe', limit: 51 }).expect(400);
     });
   });
 

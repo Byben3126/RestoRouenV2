@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
@@ -13,7 +14,13 @@ import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
-import { CreateRestaurantDto, RestaurantDto, UpdateRestaurantDto } from './dto';
+import {
+  CreateRestaurantDto,
+  PaginatedRestaurantsDto,
+  RestaurantDto,
+  SearchRestaurantsQueryDto,
+  UpdateRestaurantDto,
+} from './dto';
 import { RestaurantService } from './restaurant.service';
 
 @ApiTags('Restaurant')
@@ -41,6 +48,14 @@ export class RestaurantController {
   @ApiOkResponse({ type: RestaurantDto })
   updateMyRestaurant(@CurrentUser() userId: string, @Body() dto: UpdateRestaurantDto) {
     return this.restaurantService.updateMyRestaurant(userId, dto);
+  }
+
+  // Déclarée avant :restaurantId, sinon "search" serait lu comme un id
+  @Get('search')
+  @Serialize(PaginatedRestaurantsDto)
+  @ApiOkResponse({ type: PaginatedRestaurantsDto })
+  searchRestaurants(@Query() query: SearchRestaurantsQueryDto) {
+    return this.restaurantService.searchRestaurants(query);
   }
 
   @Get(':restaurantId')

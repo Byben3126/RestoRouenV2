@@ -1,5 +1,6 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, OnModuleInit } from '@nestjs/common';
 
+import { MikroORM } from '@mikro-orm/core';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 
 import config from './config/mikro-orm.app.config';
@@ -13,4 +14,14 @@ import config from './config/mikro-orm.app.config';
     }),
   ],
 })
-export class DatabaseModule {}
+export class DatabaseModule implements OnModuleInit {
+  constructor(private readonly orm: MikroORM) {}
+
+  async onModuleInit() {
+    const connection = this.orm.em.getConnection();
+
+    // Add extensions for PostgreSQL
+    await connection.execute('create extension if not exists unaccent');
+    await connection.execute('create extension if not exists pg_trgm');
+  }
+}

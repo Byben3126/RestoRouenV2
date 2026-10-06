@@ -29,6 +29,7 @@ describe('RestaurantService', () => {
     findOne: jest.fn(),
     findByUserId: jest.fn(),
     findActiveById: jest.fn(),
+    searchByName: jest.fn(),
     createOne: jest.fn(),
     loadWithMedias: jest.fn(),
     updateForUser: jest.fn(),
@@ -126,6 +127,20 @@ describe('RestaurantService', () => {
       const result = await service.getMyRestaurant('user-1');
 
       expect(result).toBe(restaurant);
+    });
+  });
+
+  // ── searchRestaurants ───────────────────────────────────────────────────────
+
+  describe('searchRestaurants', () => {
+    it('returns the paginated results from the repository', async () => {
+      const restaurant = makeRestaurant();
+      mockRepo.searchByName.mockResolvedValue({ items: [restaurant], total: 1 });
+
+      const result = await service.searchRestaurants({ q: 'bistrot', page: 2, limit: 10 });
+
+      expect(mockRepo.searchByName).toHaveBeenCalledWith('bistrot', 2, 10);
+      expect(result).toEqual({ items: [restaurant], total: 1, page: 2, limit: 10 });
     });
   });
 
