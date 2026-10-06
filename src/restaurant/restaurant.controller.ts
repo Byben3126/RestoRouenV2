@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -32,5 +41,12 @@ export class RestaurantController {
   @ApiOkResponse({ type: RestaurantDto })
   updateMyRestaurant(@CurrentUser() userId: string, @Body() dto: UpdateRestaurantDto) {
     return this.restaurantService.updateMyRestaurant(userId, dto);
+  }
+
+  @Get(':restaurantId')
+  @Serialize(RestaurantDto)
+  @ApiOkResponse({ type: RestaurantDto })
+  getRestaurant(@Param('restaurantId', ParseUUIDPipe) restaurantId: string) {
+    return this.restaurantService.getRestaurant(restaurantId);
   }
 }

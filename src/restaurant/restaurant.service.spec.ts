@@ -28,6 +28,7 @@ describe('RestaurantService', () => {
   const mockRepo = {
     findOne: jest.fn(),
     findByUserId: jest.fn(),
+    findActiveById: jest.fn(),
     createOne: jest.fn(),
     loadWithMedias: jest.fn(),
     updateForUser: jest.fn(),
@@ -124,6 +125,26 @@ describe('RestaurantService', () => {
 
       const result = await service.getMyRestaurant('user-1');
 
+      expect(result).toBe(restaurant);
+    });
+  });
+
+  // ── getRestaurant ───────────────────────────────────────────────────────────
+
+  describe('getRestaurant', () => {
+    it('throws NotFoundException when restaurant does not exist or is inactive', async () => {
+      mockRepo.findActiveById.mockResolvedValue(null);
+
+      await expect(service.getRestaurant('resto-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('returns the restaurant when found', async () => {
+      const restaurant = makeRestaurant();
+      mockRepo.findActiveById.mockResolvedValue(restaurant);
+
+      const result = await service.getRestaurant('resto-1');
+
+      expect(mockRepo.findActiveById).toHaveBeenCalledWith('resto-1');
       expect(result).toBe(restaurant);
     });
   });

@@ -31,6 +31,12 @@ export class RestaurantService {
     return restaurant;
   }
 
+  async getRestaurant(restaurantId: string): Promise<Restaurant> {
+    const restaurant = await this.restaurantRepository.findActiveById(restaurantId);
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+    return restaurant;
+  }
+
   async updateMyRestaurant(userId: string, dto: UpdateRestaurantDto): Promise<Restaurant> {
     const restaurant = await this.restaurantRepository.updateForUser(userId, dto);
     if (!restaurant) throw new NotFoundException('Restaurant not found');

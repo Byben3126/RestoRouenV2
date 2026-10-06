@@ -18,6 +18,15 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
     return this.loadWithMedias(restaurant);
   }
 
+  async findActiveById(restaurantId: string): Promise<Restaurant | null> {
+    const restaurant = await this.findOne(
+      { id: restaurantId, isActive: true },
+      { populate: ['outlets'] },
+    );
+    if (!restaurant) return null;
+    return this.loadWithMedias(restaurant);
+  }
+
   async updateForUser(userId: string, dto: UpdateRestaurantDto): Promise<Restaurant | null> {
     const { mediaIds, ...fields } = dto;
     const restaurant = await this.findOne({ user: userId });
