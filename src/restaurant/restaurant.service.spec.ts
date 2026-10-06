@@ -30,6 +30,7 @@ describe('RestaurantService', () => {
     findByUserId: jest.fn(),
     findActiveById: jest.fn(),
     searchByName: jest.fn(),
+    findNearby: jest.fn(),
     createOne: jest.fn(),
     loadWithMedias: jest.fn(),
     updateForUser: jest.fn(),
@@ -141,6 +142,26 @@ describe('RestaurantService', () => {
 
       expect(mockRepo.searchByName).toHaveBeenCalledWith('bistrot', 2, 10);
       expect(result).toEqual({ items: [restaurant], total: 1, page: 2, limit: 10 });
+    });
+  });
+
+  // ── findNearbyRestaurants ───────────────────────────────────────────────────
+
+  describe('findNearbyRestaurants', () => {
+    it('returns the paginated results from the repository', async () => {
+      const restaurant = makeRestaurant({ nearbyOutlets: [] });
+      mockRepo.findNearby.mockResolvedValue({ items: [restaurant], total: 1 });
+
+      const result = await service.findNearbyRestaurants({
+        latitude: 49.44,
+        longitude: 1.09,
+        radius: 5,
+        page: 1,
+        limit: 20,
+      });
+
+      expect(mockRepo.findNearby).toHaveBeenCalledWith(49.44, 1.09, 5, 1, 20);
+      expect(result).toEqual({ items: [restaurant], total: 1, page: 1, limit: 20 });
     });
   });
 

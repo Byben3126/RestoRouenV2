@@ -16,6 +16,8 @@ import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
 import {
   CreateRestaurantDto,
+  NearbyRestaurantsQueryDto,
+  PaginatedNearbyRestaurantsDto,
   PaginatedRestaurantsDto,
   RestaurantDto,
   SearchRestaurantsQueryDto,
@@ -50,7 +52,14 @@ export class RestaurantController {
     return this.restaurantService.updateMyRestaurant(userId, dto);
   }
 
-  // Déclarée avant :restaurantId, sinon "search" serait lu comme un id
+  // search et nearby sont déclarées avant :restaurantId, sinon elles seraient lues comme un id
+  @Get('nearby')
+  @Serialize(PaginatedNearbyRestaurantsDto)
+  @ApiOkResponse({ type: PaginatedNearbyRestaurantsDto })
+  findNearbyRestaurants(@Query() query: NearbyRestaurantsQueryDto) {
+    return this.restaurantService.findNearbyRestaurants(query);
+  }
+
   @Get('search')
   @Serialize(PaginatedRestaurantsDto)
   @ApiOkResponse({ type: PaginatedRestaurantsDto })

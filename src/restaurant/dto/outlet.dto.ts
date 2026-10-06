@@ -15,6 +15,12 @@ export class OutletDto {
   @Expose() updatedAt!: Date;
 }
 
+@Exclude()
+export class NearbyOutletDto extends OutletDto {
+  /** Distance en mètres depuis le point de recherche */
+  @Expose() distance!: number;
+}
+
 export class CreateOutletDto {
   @IsString()
   @MinLength(1)

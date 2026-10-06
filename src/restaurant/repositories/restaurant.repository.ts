@@ -2,7 +2,11 @@ import { EntityRepository } from '@mikro-orm/postgresql';
 
 import { Media } from '../../media/entities/media.entity';
 import { UpdateRestaurantDto } from '../dto/update-restaurant.dto';
+import { Outlet } from '../entities/outlet.entity';
 import { Restaurant } from '../entities/restaurant.entity';
+
+export type NearbyOutlet = Outlet & { distance: number };
+export type NearbyRestaurant = Restaurant & { nearbyOutlets: NearbyOutlet[] };
 
 export class RestaurantRepository extends EntityRepository<Restaurant> {
   async createOne(userId: string, data: Pick<Restaurant, 'name'>): Promise<Restaurant> {
@@ -77,6 +81,81 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
     const found = ids.length ? await this.find({ id: { $in: ids } }) : [];
     const items = ids.map((id) => found.find((r) => r.id === id)!).filter(Boolean);
     await this.loadMediasForMany(items);
+
+    return { items, total: Number(total) };
+  }
+
+  /**
+   * Restaurants actifs ayant au moins un point de vente actif dans le rayon (en km).
+   * Chaque restaurant porte ses points de vente du rayon, du plus proche au plus loin, avec leur
+   * distance en mètres (Haversine). Les restaurants sont triés par leur point de vente le plus proche.
+   */
+  async findNearby(
+    latitude: number,
+    longitude: number,
+    radiusKm: number,
+    page: number,
+    limit: number,
+  ): Promise<{ items: NearbyRestaurant[]; total: number }> {
+    const inRadius = `with outlet_distance as (
+        select * from (
+          select o.restaurant_id, o.id as outlet_id,
+            2 * 6371000 * asin(least(1, sqrt(
+              power(sin(radians(o.latitude - ?) / 2), 2)
+              + cos(radians(?)) * cos(radians(o.latitude)) * power(sin(radians(o.longitude - ?) / 2), 2)
+            ))) as distance
+          from outlet o
+          join restaurant r on r.id = o.restaurant_id
+          where o.is_active and r.is_active and o.latitude is not null and o.longitude is not null
+        ) d
+        where distance <= ?
+      )`;
+    const params = [latitude, latitude, longitude, radiusKm * 1000];
+
+    const [rows, [{ total }]] = await Promise.all([
+      this.em.execute<{ restaurant_id: string; outlet_id: string; distance: number }[]>(
+        `${inRadius},
+        restaurant_page as (
+          select od.restaurant_id, min(od.distance) as min_distance, r.average_rating
+          from outlet_distance od
+          join restaurant r on r.id = od.restaurant_id
+          group by od.restaurant_id, r.average_rating
+          order by min_distance, r.average_rating desc, od.restaurant_id
+          limit ? offset ?
+        )
+        select od.restaurant_id, od.outlet_id, round(od.distance) as distance
+        from outlet_distance od
+        join restaurant_page p on p.restaurant_id = od.restaurant_id
+        order by p.min_distance, p.average_rating desc, p.restaurant_id, od.distance`,
+        [...params, limit, (page - 1) * limit],
+      ),
+      this.em.execute<{ total: string }[]>(
+        `${inRadius} select count(distinct restaurant_id) as total from outlet_distance`,
+        params,
+      ),
+    ]);
+
+    const restaurantIds = [...new Set(rows.map((row) => row.restaurant_id))];
+    const [restaurants, outlets]: [Restaurant[], Outlet[]] = rows.length
+      ? await Promise.all([
+          this.find({ id: { $in: restaurantIds } }),
+          this.em.find(Outlet, { id: { $in: rows.map((row) => row.outlet_id) } }),
+        ])
+      : [[], []];
+    await this.loadMediasForMany(restaurants);
+
+    const items = restaurantIds
+      .map((id) => restaurants.find((r) => r.id === id))
+      .filter((restaurant): restaurant is Restaurant => restaurant !== undefined)
+      .map((restaurant) => {
+        const nearbyOutlets = rows
+          .filter((row) => row.restaurant_id === restaurant.id)
+          .map((row) => {
+            const outlet = outlets.find((o) => o.id === row.outlet_id)!;
+            return Object.assign(outlet, { distance: Number(row.distance) });
+          });
+        return Object.assign(restaurant, { nearbyOutlets });
+      });
 
     return { items, total: Number(total) };
   }

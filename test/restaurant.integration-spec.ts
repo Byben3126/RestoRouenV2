@@ -158,28 +158,14 @@ describe('RestaurantController (integration)', () => {
       { name: 'Sushi Bar' },
       { name: 'Café Fermé', isActive: false },
     ];
-    const userIds = fixtures.map((_, i) => `search-user-${i}`);
+    let userIds: string[] = [];
 
     beforeAll(async () => {
-      const fork = em.fork();
-      fixtures.forEach((fixture, i) => {
-        const user = fork.create(User, {
-          id: userIds[i],
-          name: `Search User ${i}`,
-          email: `search-${i}@test.com`,
-          emailVerified: true,
-        } as any);
-        const appUser = fork.create(AppUser, { authUser: user } as any);
-        fork.create(Restaurant, { user: appUser, ...fixture } as any);
-      });
-      await fork.flush();
+      userIds = await seedRestaurants(em, 'search', fixtures);
     });
 
     afterAll(async () => {
-      const fork = em.fork();
-      await fork.nativeDelete(Restaurant, { user: { $in: userIds } });
-      await fork.nativeDelete(AppUser, { authUser: { $in: userIds } });
-      await fork.nativeDelete(User, { id: { $in: userIds } });
+      await cleanRestaurants(em, userIds);
     });
 
     const search = (query: Record<string, unknown>) =>
@@ -221,6 +207,100 @@ describe('RestaurantController (integration)', () => {
 
     it('returns 400 when limit exceeds 50', async () => {
       await search({ q: 'cafe', limit: 51 }).expect(400);
+    });
+  });
+
+  // ── GET /restaurant/nearby ──────────────────────────────────────────────────
+
+  describe('GET /restaurant/nearby', () => {
+    // Loin de toute donnée réelle (Svalbard) ; 0.01° de latitude ≈ 1,1 km
+    const lat = 78.22;
+    const lon = 15.65;
+    const fixtures = [
+      { name: 'Tout Près', outlets: [{ name: 'Centre', latitude: lat, longitude: lon }] },
+      {
+        name: 'Deux Adresses',
+        outlets: [
+          { name: 'Loin', latitude: lat + 0.3, longitude: lon },
+          { name: 'Proche', latitude: lat + 0.02, longitude: lon },
+          { name: 'Aussi Proche', latitude: lat + 0.05, longitude: lon },
+        ],
+      },
+      { name: 'Hors Rayon', outlets: [{ name: 'Loin', latitude: lat + 0.5, longitude: lon }] },
+      {
+        name: 'Restaurant Inactif',
+        isActive: false,
+        outlets: [{ name: 'Centre', latitude: lat, longitude: lon }],
+      },
+      {
+        name: 'Point De Vente Inactif',
+        outlets: [{ name: 'Centre', latitude: lat, longitude: lon, isActive: false }],
+      },
+      { name: 'Sans Coordonnées', outlets: [{ name: 'Centre' }] },
+    ];
+    let userIds: string[] = [];
+
+    beforeAll(async () => {
+      userIds = await seedRestaurants(em, 'nearby', fixtures);
+    });
+
+    afterAll(async () => {
+      await cleanRestaurants(em, userIds);
+    });
+
+    type NearbyItem = { name: string; outlets: { name: string; distance: number }[] };
+    const nearby = (query: Record<string, unknown>) =>
+      request(app.getHttpServer()).get('/restaurant/nearby').query(query);
+
+    it('returns active restaurants within the radius, closest first', async () => {
+      const res = await nearby({ latitude: lat, longitude: lon, radius: 10 }).expect(200);
+
+      const items = res.body.data.items as NearbyItem[];
+      expect(items.map((r) => r.name)).toEqual(['Tout Près', 'Deux Adresses']);
+      expect(items[0].outlets[0].distance).toBe(0);
+      expect(items[1].outlets[0].distance).toBeGreaterThan(2000);
+      expect(items[1].outlets[0].distance).toBeLessThan(2400);
+      expect(res.body.data.total).toBe(2);
+    });
+
+    it('returns only the outlets within the radius, closest first', async () => {
+      const res = await nearby({ latitude: lat, longitude: lon, radius: 10 }).expect(200);
+
+      const outlets = (res.body.data.items as NearbyItem[])[1].outlets;
+      expect(outlets.map((o) => o.name)).toEqual(['Proche', 'Aussi Proche']);
+      expect(outlets[0].distance).toBeLessThan(outlets[1].distance);
+    });
+
+    it('includes the farther outlet once the radius covers it', async () => {
+      const res = await nearby({ latitude: lat, longitude: lon, radius: 50 }).expect(200);
+
+      const outlets = (res.body.data.items as NearbyItem[]).find(
+        (r) => r.name === 'Deux Adresses',
+      )!.outlets;
+      expect(outlets.map((o) => o.name)).toEqual(['Proche', 'Aussi Proche', 'Loin']);
+    });
+
+    it('excludes restaurants outside a smaller radius', async () => {
+      const res = await nearby({ latitude: lat, longitude: lon, radius: 1 }).expect(200);
+
+      const items = res.body.data.items as { name: string }[];
+      expect(items.map((r) => r.name)).toEqual(['Tout Près']);
+    });
+
+    it('paginates the results', async () => {
+      const res = await nearby({ latitude: lat, longitude: lon, limit: 1, page: 2 }).expect(200);
+
+      expect(res.body.data.items[0].name).toBe('Deux Adresses');
+      expect(res.body.data).toMatchObject({ total: 2, page: 2, limit: 1 });
+    });
+
+    it('returns 400 when coordinates are missing or invalid', async () => {
+      await nearby({ longitude: lon }).expect(400);
+      await nearby({ latitude: 120, longitude: lon }).expect(400);
+    });
+
+    it('returns 400 when radius exceeds 50 km', async () => {
+      await nearby({ latitude: lat, longitude: lon, radius: 51 }).expect(400);
     });
   });
 
@@ -290,3 +370,42 @@ describe('RestaurantController (integration)', () => {
     });
   });
 });
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+interface RestaurantFixture {
+  name: string;
+  isActive?: boolean;
+  outlets?: Partial<Outlet>[];
+}
+
+/** Crée un utilisateur par restaurant (user est obligatoire) et renvoie leurs ids */
+async function seedRestaurants(
+  em: EntityManager,
+  prefix: string,
+  fixtures: RestaurantFixture[],
+): Promise<string[]> {
+  const fork = em.fork();
+  const userIds = fixtures.map((_, i) => `${prefix}-user-${i}`);
+  fixtures.forEach(({ outlets = [], ...fixture }, i) => {
+    const user = fork.create(User, {
+      id: userIds[i],
+      name: `${prefix} user ${i}`,
+      email: `${prefix}-${i}@test.com`,
+      emailVerified: true,
+    } as any);
+    const appUser = fork.create(AppUser, { authUser: user } as any);
+    const restaurant = fork.create(Restaurant, { user: appUser, ...fixture } as any);
+    outlets.forEach((outlet) => fork.create(Outlet, { restaurant, ...outlet } as any));
+  });
+  await fork.flush();
+  return userIds;
+}
+
+async function cleanRestaurants(em: EntityManager, userIds: string[]): Promise<void> {
+  const fork = em.fork();
+  await fork.nativeDelete(Outlet, { restaurant: { user: { $in: userIds } } });
+  await fork.nativeDelete(Restaurant, { user: { $in: userIds } });
+  await fork.nativeDelete(AppUser, { authUser: { $in: userIds } });
+  await fork.nativeDelete(User, { id: { $in: userIds } });
+}
