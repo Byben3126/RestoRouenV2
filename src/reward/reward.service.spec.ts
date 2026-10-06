@@ -27,6 +27,7 @@ describe('RewardService', () => {
 
   const mockRepo = {
     findByRestaurant: jest.fn(),
+    findActiveByRestaurant: jest.fn(),
     createForRestaurant: jest.fn(),
     updateForRestaurant: jest.fn(),
     setStatusForRestaurant: jest.fn(),
@@ -40,6 +41,26 @@ describe('RewardService', () => {
     }).compile();
 
     service = module.get(RewardService);
+  });
+
+  // ── getActiveRewards ────────────────────────────────────────────────────────
+
+  describe('getActiveRewards', () => {
+    it('returns the active rewards of the restaurant', async () => {
+      const rewards = [makeReward({ status: RewardStatus.ACTIVE })];
+      mockRepo.findActiveByRestaurant.mockResolvedValue(rewards);
+
+      const result = await service.getActiveRewards('resto-1');
+
+      expect(mockRepo.findActiveByRestaurant).toHaveBeenCalledWith('resto-1');
+      expect(result).toBe(rewards);
+    });
+
+    it('throws NotFoundException when the restaurant does not exist or is inactive', async () => {
+      mockRepo.findActiveByRestaurant.mockResolvedValue(null);
+
+      await expect(service.getActiveRewards('resto-1')).rejects.toThrow(NotFoundException);
+    });
   });
 
   // ── getRestaurantRewards ────────────────────────────────────────────────────

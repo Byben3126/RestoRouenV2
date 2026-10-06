@@ -18,6 +18,12 @@ export class RewardService {
     return this.rewardRepository.findByRestaurant(restaurantId);
   }
 
+  async getActiveRewards(restaurantId: string): Promise<Reward[]> {
+    const rewards = await this.rewardRepository.findActiveByRestaurant(restaurantId);
+    if (!rewards) throw new NotFoundException('Restaurant not found');
+    return rewards;
+  }
+
   createReward(restaurantId: string, dto: CreateRewardDto): Promise<Reward> {
     return this.rewardRepository.createForRestaurant(restaurantId, dto);
   }

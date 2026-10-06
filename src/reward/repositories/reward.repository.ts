@@ -1,6 +1,7 @@
 import { EntityRepository, RequiredEntityData } from '@mikro-orm/postgresql';
 
 import { Media } from '../../media/entities/media.entity';
+import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 import { CreateRewardDto } from '../dto/create-reward.dto';
 import { UpdateRewardDto } from '../dto/update-reward.dto';
 import { Reward, RewardStatus } from '../entities/reward.entity';
@@ -62,6 +63,16 @@ export class RewardRepository extends EntityRepository<Reward> {
     );
     if (!affected) return null;
     return this.findOne({ id: rewardId }, { populate: ['usedCount'] });
+  }
+
+  async findActiveByRestaurant(restaurantId: string): Promise<Reward[] | null> {
+    const restaurantExists = await this.em.count(Restaurant, { id: restaurantId, isActive: true });
+    if (!restaurantExists) return null;
+
+    return this.find(
+      { restaurant: restaurantId, status: RewardStatus.ACTIVE },
+      { populate: ['medias'], orderBy: { pointRequired: 'ASC', createdAt: 'DESC' } },
+    );
   }
 
   async findByRestaurant(restaurantId: string): Promise<Reward[]> {

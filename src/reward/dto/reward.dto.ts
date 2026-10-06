@@ -13,7 +13,8 @@ export class RewardDto {
   @Expose() description?: string;
   @Expose() pointRequired!: number;
   @Expose() status!: RewardStatus;
-  @Expose() usedCount!: number;
+  /** Statistique réservée au propriétaire */
+  @Expose({ groups: ['owner'] }) usedCount!: number;
   @Expose() createdAt!: Date;
   @Expose() updatedAt!: Date;
 

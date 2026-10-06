@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
+import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { Reward, RewardStatus } from '../src/reward/entities/reward.entity';
 import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
@@ -48,6 +49,55 @@ describe('RewardController (integration)', () => {
 
       expect(res.body.data).toHaveLength(1);
       expect(res.body.data[0].name).toBe('Café offert');
+      expect(res.body.data[0].usedCount).toBe(0);
+    });
+  });
+
+  // ── GET /restaurant/:restaurantId/rewards ───────────────────────────────────
+
+  describe('GET /restaurant/:restaurantId/rewards', () => {
+    beforeEach(async () => {
+      const fork = em.fork();
+      const rewards: [string, number, RewardStatus][] = [
+        ['Dessert offert', 200, RewardStatus.ACTIVE],
+        ['Café offert', 100, RewardStatus.ACTIVE],
+        ['Brouillon', 50, RewardStatus.DRAFT],
+        ['Archivée', 10, RewardStatus.ARCHIVED],
+      ];
+      for (const [name, pointRequired, status] of rewards) {
+        fork.create(Reward, { restaurant: restaurantId, name, pointRequired, status } as any);
+      }
+      await fork.flush();
+    });
+
+    it('returns only active rewards, cheapest first, without owner stats', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/restaurant/${restaurantId}/rewards`)
+        .expect(200);
+
+      const rewards = res.body.data as { name: string; usedCount?: number; medias: unknown[] }[];
+      expect(rewards.map((r) => r.name)).toEqual(['Café offert', 'Dessert offert']);
+      expect(rewards[0]).not.toHaveProperty('usedCount');
+      expect(rewards[0].medias).toEqual([]);
+    });
+
+    it('returns 404 when the restaurant is inactive', async () => {
+      await em.fork().nativeUpdate(Restaurant, { id: restaurantId }, { isActive: false });
+      try {
+        await request(app.getHttpServer()).get(`/restaurant/${restaurantId}/rewards`).expect(404);
+      } finally {
+        await em.fork().nativeUpdate(Restaurant, { id: restaurantId }, { isActive: true });
+      }
+    });
+
+    it('returns 404 for an unknown restaurant', async () => {
+      await request(app.getHttpServer())
+        .get('/restaurant/00000000-0000-0000-0000-000000000000/rewards')
+        .expect(404);
+    });
+
+    it('returns 400 when the restaurant id is not a UUID', async () => {
+      await request(app.getHttpServer()).get('/restaurant/abc/rewards').expect(400);
     });
   });
 
