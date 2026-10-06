@@ -16,11 +16,12 @@ export class PromotionDto {
   @Expose() expiresAt!: Date;
   @Expose() createdAt!: Date;
   @Expose() updatedAt!: Date;
-  @Expose() usedCount!: number;
-  @Expose() targetCount!: number;
+  // Statistiques et clients ciblés : réservés au propriétaire
+  @Expose({ groups: ['owner'] }) usedCount!: number;
+  @Expose({ groups: ['owner'] }) targetCount!: number;
 
   @ApiProperty({ type: () => CustomerDto, isArray: true })
-  @Expose()
+  @Expose({ groups: ['owner'] })
   @Transform(({ obj }) =>
     plainToInstance(
       CustomerDto,

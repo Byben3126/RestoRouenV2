@@ -1,5 +1,7 @@
 import { EntityRepository, RequiredEntityData } from '@mikro-orm/postgresql';
 
+import { Customer } from '../../customer/entities/customer.entity';
+import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 import { CreatePromotionDto } from '../dto/create-promotion.dto';
 import { UpdatePromotionDto } from '../dto/update-promotion.dto';
 import { PromotionTarget } from '../entities/promotion-target.entity';
@@ -27,6 +29,41 @@ export class PromotionRepository extends EntityRepository<Promotion> {
         populate: PROMOTION_DETAIL_POPULATE,
         orderBy: { createdAt: 'DESC' },
       },
+    );
+  }
+
+  /** Promotions en cours visibles par un utilisateur. null si le restaurant n'existe pas ou est désactivé. */
+  async findAvailableForUser(restaurantId: string, userId: string): Promise<Promotion[] | null> {
+    const restaurantExists = await this.em.count(Restaurant, { id: restaurantId, isActive: true });
+    if (!restaurantExists) return null;
+
+    const customer = await this.em.findOne(Customer, { user: userId, restaurant: restaurantId });
+    const isInactive = customer?.isInactive ?? false;
+    const now = new Date();
+
+    return this.find(
+      {
+        restaurant: restaurantId,
+        internalStatus: PromotionInternalStatus.ACTIVE,
+        // Pas déjà utilisée par l'utilisateur
+        usages: { $none: { customer: { user: userId } } },
+        $and: [
+          // Entre scheduledAt et expiresAt (chaque borne est optionnelle)
+          { $or: [{ scheduledAt: null }, { scheduledAt: { $lte: now } }] },
+          { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },
+          {
+            $or: [
+              { audience: PromotionAudience.ALL },
+              {
+                audience: PromotionAudience.TARGETED,
+                targetedCustomers: { $some: { customer: { user: userId } } },
+              },
+              ...(isInactive ? [{ audience: PromotionAudience.INACTIVE }] : []),
+            ],
+          },
+        ],
+      },
+      { orderBy: { createdAt: 'DESC' } },
     );
   }
 

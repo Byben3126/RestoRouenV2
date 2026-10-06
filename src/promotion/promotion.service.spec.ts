@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { getRepositoryToken } from '@mikro-orm/nestjs';
@@ -25,6 +26,7 @@ describe('PromotionService', () => {
 
   const mockRepo = {
     findByRestaurant: jest.fn(),
+    findAvailableForUser: jest.fn(),
     createForRestaurant: jest.fn(),
     updateForRestaurant: jest.fn(),
     setStatusForRestaurant: jest.fn(),
@@ -63,6 +65,26 @@ describe('PromotionService', () => {
   });
 
   // ── createPromotion ─────────────────────────────────────────────────────────
+
+  describe('getAvailablePromotions', () => {
+    it('returns the promotions available to the user', async () => {
+      const promotions = [makePromotion()];
+      mockRepo.findAvailableForUser.mockResolvedValue(promotions);
+
+      const result = await service.getAvailablePromotions('resto-1', 'user-1');
+
+      expect(mockRepo.findAvailableForUser).toHaveBeenCalledWith('resto-1', 'user-1');
+      expect(result).toBe(promotions);
+    });
+
+    it('throws NotFoundException when the restaurant does not exist or is inactive', async () => {
+      mockRepo.findAvailableForUser.mockResolvedValue(null);
+
+      await expect(service.getAvailablePromotions('resto-1', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
 
   describe('createPromotion', () => {
     it('creates and returns a new promotion', async () => {

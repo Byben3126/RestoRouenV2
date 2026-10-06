@@ -4,13 +4,23 @@ import { INestApplication } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
+import { User } from '../src/auth/entities/user.entity';
+import { Customer } from '../src/customer/entities/customer.entity';
+import { PromotionTarget } from '../src/promotion/entities/promotion-target.entity';
+import { PromotionUsed } from '../src/promotion/entities/promotion-used.entity';
 import {
   Promotion,
   PromotionAudience,
   PromotionInternalStatus,
   PromotionStatus,
 } from '../src/promotion/entities/promotion.entity';
-import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
+import { AppUser } from '../src/user/entities/app-user.entity';
+import {
+  TEST_USER_ID,
+  cleanBaseFixtures,
+  createTestApp,
+  seedBaseFixtures,
+} from './helpers/app.helper';
 
 describe('PromotionController (integration)', () => {
   let app: INestApplication;
@@ -99,6 +109,128 @@ describe('PromotionController (integration)', () => {
         .post('/promotions')
         .send({ name: 'Test', audience: 'invalid' })
         .expect(400);
+    });
+  });
+
+  // ── GET /restaurant/:restaurantId/promotions ────────────────────────────────
+
+  describe('GET /restaurant/:restaurantId/promotions', () => {
+    const OTHER_USER_ID = 'promotion-other-user';
+    const DAY = 86_400_000;
+    let otherCustomerId: string;
+
+    beforeAll(async () => {
+      const fork = em.fork();
+      const user = fork.create(User, {
+        id: OTHER_USER_ID,
+        name: 'Other User',
+        email: 'promotion-other@test.com',
+        emailVerified: true,
+      } as any);
+      const appUser = fork.create(AppUser, { authUser: user } as any);
+      const customer = fork.create(Customer, { user: appUser, restaurant: restaurantId } as any);
+      await fork.flush();
+      otherCustomerId = customer.id;
+    });
+
+    afterEach(async () => {
+      const fork = em.fork();
+      await fork.nativeDelete(PromotionUsed, { promotion: { restaurant: restaurantId } });
+      await fork.nativeDelete(PromotionTarget, { promotion: { restaurant: restaurantId } });
+      await fork.nativeDelete(Customer, { user: TEST_USER_ID });
+    });
+
+    afterAll(async () => {
+      const fork = em.fork();
+      await fork.nativeDelete(Customer, { user: OTHER_USER_ID });
+      await fork.nativeDelete(AppUser, { authUser: OTHER_USER_ID });
+      await fork.nativeDelete(User, { id: OTHER_USER_ID });
+    });
+
+    /**
+     * Crée les promotions des différents cas. Avec `me`, l'utilisateur de test devient client
+     * (ciblé par « Rien que pour moi », a utilisé « Déjà utilisée ») ; sinon c'est l'autre client.
+     */
+    async function seedPromotions(me?: { lastVisitDate: Date | null }) {
+      const fork = em.fork();
+      const customer = me
+        ? fork.create(Customer, { user: TEST_USER_ID, restaurant: restaurantId, ...me } as any)
+        : otherCustomerId;
+      const promo = (name: string, data: Record<string, unknown> = {}) =>
+        fork.create(Promotion, {
+          restaurant: restaurantId,
+          name,
+          audience: PromotionAudience.ALL,
+          ...data,
+        } as any);
+
+      promo('Pour tous');
+      promo('Pour tous, déjà commencée', { scheduledAt: new Date(Date.now() - DAY) });
+      promo('Brouillon', { internalStatus: PromotionInternalStatus.DRAFT });
+      promo('Expirée', { expiresAt: new Date(Date.now() - DAY) });
+      promo('À venir', { scheduledAt: new Date(Date.now() + DAY) });
+      promo('Inactifs', { audience: PromotionAudience.INACTIVE });
+      const forMe = promo('Rien que pour moi', { audience: PromotionAudience.TARGETED });
+      const forOther = promo('Pour un autre', { audience: PromotionAudience.TARGETED });
+      const used = promo('Déjà utilisée');
+      fork.create(PromotionTarget, { promotion: forMe, customer } as any);
+      fork.create(PromotionTarget, { promotion: forOther, customer: otherCustomerId } as any);
+      fork.create(PromotionUsed, { promotion: used, customer } as any);
+      await fork.flush();
+    }
+
+    const getPromotions = (id = restaurantId) =>
+      request(app.getHttpServer()).get(`/restaurant/${id}/promotions`);
+    const namesOf = (res: request.Response) =>
+      (res.body.data as { name: string }[]).map((p) => p.name).sort();
+
+    it('shows only promotions for everyone when the user is not a customer', async () => {
+      await seedPromotions();
+
+      const res = await getPromotions().expect(200);
+
+      expect(namesOf(res)).toEqual(['Déjà utilisée', 'Pour tous', 'Pour tous, déjà commencée']);
+    });
+
+    it('adds the promotions targeting an inactive customer and hides used ones', async () => {
+      await seedPromotions({ lastVisitDate: new Date(Date.now() - 60 * DAY) });
+
+      const res = await getPromotions().expect(200);
+
+      expect(namesOf(res)).toEqual([
+        'Inactifs',
+        'Pour tous',
+        'Pour tous, déjà commencée',
+        'Rien que pour moi',
+      ]);
+    });
+
+    it('hides INACTIVE promotions from an active customer', async () => {
+      await seedPromotions({ lastVisitDate: new Date() });
+
+      const res = await getPromotions().expect(200);
+
+      expect(namesOf(res)).toEqual(['Pour tous', 'Pour tous, déjà commencée', 'Rien que pour moi']);
+    });
+
+    it('does not expose owner-only fields', async () => {
+      await seedPromotions({ lastVisitDate: new Date() });
+
+      const res = await getPromotions().expect(200);
+
+      const promotion = (res.body.data as Record<string, unknown>[])[0];
+      expect(promotion).toHaveProperty('audience');
+      expect(promotion).not.toHaveProperty('targetedCustomers');
+      expect(promotion).not.toHaveProperty('usedCount');
+      expect(promotion).not.toHaveProperty('targetCount');
+    });
+
+    it('returns 404 for an unknown restaurant', async () => {
+      await getPromotions('00000000-0000-0000-0000-000000000000').expect(404);
+    });
+
+    it('returns 400 when the restaurant id is not a UUID', async () => {
+      await getPromotions('abc').expect(400);
     });
   });
 

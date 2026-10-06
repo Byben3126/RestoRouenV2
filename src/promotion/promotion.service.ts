@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { InjectRepository } from '@mikro-orm/nestjs';
 
@@ -16,6 +16,12 @@ export class PromotionService {
 
   async getRestaurantPromotions(restaurantId: string): Promise<Promotion[]> {
     return this.promotionRepository.findByRestaurant(restaurantId);
+  }
+
+  async getAvailablePromotions(restaurantId: string, userId: string): Promise<Promotion[]> {
+    const promotions = await this.promotionRepository.findAvailableForUser(restaurantId, userId);
+    if (!promotions) throw new NotFoundException('Restaurant not found');
+    return promotions;
   }
 
   createPromotion(restaurantId: string, dto: CreatePromotionDto): Promise<Promotion> {
