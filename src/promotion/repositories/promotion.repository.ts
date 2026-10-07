@@ -67,6 +67,91 @@ export class PromotionRepository extends EntityRepository<Promotion> {
     );
   }
 
+  /** Promotions pour tous (audience ALL) disponibles pour l'utilisateur, tous restaurants confondus */
+  async findUntargetedForUser(
+    userId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ items: Promotion[]; total: number }> {
+    const now = new Date();
+
+    const [items, total] = await this.findAndCount(
+      {
+        restaurant: { isActive: true },
+        internalStatus: PromotionInternalStatus.ACTIVE,
+        audience: PromotionAudience.ALL,
+        // Pas déjà utilisée par l'utilisateur
+        usages: { $none: { customer: { user: userId } } },
+        $and: [
+          // Entre scheduledAt et expiresAt (chaque borne est optionnelle)
+          { $or: [{ scheduledAt: null }, { scheduledAt: { $lte: now } }] },
+          { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },
+        ],
+      },
+      {
+        populate: ['restaurant'],
+        orderBy: { createdAt: 'DESC' },
+        limit,
+        offset: (page - 1) * limit,
+      },
+    );
+    return { items, total };
+  }
+
+  /**
+   * Promotions qui ciblent l'utilisateur, tous restaurants confondus : TARGETED s'il est dans les
+   * cibles, INACTIVE dans les restaurants où il est client inactif.
+   */
+  async findTargetedForUser(
+    userId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ items: Promotion[]; total: number }> {
+    const inactiveCustomers = await this.em.find(
+      Customer,
+      {
+        user: userId,
+        $or: [{ lastVisitDate: null }, { lastVisitDate: { $lt: Customer.inactiveThreshold() } }],
+      },
+      { fields: ['restaurant'] },
+    );
+    const inactiveRestaurantIds = inactiveCustomers.map((c) => c.restaurant.id);
+    const now = new Date();
+
+    const [items, total] = await this.findAndCount(
+      {
+        restaurant: { isActive: true },
+        internalStatus: PromotionInternalStatus.ACTIVE,
+        // Pas déjà utilisée par l'utilisateur
+        usages: { $none: { customer: { user: userId } } },
+        $and: [
+          // Entre scheduledAt et expiresAt (chaque borne est optionnelle)
+          { $or: [{ scheduledAt: null }, { scheduledAt: { $lte: now } }] },
+          { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },
+          {
+            $or: [
+              {
+                audience: PromotionAudience.TARGETED,
+                targetedCustomers: { $some: { customer: { user: userId } } },
+              },
+              {
+                audience: PromotionAudience.INACTIVE,
+                restaurant: { $in: inactiveRestaurantIds },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        populate: ['restaurant'],
+        orderBy: { createdAt: 'DESC' },
+        limit,
+        offset: (page - 1) * limit,
+      },
+    );
+    return { items, total };
+  }
+
   async createForRestaurant(restaurantId: string, dto: CreatePromotionDto): Promise<Promotion> {
     return this.em.transactional(async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

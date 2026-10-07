@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 
 import { CreatePromotionDto } from './dto/create-promotion.dto';
+import { GetUserPromotionsQueryDto } from './dto/get-user-promotions-query.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { Promotion, PromotionInternalStatus } from './entities/promotion.entity';
 import { PromotionRepository } from './repositories/promotion.repository';
@@ -22,6 +23,24 @@ export class PromotionService {
     const promotions = await this.promotionRepository.findAvailableForUser(restaurantId, userId);
     if (!promotions) throw new NotFoundException('Restaurant not found');
     return promotions;
+  }
+
+  async getUntargetedPromotions(userId: string, { page, limit }: GetUserPromotionsQueryDto) {
+    const { items, total } = await this.promotionRepository.findUntargetedForUser(
+      userId,
+      page,
+      limit,
+    );
+    return { items, total, page, limit };
+  }
+
+  async getTargetedPromotions(userId: string, { page, limit }: GetUserPromotionsQueryDto) {
+    const { items, total } = await this.promotionRepository.findTargetedForUser(
+      userId,
+      page,
+      limit,
+    );
+    return { items, total, page, limit };
   }
 
   createPromotion(restaurantId: string, dto: CreatePromotionDto): Promise<Promotion> {

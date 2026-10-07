@@ -30,3 +30,32 @@ export class PromotionDto {
   )
   targetedCustomers!: CustomerDto[];
 }
+
+@Exclude()
+export class PromotionRestaurantDto {
+  @Expose() id!: string;
+  @Expose() name!: string;
+}
+
+/** Promotion vue par un client, tous restaurants confondus : on indique de quel restaurant elle vient */
+@Exclude()
+export class UserPromotionDto extends PromotionDto {
+  @Expose()
+  @Transform(({ obj }) =>
+    plainToInstance(PromotionRestaurantDto, obj.restaurant, { excludeExtraneousValues: true }),
+  )
+  restaurant!: PromotionRestaurantDto;
+}
+
+@Exclude()
+export class PaginatedUserPromotionsDto {
+  @Expose()
+  @Transform(({ obj }) =>
+    plainToInstance(UserPromotionDto, obj.items ?? [], { excludeExtraneousValues: true }),
+  )
+  items!: UserPromotionDto[];
+
+  @Expose() total!: number;
+  @Expose() page!: number;
+  @Expose() limit!: number;
+}

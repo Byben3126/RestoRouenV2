@@ -14,6 +14,7 @@ import {
   PromotionInternalStatus,
   PromotionStatus,
 } from '../src/promotion/entities/promotion.entity';
+import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
 import {
   TEST_USER_ID,
@@ -231,6 +232,124 @@ describe('PromotionController (integration)', () => {
 
     it('returns 400 when the restaurant id is not a UUID', async () => {
       await getPromotions('abc').expect(400);
+    });
+  });
+
+  // ── GET /users/me/promotions(/targeted) ─────────────────────────────────────
+
+  describe('GET /users/me/promotions', () => {
+    const OWNER_B_ID = 'promotion-owner-b';
+    const DAY = 86_400_000;
+    let restaurantBId: string;
+
+    beforeAll(async () => {
+      const fork = em.fork();
+      const user = fork.create(User, {
+        id: OWNER_B_ID,
+        name: 'Owner B',
+        email: 'promotion-owner-b@test.com',
+        emailVerified: true,
+      } as any);
+      const appUser = fork.create(AppUser, { authUser: user } as any);
+      const restaurantB = fork.create(Restaurant, { user: appUser, name: 'Restaurant B' } as any);
+      await fork.flush();
+      restaurantBId = restaurantB.id;
+    });
+
+    beforeEach(async () => {
+      const fork = em.fork();
+      // Client inactif du restaurant A, actif du restaurant B
+      const meA = fork.create(Customer, {
+        user: TEST_USER_ID,
+        restaurant: restaurantId,
+        lastVisitDate: new Date(Date.now() - 60 * DAY),
+      } as any);
+      fork.create(Customer, {
+        user: TEST_USER_ID,
+        restaurant: restaurantBId,
+        lastVisitDate: new Date(),
+      } as any);
+      const promo = (restaurant: string, name: string, data: Record<string, unknown> = {}) =>
+        fork.create(Promotion, {
+          restaurant,
+          name,
+          audience: PromotionAudience.ALL,
+          ...data,
+        } as any);
+
+      promo(restaurantId, 'A pour tous');
+      promo(restaurantId, 'A expirée', { expiresAt: new Date(Date.now() - DAY) });
+      const usedA = promo(restaurantId, 'A utilisée');
+      const targetedA = promo(restaurantId, 'A ciblée', { audience: PromotionAudience.TARGETED });
+      promo(restaurantId, 'A inactifs', { audience: PromotionAudience.INACTIVE });
+      promo(restaurantBId, 'B pour tous');
+      promo(restaurantBId, 'B à venir', { scheduledAt: new Date(Date.now() + DAY) });
+      promo(restaurantBId, 'B inactifs', { audience: PromotionAudience.INACTIVE });
+      fork.create(PromotionTarget, { promotion: targetedA, customer: meA } as any);
+      fork.create(PromotionUsed, { promotion: usedA, customer: meA } as any);
+      await fork.flush();
+    });
+
+    afterEach(async () => {
+      const fork = em.fork();
+      const restaurants = { $in: [restaurantId, restaurantBId] };
+      await fork.nativeDelete(PromotionUsed, { promotion: { restaurant: restaurants } });
+      await fork.nativeDelete(PromotionTarget, { promotion: { restaurant: restaurants } });
+      await fork.nativeDelete(Promotion, { restaurant: restaurantBId });
+      await fork.nativeDelete(Customer, { user: TEST_USER_ID });
+    });
+
+    afterAll(async () => {
+      const fork = em.fork();
+      await fork.nativeDelete(Restaurant, { id: restaurantBId });
+      await fork.nativeDelete(AppUser, { authUser: OWNER_B_ID });
+      await fork.nativeDelete(User, { id: OWNER_B_ID });
+    });
+
+    type UserPromotion = { name: string; restaurant: { id: string; name: string } };
+    /** Ne garde que les promotions des restaurants du test (la base peut en contenir d'autres) */
+    const ownItems = (res: request.Response) =>
+      (res.body.data.items as UserPromotion[]).filter((p) =>
+        [restaurantId, restaurantBId].includes(p.restaurant.id),
+      );
+
+    it('returns the untargeted promotions of every restaurant, with their restaurant', async () => {
+      const res = await request(app.getHttpServer()).get('/users/me/promotions').expect(200);
+
+      const items = ownItems(res);
+      expect(items.map((p) => p.name).sort()).toEqual(['A pour tous', 'B pour tous']);
+      expect(items.find((p) => p.name === 'B pour tous')!.restaurant.name).toBe('Restaurant B');
+      expect(items[0]).not.toHaveProperty('targetedCustomers');
+    });
+
+    it('returns the promotions targeting the user (TARGETED and INACTIVE where inactive)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/users/me/promotions/targeted')
+        .expect(200);
+
+      expect(
+        ownItems(res)
+          .map((p) => p.name)
+          .sort(),
+      ).toEqual(['A ciblée', 'A inactifs']);
+    });
+
+    it('paginates the results', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/users/me/promotions/targeted')
+        .query({ page: 2, limit: 1 })
+        .expect(200);
+
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data).toMatchObject({ page: 2, limit: 1 });
+      expect(res.body.data.total).toBeGreaterThanOrEqual(2);
+    });
+
+    it('returns 400 when limit exceeds 50', async () => {
+      await request(app.getHttpServer())
+        .get('/users/me/promotions')
+        .query({ limit: 51 })
+        .expect(400);
     });
   });
 

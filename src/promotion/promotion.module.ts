@@ -6,10 +6,11 @@ import { Promotion, PromotionTarget, PromotionUsed } from './entities';
 import { PromotionController } from './promotion.controller';
 import { PromotionService } from './promotion.service';
 import { RestaurantPromotionController } from './restaurant-promotion.controller';
+import { UserPromotionController } from './user-promotion.controller';
 
 @Module({
   imports: [MikroOrmModule.forFeature([Promotion, PromotionTarget, PromotionUsed])],
-  controllers: [PromotionController, RestaurantPromotionController],
+  controllers: [PromotionController, RestaurantPromotionController, UserPromotionController],
   providers: [PromotionService],
 })
 export class PromotionModule {}
