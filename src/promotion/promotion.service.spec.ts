@@ -1,7 +1,13 @@
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
 import { Promotion, PromotionInternalStatus } from './entities/promotion.entity';
@@ -32,6 +38,7 @@ describe('PromotionService', () => {
     findAllForUser: jest.fn(),
     findTargetedForUser: jest.fn(),
     findAvailableByIdForUser: jest.fn(),
+    markUsedByUser: jest.fn(),
     createForRestaurant: jest.fn(),
     updateForRestaurant: jest.fn(),
     setStatusForRestaurant: jest.fn(),
@@ -140,6 +147,70 @@ describe('PromotionService', () => {
 
       await expect(service.createPromotionToken('user-1', 'promo-1')).rejects.toThrow(
         NotFoundException,
+      );
+    });
+  });
+
+  describe('usePromotion', () => {
+    const tokenFor = (promotionId = 'promo-1', userId = 'user-1') =>
+      jwtService.signAsync({ sub: userId, promotionId });
+    const promotion = makePromotion({ restaurant: { id: 'resto-1' } });
+
+    it('marks the promotion of the token as used by its user', async () => {
+      mockRepo.findAvailableByIdForUser.mockResolvedValue(promotion);
+
+      const result = await service.usePromotion('resto-1', await tokenFor());
+
+      expect(mockRepo.findAvailableByIdForUser).toHaveBeenCalledWith('promo-1', 'user-1');
+      expect(mockRepo.markUsedByUser).toHaveBeenCalledWith(promotion, 'user-1');
+      expect(result).toBe(promotion);
+    });
+
+    it('throws BadRequestException when the token is not signed by the server', async () => {
+      const forged = await new JwtService({ secret: 'other-secret' }).signAsync({
+        sub: 'user-1',
+        promotionId: 'promo-1',
+      });
+
+      await expect(service.usePromotion('resto-1', forged)).rejects.toThrow(BadRequestException);
+      expect(mockRepo.markUsedByUser).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when the token has expired', async () => {
+      const expired = await jwtService.signAsync(
+        { sub: 'user-1', promotionId: 'promo-1' },
+        { expiresIn: '-1s' },
+      );
+
+      await expect(service.usePromotion('resto-1', expired)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws ConflictException when the promotion is no longer available', async () => {
+      mockRepo.findAvailableByIdForUser.mockResolvedValue(null);
+
+      await expect(service.usePromotion('resto-1', await tokenFor())).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockRepo.markUsedByUser).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when the promotion belongs to another restaurant', async () => {
+      mockRepo.findAvailableByIdForUser.mockResolvedValue(promotion);
+
+      await expect(service.usePromotion('resto-2', await tokenFor())).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockRepo.markUsedByUser).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException when the same token is used twice at the same time', async () => {
+      mockRepo.findAvailableByIdForUser.mockResolvedValue(promotion);
+      mockRepo.markUsedByUser.mockRejectedValue(
+        new UniqueConstraintViolationException(new Error('duplicate key')),
+      );
+
+      await expect(service.usePromotion('resto-1', await tokenFor())).rejects.toThrow(
+        ConflictException,
       );
     });
   });

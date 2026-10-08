@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
@@ -8,6 +8,7 @@ import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
 import { CreatePromotionDto } from './dto/create-promotion.dto';
 import { PromotionDto } from './dto/promotion.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
+import { UsePromotionDto } from './dto/use-promotion.dto';
 import { PromotionService } from './promotion.service';
 
 @ApiTags('Promotions')
@@ -60,5 +61,14 @@ export class PromotionController {
   @ApiOkResponse({ type: PromotionDto })
   publishPromotion(@CurrentRestaurant() restaurantId: string, @Param('id') promotionId: string) {
     return this.promotionService.publishPromotion(restaurantId, promotionId);
+  }
+
+  /** Scan du QR code du client : vérifie son token et marque la promotion comme utilisée */
+  @Post('use')
+  @HttpCode(200)
+  @Serialize(PromotionDto)
+  @ApiOkResponse({ type: PromotionDto })
+  usePromotion(@CurrentRestaurant() restaurantId: string, @Body() dto: UsePromotionDto) {
+    return this.promotionService.usePromotion(restaurantId, dto.token);
   }
 }

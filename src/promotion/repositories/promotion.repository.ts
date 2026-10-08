@@ -5,6 +5,7 @@ import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 import { CreatePromotionDto } from '../dto/create-promotion.dto';
 import { UpdatePromotionDto } from '../dto/update-promotion.dto';
 import { PromotionTarget } from '../entities/promotion-target.entity';
+import { PromotionUsed } from '../entities/promotion-used.entity';
 import {
   Promotion,
   PromotionAudience,
@@ -213,6 +214,26 @@ export class PromotionRepository extends EntityRepository<Promotion> {
           ],
         },
       ],
+    });
+  }
+
+  /**
+   * Enregistre l'utilisation de la promotion par l'utilisateur, en le créant client du restaurant si
+   * besoin. Utiliser une promotion compte comme une visite.
+   */
+  async markUsedByUser(promotion: Promotion, userId: string): Promise<void> {
+    await this.em.transactional(async (em) => {
+      const restaurantId = promotion.restaurant.id;
+      const customer =
+        (await em.findOne(Customer, { user: userId, restaurant: restaurantId })) ??
+        em.create(Customer, {
+          user: userId,
+          restaurant: restaurantId,
+        } as RequiredEntityData<Customer>);
+      customer.lastVisitDate = new Date();
+
+      em.create(PromotionUsed, { promotion, customer } as RequiredEntityData<PromotionUsed>);
+      await em.flush();
     });
   }
 

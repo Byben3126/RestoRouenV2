@@ -1,4 +1,4 @@
-import { Entity, Index, ManyToOne, PrimaryKey } from '@mikro-orm/core';
+import { Entity, ManyToOne, PrimaryKey, Unique } from '@mikro-orm/core';
 import { Exclude } from 'class-transformer';
 import { randomUUID } from 'crypto';
 
@@ -6,7 +6,7 @@ import { Customer } from '../../customer/entities/customer.entity';
 import { Promotion } from './promotion.entity';
 
 @Entity()
-@Index({ properties: ['customer', 'promotion'], options: { unique: true } })
+@Unique({ properties: ['customer', 'promotion'] })
 export class PromotionTarget {
   @PrimaryKey({ type: 'uuid' })
   id: string = randomUUID();

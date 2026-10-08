@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
@@ -109,6 +110,13 @@ describe('PromotionController (integration)', () => {
       await request(app.getHttpServer())
         .post('/promotions')
         .send({ name: 'Test', audience: 'invalid' })
+        .expect(400);
+    });
+
+    it('returns 400 when a customer is targeted twice', async () => {
+      await request(app.getHttpServer())
+        .post('/promotions')
+        .send({ ...BASE_DTO, audience: PromotionAudience.TARGETED, customerIds: ['c-1', 'c-1'] })
         .expect(400);
     });
   });
@@ -380,6 +388,72 @@ describe('PromotionController (integration)', () => {
           .expect(404);
       },
     );
+
+    // ── POST /promotions/use (le restaurant A scanne le token) ─────────────────
+
+    const tokenFor = async (name: string) => {
+      const res = await request(app.getHttpServer())
+        .get(`/users/me/promotions/${await promotionId(name)}/token`)
+        .expect(200);
+      return res.body.data.token as string;
+    };
+
+    it('marks the promotion as used, only once', async () => {
+      const token = await tokenFor('A ciblée');
+
+      const res = await request(app.getHttpServer())
+        .post('/promotions/use')
+        .send({ token })
+        .expect(200);
+
+      expect(res.body.data.name).toBe('A ciblée');
+      const usages = await em.fork().count(PromotionUsed, {
+        promotion: { name: 'A ciblée', restaurant: restaurantId },
+        customer: { user: TEST_USER_ID },
+      });
+      expect(usages).toBe(1);
+      // Utiliser une promotion compte comme une visite : le client inactif redevient actif
+      const customer = await em
+        .fork()
+        .findOneOrFail(Customer, { user: TEST_USER_ID, restaurant: restaurantId });
+      expect(customer.isInactive).toBe(false);
+
+      await request(app.getHttpServer()).post('/promotions/use').send({ token }).expect(409);
+    });
+
+    it('returns 409 when the user has no access to the promotion of a valid token', async () => {
+      const fork = em.fork();
+      const other = fork.create(Promotion, {
+        restaurant: restaurantId,
+        name: 'A ciblée pour un autre',
+        audience: PromotionAudience.TARGETED,
+      } as any);
+      await fork.flush();
+      // Token signé par le serveur, mais l'utilisateur ne fait pas partie des cibles
+      const token = await app
+        .get(JwtService, { strict: false })
+        .signAsync({ sub: TEST_USER_ID, promotionId: other.id });
+
+      await request(app.getHttpServer()).post('/promotions/use').send({ token }).expect(409);
+      expect(await em.fork().count(PromotionUsed, { promotion: other.id })).toBe(0);
+    });
+
+    it('returns 403 when the promotion belongs to another restaurant', async () => {
+      const token = await tokenFor('B pour tous');
+
+      await request(app.getHttpServer()).post('/promotions/use').send({ token }).expect(403);
+    });
+
+    it('returns 400 when the token is not a valid signed token', async () => {
+      const token = await tokenFor('A pour tous');
+      const [header, payload] = token.split('.');
+
+      await request(app.getHttpServer())
+        .post('/promotions/use')
+        .send({ token: `${header}.${payload}.signature-falsifiee` })
+        .expect(400);
+      await request(app.getHttpServer()).post('/promotions/use').send({}).expect(400);
+    });
   });
 
   // ── PATCH /promotions/:id ───────────────────────────────────────────────────

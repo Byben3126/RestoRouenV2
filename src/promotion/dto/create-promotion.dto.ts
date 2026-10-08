@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsArray, IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
+import { ArrayUnique, IsArray, IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 
 import { PromotionAudience, PromotionInternalStatus } from '../entities/promotion.entity';
 
@@ -23,6 +23,7 @@ export class CreatePromotionDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @ArrayUnique()
   customerIds?: string[];
 
   @IsEnum([PromotionInternalStatus.ACTIVE, PromotionInternalStatus.DRAFT])
