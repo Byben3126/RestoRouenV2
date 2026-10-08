@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { getRepositoryToken } from '@mikro-orm/nestjs';
@@ -23,12 +24,14 @@ const CREATE_DTO = { name: 'Happy Hour', description: '-50% sur les boissons' };
 
 describe('PromotionService', () => {
   let service: PromotionService;
+  const jwtService = new JwtService({ secret: 'test-secret', signOptions: { expiresIn: '10m' } });
 
   const mockRepo = {
     findByRestaurant: jest.fn(),
     findAvailableForUser: jest.fn(),
     findAllForUser: jest.fn(),
     findTargetedForUser: jest.fn(),
+    findAvailableByIdForUser: jest.fn(),
     createForRestaurant: jest.fn(),
     updateForRestaurant: jest.fn(),
     setStatusForRestaurant: jest.fn(),
@@ -38,7 +41,11 @@ describe('PromotionService', () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PromotionService, { provide: getRepositoryToken(Promotion), useValue: mockRepo }],
+      providers: [
+        PromotionService,
+        { provide: getRepositoryToken(Promotion), useValue: mockRepo },
+        { provide: JwtService, useValue: jwtService },
+      ],
     }).compile();
 
     service = module.get(PromotionService);
@@ -109,6 +116,31 @@ describe('PromotionService', () => {
 
       expect(mockRepo.findTargetedForUser).toHaveBeenCalledWith('user-1', 1, 20);
       expect(result).toEqual({ items: promotions, total: 1, page: 1, limit: 20 });
+    });
+  });
+
+  describe('createPromotionToken', () => {
+    it('signs the user and the promotion in a 10 minutes token', async () => {
+      mockRepo.findAvailableByIdForUser.mockResolvedValue(makePromotion());
+
+      const result = await service.createPromotionToken('user-1', 'promo-1');
+
+      expect(mockRepo.findAvailableByIdForUser).toHaveBeenCalledWith('promo-1', 'user-1');
+      const payload = await jwtService.verifyAsync<{ sub: string; promotionId: string }>(
+        result.token,
+      );
+      expect(payload).toMatchObject({ sub: 'user-1', promotionId: 'promo-1' });
+      const tenMinutes = 10 * 60 * 1000;
+      expect(result.expiresAt.getTime() - Date.now()).toBeGreaterThan(tenMinutes - 5000);
+      expect(result.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(tenMinutes);
+    });
+
+    it('throws NotFoundException when the promotion is not available for the user', async () => {
+      mockRepo.findAvailableByIdForUser.mockResolvedValue(null);
+
+      await expect(service.createPromotionToken('user-1', 'promo-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

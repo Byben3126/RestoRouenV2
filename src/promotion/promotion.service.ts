@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 import { InjectRepository } from '@mikro-orm/nestjs';
 
@@ -13,6 +14,7 @@ export class PromotionService {
   constructor(
     @InjectRepository(Promotion)
     private readonly promotionRepository: PromotionRepository,
+    private readonly jwtService: JwtService,
   ) {}
 
   async getRestaurantPromotions(restaurantId: string): Promise<Promotion[]> {
@@ -26,11 +28,7 @@ export class PromotionService {
   }
 
   async getAllPromotions(userId: string, { page, limit }: GetUserPromotionsQueryDto) {
-    const { items, total } = await this.promotionRepository.findAllForUser(
-      userId,
-      page,
-      limit,
-    );
+    const { items, total } = await this.promotionRepository.findAllForUser(userId, page, limit);
     return { items, total, page, limit };
   }
 
@@ -41,6 +39,16 @@ export class PromotionService {
       limit,
     );
     return { items, total, page, limit };
+  }
+
+  /** Signe la demande de l'utilisateur d'utiliser la promotion, si elle lui est disponible */
+  async createPromotionToken(userId: string, promotionId: string) {
+    const promotion = await this.promotionRepository.findAvailableByIdForUser(promotionId, userId);
+    if (!promotion) throw new NotFoundException('Promotion not available');
+
+    const token = await this.jwtService.signAsync({ sub: userId, promotionId: promotion.id });
+    const { exp } = this.jwtService.decode<{ exp: number }>(token);
+    return { token, expiresAt: new Date(exp * 1000) };
   }
 
   createPromotion(restaurantId: string, dto: CreatePromotionDto): Promise<Promotion> {

@@ -356,6 +356,30 @@ describe('PromotionController (integration)', () => {
         .query({ limit: 51 })
         .expect(400);
     });
+
+    /** Id de la promotion du test portant ce nom */
+    const promotionId = async (name: string) => {
+      const restaurant = { $in: [restaurantId, restaurantBId] };
+      return (await em.fork().findOneOrFail(Promotion, { name, restaurant })).id;
+    };
+
+    it('returns a signed token for a promotion available to the user', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/users/me/promotions/${await promotionId('A ciblée')}/token`)
+        .expect(200);
+
+      expect(typeof res.body.data.token).toBe('string');
+      expect(new Date(res.body.data.expiresAt).getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it.each(['A utilisée', 'A expirée', 'B à venir', 'B inactifs'])(
+      'returns 404 for a token on a promotion not available to the user (%s)',
+      async (name) => {
+        await request(app.getHttpServer())
+          .get(`/users/me/promotions/${await promotionId(name)}/token`)
+          .expect(404);
+      },
+    );
   });
 
   // ── PATCH /promotions/:id ───────────────────────────────────────────────────

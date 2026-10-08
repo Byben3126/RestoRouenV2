@@ -176,6 +176,46 @@ export class PromotionRepository extends EntityRepository<Promotion> {
     return { items, total };
   }
 
+  /** La promotion si elle est disponible pour l'utilisateur (mêmes règles que findAllForUser), sinon null */
+  async findAvailableByIdForUser(promotionId: string, userId: string): Promise<Promotion | null> {
+    const inactiveCustomers = await this.em.find(
+      Customer,
+      {
+        user: userId,
+        $or: [{ lastVisitDate: null }, { lastVisitDate: { $lt: Customer.inactiveThreshold() } }],
+      },
+      { fields: ['restaurant'] },
+    );
+    const inactiveRestaurantIds = inactiveCustomers.map((c) => c.restaurant.id);
+    const now = new Date();
+
+    return this.findOne({
+      id: promotionId,
+      restaurant: { isActive: true },
+      internalStatus: PromotionInternalStatus.ACTIVE,
+      // Pas déjà utilisée par l'utilisateur
+      usages: { $none: { customer: { user: userId } } },
+      $and: [
+        // Entre scheduledAt et expiresAt (chaque borne est optionnelle)
+        { $or: [{ scheduledAt: null }, { scheduledAt: { $lte: now } }] },
+        { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },
+        {
+          $or: [
+            { audience: PromotionAudience.ALL },
+            {
+              audience: PromotionAudience.TARGETED,
+              targetedCustomers: { $some: { customer: { user: userId } } },
+            },
+            {
+              audience: PromotionAudience.INACTIVE,
+              restaurant: { $in: inactiveRestaurantIds },
+            },
+          ],
+        },
+      ],
+    });
+  }
+
   async createForRestaurant(restaurantId: string, dto: CreatePromotionDto): Promise<Promotion> {
     return this.em.transactional(async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
