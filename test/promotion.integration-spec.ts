@@ -313,11 +313,16 @@ describe('PromotionController (integration)', () => {
         [restaurantId, restaurantBId].includes(p.restaurant.id),
       );
 
-    it('returns the untargeted promotions of every restaurant, with their restaurant', async () => {
+    it('returns all the available promotions of every restaurant, with their restaurant', async () => {
       const res = await request(app.getHttpServer()).get('/users/me/promotions').expect(200);
 
       const items = ownItems(res);
-      expect(items.map((p) => p.name).sort()).toEqual(['A pour tous', 'B pour tous']);
+      expect(items.map((p) => p.name).sort()).toEqual([
+        'A ciblée',
+        'A inactifs',
+        'A pour tous',
+        'B pour tous',
+      ]);
       expect(items.find((p) => p.name === 'B pour tous')!.restaurant.name).toBe('Restaurant B');
       expect(items[0]).not.toHaveProperty('targetedCustomers');
     });

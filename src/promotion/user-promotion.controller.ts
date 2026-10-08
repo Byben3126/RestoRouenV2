@@ -15,15 +15,15 @@ import { PromotionService } from './promotion.service';
 export class UserPromotionController {
   constructor(private readonly promotionService: PromotionService) {}
 
-  /** Promotions pour tous (non ciblées) */
+  /** Toutes les promotions disponibles, y compris celles qui ciblent l'utilisateur */
   @Get()
   @Serialize(PaginatedUserPromotionsDto)
   @ApiOkResponse({ type: PaginatedUserPromotionsDto })
-  getUntargetedPromotions(
+  getAllPromotions(
     @CurrentUser() userId: string,
     @Query() query: GetUserPromotionsQueryDto,
   ) {
-    return this.promotionService.getUntargetedPromotions(userId, query);
+    return this.promotionService.getAllPromotions(userId, query);
   }
 
   /** Promotions qui ciblent l'utilisateur (TARGETED ou INACTIVE) */

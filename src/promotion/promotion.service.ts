@@ -25,8 +25,8 @@ export class PromotionService {
     return promotions;
   }
 
-  async getUntargetedPromotions(userId: string, { page, limit }: GetUserPromotionsQueryDto) {
-    const { items, total } = await this.promotionRepository.findUntargetedForUser(
+  async getAllPromotions(userId: string, { page, limit }: GetUserPromotionsQueryDto) {
+    const { items, total } = await this.promotionRepository.findAllForUser(
       userId,
       page,
       limit,

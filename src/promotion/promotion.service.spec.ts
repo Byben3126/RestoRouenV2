@@ -27,7 +27,7 @@ describe('PromotionService', () => {
   const mockRepo = {
     findByRestaurant: jest.fn(),
     findAvailableForUser: jest.fn(),
-    findUntargetedForUser: jest.fn(),
+    findAllForUser: jest.fn(),
     findTargetedForUser: jest.fn(),
     createForRestaurant: jest.fn(),
     updateForRestaurant: jest.fn(),
@@ -88,14 +88,14 @@ describe('PromotionService', () => {
     });
   });
 
-  describe('getUntargetedPromotions', () => {
-    it('returns the paginated untargeted promotions of the user', async () => {
+  describe('getAllPromotions', () => {
+    it('returns all the paginated promotions of the user', async () => {
       const promotions = [makePromotion()];
-      mockRepo.findUntargetedForUser.mockResolvedValue({ items: promotions, total: 1 });
+      mockRepo.findAllForUser.mockResolvedValue({ items: promotions, total: 1 });
 
-      const result = await service.getUntargetedPromotions('user-1', { page: 2, limit: 10 });
+      const result = await service.getAllPromotions('user-1', { page: 2, limit: 10 });
 
-      expect(mockRepo.findUntargetedForUser).toHaveBeenCalledWith('user-1', 2, 10);
+      expect(mockRepo.findAllForUser).toHaveBeenCalledWith('user-1', 2, 10);
       expect(result).toEqual({ items: promotions, total: 1, page: 2, limit: 10 });
     });
   });

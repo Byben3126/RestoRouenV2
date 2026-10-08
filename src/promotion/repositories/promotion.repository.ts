@@ -67,25 +67,49 @@ export class PromotionRepository extends EntityRepository<Promotion> {
     );
   }
 
-  /** Promotions pour tous (audience ALL) disponibles pour l'utilisateur, tous restaurants confondus */
-  async findUntargetedForUser(
+  /**
+   * Toutes les promotions disponibles pour l'utilisateur, tous restaurants confondus : celles pour
+   * tous, TARGETED s'il est dans les cibles, INACTIVE dans les restaurants où il est client inactif.
+   */
+  async findAllForUser(
     userId: string,
     page: number,
     limit: number,
   ): Promise<{ items: Promotion[]; total: number }> {
+    const inactiveCustomers = await this.em.find(
+      Customer,
+      {
+        user: userId,
+        $or: [{ lastVisitDate: null }, { lastVisitDate: { $lt: Customer.inactiveThreshold() } }],
+      },
+      { fields: ['restaurant'] },
+    );
+    const inactiveRestaurantIds = inactiveCustomers.map((c) => c.restaurant.id);
     const now = new Date();
 
     const [items, total] = await this.findAndCount(
       {
         restaurant: { isActive: true },
         internalStatus: PromotionInternalStatus.ACTIVE,
-        audience: PromotionAudience.ALL,
         // Pas déjà utilisée par l'utilisateur
         usages: { $none: { customer: { user: userId } } },
         $and: [
           // Entre scheduledAt et expiresAt (chaque borne est optionnelle)
           { $or: [{ scheduledAt: null }, { scheduledAt: { $lte: now } }] },
           { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },
+          {
+            $or: [
+              { audience: PromotionAudience.ALL },
+              {
+                audience: PromotionAudience.TARGETED,
+                targetedCustomers: { $some: { customer: { user: userId } } },
+              },
+              {
+                audience: PromotionAudience.INACTIVE,
+                restaurant: { $in: inactiveRestaurantIds },
+              },
+            ],
+          },
         ],
       },
       {
