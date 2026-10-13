@@ -8,6 +8,7 @@ import { CustomerModule } from './customer/customer.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseModule } from './database';
 import { MediaModule } from './media/media.module';
+import { NotificationModule } from './notification/notification.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
 import { RewardModule } from './reward/reward.module';
@@ -27,6 +28,7 @@ import { UserModule } from './user/user.module';
     SubscriptionModule,
     DashboardModule,
     MediaModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

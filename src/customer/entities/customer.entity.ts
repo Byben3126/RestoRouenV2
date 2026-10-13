@@ -40,6 +40,10 @@ export class Customer {
   @Property({ nullable: true, type: 'date' })
   lastVisitDate?: Date;
 
+  /** false : le client a coupé toutes les notifications de ce restaurant */
+  @Property()
+  notificationsEnabled: boolean = true;
+
   @OneToMany(() => PointsTransaction, (t) => t.customer)
   pointsTransactions = new Collection<PointsTransaction>(this);
 
