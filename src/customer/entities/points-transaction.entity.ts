@@ -30,4 +30,10 @@ export class PointsTransaction {
 
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();
+
+  constructor(data: Pick<PointsTransaction, 'customer' | 'type' | 'amount' | 'reason'>) {
+    Object.assign(this, data);
+    // Le client était-il inactif avant cette visite ? À créer avant de mettre à jour lastVisitDate
+    this.reactivatedCustomer = data.customer.isInactive;
+  }
 }

@@ -70,7 +70,7 @@ export class Customer {
 
   /** Crédite des points. Compte comme une visite ; la transaction est enregistrée au prochain flush. */
   addPoints(amount: number, reason?: string): PointsTransaction {
-    const transaction = this.recordVisit(PointsTransactionType.GAIN, amount, reason);
+    const transaction = this.recordTransaction(PointsTransactionType.GAIN, amount, reason);
     this.points += amount;
     this.totalPointsGained += amount;
     return transaction;
@@ -79,25 +79,19 @@ export class Customer {
   /** Débite des points. Compte comme une visite ; la transaction est enregistrée au prochain flush. */
   removePoints(amount: number, reason?: string): PointsTransaction {
     if (!this.hasEnoughPoints(amount)) throw new Error('Not enough points');
-    const transaction = this.recordVisit(PointsTransactionType.LOSS, amount, reason);
+    const transaction = this.recordTransaction(PointsTransactionType.LOSS, amount, reason);
     this.points -= amount;
     return transaction;
   }
 
-  private recordVisit(
+  private recordTransaction(
     type: PointsTransactionType,
     amount: number,
     reason?: string,
   ): PointsTransaction {
-    const transaction = new PointsTransaction();
-    transaction.customer = this;
-    transaction.type = type;
-    transaction.amount = amount;
-    transaction.reason = reason;
-    // A calculer avant de mettre à jour la date de visite
-    transaction.reactivatedCustomer = this.isInactive;
+    // Créée avant de mettre à jour la date de visite (calcul de reactivatedCustomer)
+    const transaction = new PointsTransaction({ customer: this, type, amount, reason });
     this.pointsTransactions.add(transaction);
-
     this.lastVisitDate = new Date();
     return transaction;
   }

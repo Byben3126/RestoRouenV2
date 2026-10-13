@@ -30,7 +30,7 @@ export function createPointsTransaction(
     reactivatedCustomer?: boolean;
   },
 ): PointsTransaction {
-  const tx = em.create(PointsTransaction, {
+  const tx = new PointsTransaction({
     customer,
     type: opts.type,
     amount: opts.amount,
@@ -38,9 +38,11 @@ export function createPointsTransaction(
       opts.type === PointsTransactionType.GAIN
         ? faker.helpers.arrayElement(GAIN_REASONS)
         : faker.helpers.arrayElement(LOSS_REASONS),
-    reactivatedCustomer: opts.reactivatedCustomer ?? false,
-    createdAt: opts.createdAt,
   });
+  // Données historiques : on impose les valeurs au lieu de les calculer
+  tx.reactivatedCustomer = opts.reactivatedCustomer ?? false;
+  tx.createdAt = opts.createdAt;
+  em.persist(tx);
   return tx;
 }
 
