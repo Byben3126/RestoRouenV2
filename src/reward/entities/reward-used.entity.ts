@@ -15,6 +15,10 @@ export class RewardUsed {
   @ManyToOne(() => Reward)
   reward!: Reward;
 
+  /** Id (jti) du token scanné : un même token ne peut servir qu'une fois */
+  @Property({ type: 'uuid', nullable: true, unique: true })
+  tokenId?: string;
+
   @Property({ onCreate: () => new Date() })
   usedAt?: Date = new Date();
 }

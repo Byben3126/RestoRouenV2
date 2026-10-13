@@ -6,6 +6,10 @@ import request from 'supertest';
 
 import { User } from '../src/auth/entities/user.entity';
 import { Customer } from '../src/customer/entities/customer.entity';
+import {
+  PointsTransaction,
+  PointsTransactionType,
+} from '../src/customer/entities/points-transaction.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
 import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
@@ -44,6 +48,7 @@ describe('CustomerController (integration)', () => {
 
   afterAll(async () => {
     const fork = em.fork();
+    await fork.nativeDelete(PointsTransaction, { customer: { restaurant: restaurantId } });
     await fork.nativeDelete(Customer, { restaurant: restaurantId });
     await fork.nativeDelete(AppUser, { authUser: CUSTOMER_USER_ID });
     await fork.nativeDelete(User, { id: CUSTOMER_USER_ID });
@@ -97,6 +102,31 @@ describe('CustomerController (integration)', () => {
 
       expect(res.body.data.total).toBe(0);
       expect(res.body.data.items).toHaveLength(0);
+    });
+  });
+
+  // ── POST /customers/:id/points ──────────────────────────────────────────────
+
+  describe('POST /customers/:id/points', () => {
+    it('credits the points, counts the visit and records a GAIN transaction', async () => {
+      const customer = await em.fork().findOneOrFail(Customer, { user: CUSTOMER_USER_ID });
+
+      const res = await request(app.getHttpServer())
+        .post(`/customers/${customer.id}/points`)
+        .send({ amount: 10, reason: 'Repas' })
+        .expect(201);
+
+      expect(res.body.data).toMatchObject({ points: 60, totalPointsGained: 110 });
+      const transactions = await em.fork().find(PointsTransaction, { customer: customer.id });
+      expect(transactions).toMatchObject([
+        {
+          type: PointsTransactionType.GAIN,
+          amount: 10,
+          reason: 'Repas',
+          // Jamais venu avant : sa première visite le « réactive »
+          reactivatedCustomer: true,
+        },
+      ]);
     });
   });
 });

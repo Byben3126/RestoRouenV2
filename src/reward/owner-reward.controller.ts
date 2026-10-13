@@ -1,18 +1,19 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
-import { CreateRewardDto, RewardDto, UpdateRewardDto } from './dto';
+import { CreateRewardDto, RewardDto, UpdateRewardDto, UseRewardDto } from './dto';
 import { RewardStatus } from './entities/reward.entity';
 import { RewardService } from './reward.service';
 
+/** Gestion des récompenses par le propriétaire du restaurant connecté */
 @ApiTags('Rewards')
 @UseGuards(AuthGuard, RestaurantOwnerGuard)
 @Controller('rewards')
-export class RewardController {
+export class OwnerRewardController {
   constructor(private readonly rewardService: RewardService) {}
 
   @Get()
@@ -59,5 +60,14 @@ export class RewardController {
   @ApiOkResponse({ type: RewardDto })
   publishReward(@CurrentRestaurant() restaurantId: string, @Param('id') rewardId: string) {
     return this.rewardService.setStatus(restaurantId, rewardId, RewardStatus.ACTIVE);
+  }
+
+  /** Scan du QR code du client : vérifie son token, débite ses points et lui remet la récompense */
+  @Post('use')
+  @HttpCode(200)
+  @Serialize(RewardDto)
+  @ApiOkResponse({ type: RewardDto })
+  useReward(@CurrentRestaurant() restaurantId: string, @Body() dto: UseRewardDto) {
+    return this.rewardService.useReward(restaurantId, dto.token);
   }
 }

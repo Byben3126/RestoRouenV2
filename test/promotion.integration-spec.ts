@@ -24,7 +24,7 @@ import {
   seedBaseFixtures,
 } from './helpers/app.helper';
 
-describe('PromotionController (integration)', () => {
+describe('OwnerPromotionController (integration)', () => {
   let app: INestApplication;
   let em: EntityManager;
   let restaurantId: string;

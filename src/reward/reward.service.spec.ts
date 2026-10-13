@@ -1,6 +1,13 @@
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
 import { Reward, RewardStatus } from './entities/reward.entity';
@@ -24,6 +31,7 @@ const CREATE_DTO = { name: 'Café offert', pointRequired: 100 };
 
 describe('RewardService', () => {
   let service: RewardService;
+  const jwtService = new JwtService({ secret: 'test-secret', signOptions: { expiresIn: '10m' } });
 
   const mockRepo = {
     findByRestaurant: jest.fn(),
@@ -31,13 +39,20 @@ describe('RewardService', () => {
     createForRestaurant: jest.fn(),
     updateForRestaurant: jest.fn(),
     setStatusForRestaurant: jest.fn(),
+    findActiveById: jest.fn(),
+    canRedeem: jest.fn(),
+    redeem: jest.fn(),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [RewardService, { provide: getRepositoryToken(Reward), useValue: mockRepo }],
+      providers: [
+        RewardService,
+        { provide: getRepositoryToken(Reward), useValue: mockRepo },
+        { provide: JwtService, useValue: jwtService },
+      ],
     }).compile();
 
     service = module.get(RewardService);
@@ -161,6 +176,124 @@ describe('RewardService', () => {
       const result = await service.setStatus('resto-1', 'reward-1', RewardStatus.DRAFT);
 
       expect(result.status).toBe(RewardStatus.DRAFT);
+    });
+  });
+
+  // ── createRewardToken ───────────────────────────────────────────────────────
+
+  describe('createRewardToken', () => {
+    const reward = makeReward({ status: RewardStatus.ACTIVE });
+
+    it('signs the user, the reward and a unique token id in a 10 minutes token', async () => {
+      mockRepo.findActiveById.mockResolvedValue(reward);
+      mockRepo.canRedeem.mockResolvedValue(true);
+
+      const first = await service.createRewardToken('user-1', 'reward-1');
+      const second = await service.createRewardToken('user-1', 'reward-1');
+
+      expect(mockRepo.canRedeem).toHaveBeenCalledWith(reward, 'user-1');
+      const payload = await jwtService.verifyAsync<{ sub: string; rewardId: string; jti: string }>(
+        first.token,
+      );
+      expect(payload).toMatchObject({ sub: 'user-1', rewardId: 'reward-1' });
+      expect(payload.jti).toEqual(expect.any(String));
+      expect(jwtService.decode<{ jti: string }>(second.token).jti).not.toBe(payload.jti);
+      const tenMinutes = 10 * 60 * 1000;
+      expect(first.expiresAt.getTime() - Date.now()).toBeGreaterThan(tenMinutes - 5000);
+    });
+
+    it('throws NotFoundException when the reward is not active', async () => {
+      mockRepo.findActiveById.mockResolvedValue(null);
+
+      await expect(service.createRewardToken('user-1', 'reward-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws ForbiddenException when the user has not enough points', async () => {
+      mockRepo.findActiveById.mockResolvedValue(reward);
+      mockRepo.canRedeem.mockResolvedValue(false);
+
+      await expect(service.createRewardToken('user-1', 'reward-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+  });
+
+  // ── useReward ───────────────────────────────────────────────────────────────
+
+  describe('useReward', () => {
+    const reward = makeReward({ status: RewardStatus.ACTIVE, restaurant: { id: 'resto-1' } });
+    const tokenFor = (jti = 'token-1') =>
+      jwtService.signAsync({ sub: 'user-1', rewardId: 'reward-1', jti });
+
+    it('redeems the reward of the token for its user', async () => {
+      mockRepo.findActiveById.mockResolvedValue(reward);
+      mockRepo.redeem.mockResolvedValue(true);
+
+      const result = await service.useReward('resto-1', await tokenFor());
+
+      expect(mockRepo.findActiveById).toHaveBeenCalledWith('reward-1');
+      expect(mockRepo.redeem).toHaveBeenCalledWith(reward, 'user-1', 'token-1');
+      expect(result).toBe(reward);
+    });
+
+    it('throws BadRequestException when the token is not signed by the server', async () => {
+      const forged = await new JwtService({ secret: 'other-secret' }).signAsync({
+        sub: 'user-1',
+        rewardId: 'reward-1',
+        jti: 'token-1',
+      });
+
+      await expect(service.useReward('resto-1', forged)).rejects.toThrow(BadRequestException);
+      expect(mockRepo.redeem).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when the token has expired', async () => {
+      const expired = await jwtService.signAsync(
+        { sub: 'user-1', rewardId: 'reward-1', jti: 'token-1' },
+        { expiresIn: '-1s' },
+      );
+
+      await expect(service.useReward('resto-1', expired)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws ConflictException when the reward is no longer active', async () => {
+      mockRepo.findActiveById.mockResolvedValue(null);
+
+      await expect(service.useReward('resto-1', await tokenFor())).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockRepo.redeem).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when the reward belongs to another restaurant', async () => {
+      mockRepo.findActiveById.mockResolvedValue(reward);
+
+      await expect(service.useReward('resto-2', await tokenFor())).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockRepo.redeem).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException when the user has no longer enough points', async () => {
+      mockRepo.findActiveById.mockResolvedValue(reward);
+      mockRepo.redeem.mockResolvedValue(false);
+
+      await expect(service.useReward('resto-1', await tokenFor())).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('throws ConflictException when the token has already been used', async () => {
+      mockRepo.findActiveById.mockResolvedValue(reward);
+      mockRepo.redeem.mockRejectedValue(
+        new UniqueConstraintViolationException(new Error('duplicate key')),
+      );
+
+      await expect(service.useReward('resto-1', await tokenFor())).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 });

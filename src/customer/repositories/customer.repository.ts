@@ -1,14 +1,9 @@
-import {
-  EntityManager,
-  EntityRepository,
-  FilterQuery,
-  RequiredEntityData,
-} from '@mikro-orm/postgresql';
+import { EntityManager, EntityRepository, FilterQuery } from '@mikro-orm/postgresql';
 
 import { AddCustomerPointsDto } from '../dto/add-customer-points.dto';
 import { CustomerSortBy, GetCustomersQueryDto } from '../dto/get-customers-query.dto';
 import { Customer } from '../entities/customer.entity';
-import { PointsTransaction, PointsTransactionType } from '../entities/points-transaction.entity';
+import { PointsTransaction } from '../entities/points-transaction.entity';
 
 export class PaginatedCustomers {
   items!: Customer[];
@@ -89,19 +84,7 @@ export class CustomerRepository extends EntityRepository<Customer> {
     );
     if (!customer) return null;
 
-    const wasInactive = customer.isInactive;
-
-    customer.points += dto.amount;
-    customer.totalPointsGained += dto.amount;
-    customer.lastVisitDate = new Date();
-
-    this.em.create(PointsTransaction, {
-      customer,
-      amount: dto.amount,
-      type: PointsTransactionType.GAIN,
-      reason: dto.reason,
-      reactivatedCustomer: wasInactive,
-    } as RequiredEntityData<PointsTransaction>);
+    customer.addPoints(dto.amount, dto.reason);
 
     await this.em.flush();
     return customer;

@@ -1,9 +1,12 @@
+import { LockMode } from '@mikro-orm/core';
 import { EntityRepository, RequiredEntityData } from '@mikro-orm/postgresql';
 
+import { Customer } from '../../customer/entities/customer.entity';
 import { Media } from '../../media/entities/media.entity';
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 import { CreateRewardDto } from '../dto/create-reward.dto';
 import { UpdateRewardDto } from '../dto/update-reward.dto';
+import { RewardUsed } from '../entities/reward-used.entity';
 import { Reward, RewardStatus } from '../entities/reward.entity';
 
 export class RewardRepository extends EntityRepository<Reward> {
@@ -73,6 +76,44 @@ export class RewardRepository extends EntityRepository<Reward> {
       { restaurant: restaurantId, status: RewardStatus.ACTIVE },
       { populate: ['medias'], orderBy: { pointRequired: 'ASC', createdAt: 'DESC' } },
     );
+  }
+
+  /** La récompense si elle est active dans un restaurant actif, sinon null */
+  async findActiveById(rewardId: string): Promise<Reward | null> {
+    return this.findOne(
+      { id: rewardId, status: RewardStatus.ACTIVE, restaurant: { isActive: true } },
+      { populate: ['medias'] },
+    );
+  }
+
+  /** L'utilisateur est client du restaurant de la récompense et a assez de points pour la récupérer */
+  async canRedeem(reward: Reward, userId: string): Promise<boolean> {
+    const customer = await this.em.findOne(Customer, {
+      user: userId,
+      restaurant: reward.restaurant.id,
+    });
+    return customer?.hasEnoughPoints(reward.pointRequired) ?? false;
+  }
+
+  /**
+   * Débite les points du client et enregistre l'utilisation de la récompense pour ce token.
+   * false si le client n'a plus assez de points.
+   */
+  async redeem(reward: Reward, userId: string, tokenId: string): Promise<boolean> {
+    return this.em.transactional(async (em) => {
+      // Verrouille le client : deux scans en parallèle ne peuvent pas dépenser les mêmes points
+      const customer = await em.findOne(
+        Customer,
+        { user: userId, restaurant: reward.restaurant.id },
+        { lockMode: LockMode.PESSIMISTIC_WRITE },
+      );
+      if (!customer?.hasEnoughPoints(reward.pointRequired)) return false;
+
+      customer.removePoints(reward.pointRequired, `Récompense : ${reward.name}`);
+      em.create(RewardUsed, { reward, customer, tokenId } as RequiredEntityData<RewardUsed>);
+      await em.flush();
+      return true;
+    });
   }
 
   async findByRestaurant(restaurantId: string): Promise<Reward[]> {

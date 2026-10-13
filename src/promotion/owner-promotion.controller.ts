@@ -11,10 +11,11 @@ import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { UsePromotionDto } from './dto/use-promotion.dto';
 import { PromotionService } from './promotion.service';
 
+/** Gestion des promotions par le propriétaire du restaurant connecté */
 @ApiTags('Promotions')
 @UseGuards(AuthGuard, RestaurantOwnerGuard)
 @Controller('promotions')
-export class PromotionController {
+export class OwnerPromotionController {
   constructor(private readonly promotionService: PromotionService) {}
 
   @Get()

@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 
 import { Promotion, PromotionTarget, PromotionUsed } from './entities';
-import { PromotionController } from './promotion.controller';
+import { OwnerPromotionController } from './owner-promotion.controller';
 import { PromotionService } from './promotion.service';
 import { RestaurantPromotionController } from './restaurant-promotion.controller';
 import { UserPromotionController } from './user-promotion.controller';
@@ -20,7 +20,7 @@ import { UserPromotionController } from './user-promotion.controller';
       }),
     }),
   ],
-  controllers: [PromotionController, RestaurantPromotionController, UserPromotionController],
+  controllers: [OwnerPromotionController, RestaurantPromotionController, UserPromotionController],
   providers: [PromotionService],
 })
 export class PromotionModule {}
