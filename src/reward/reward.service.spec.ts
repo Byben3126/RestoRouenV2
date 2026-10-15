@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -43,6 +44,7 @@ describe('RewardService', () => {
     canRedeem: jest.fn(),
     redeem: jest.fn(),
   };
+  const mockEventEmitter = { emit: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -52,6 +54,7 @@ describe('RewardService', () => {
         RewardService,
         { provide: getRepositoryToken(Reward), useValue: mockRepo },
         { provide: JwtService, useValue: jwtService },
+        { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
     }).compile();
 
@@ -238,6 +241,20 @@ describe('RewardService', () => {
       expect(result).toBe(reward);
     });
 
+    it('notifies that the user has used the reward', async () => {
+      mockRepo.findActiveById.mockResolvedValue(reward);
+      mockRepo.redeem.mockResolvedValue(true);
+
+      await service.useReward('resto-1', await tokenFor());
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith('reward.used', {
+        userId: 'user-1',
+        restaurantId: 'resto-1',
+        rewardId: 'reward-1',
+        pointsSpent: 100,
+      });
+    });
+
     it('throws BadRequestException when the token is not signed by the server', async () => {
       const forged = await new JwtService({ secret: 'other-secret' }).signAsync({
         sub: 'user-1',
@@ -283,6 +300,7 @@ describe('RewardService', () => {
       await expect(service.useReward('resto-1', await tokenFor())).rejects.toThrow(
         ConflictException,
       );
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
 
     it('throws ConflictException when the token has already been used', async () => {

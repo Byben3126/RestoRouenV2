@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 
 import { UniqueConstraintViolationException } from '@mikro-orm/core';
@@ -14,6 +15,7 @@ import { randomUUID } from 'crypto';
 import { CreateRewardDto } from './dto/create-reward.dto';
 import { UpdateRewardDto } from './dto/update-reward.dto';
 import { Reward, RewardStatus } from './entities/reward.entity';
+import { REWARD_USED_EVENT, RewardUsedEvent } from './events/reward-used.event';
 import { RewardRepository } from './repositories/reward.repository';
 
 /** Contenu du token de récupération d'une récompense : l'utilisateur (sub), la récompense et l'id du token (jti) */
@@ -29,6 +31,7 @@ export class RewardService {
     @InjectRepository(Reward)
     private readonly rewardRepository: RewardRepository,
     private readonly jwtService: JwtService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /** Signe la demande de l'utilisateur de récupérer la récompense, s'il a assez de points */
@@ -72,6 +75,11 @@ export class RewardService {
       throw error;
     }
     if (!redeemed) throw new ConflictException('Not enough points');
+
+    this.eventEmitter.emit(
+      REWARD_USED_EVENT,
+      new RewardUsedEvent(payload.sub, restaurantId, reward.id, reward.pointRequired),
+    );
     return reward;
   }
 

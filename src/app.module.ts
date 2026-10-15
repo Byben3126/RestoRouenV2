@@ -10,6 +10,7 @@ import { DatabaseModule } from './database';
 import { MediaModule } from './media/media.module';
 import { NotificationModule } from './notification/notification.module';
 import { PromotionModule } from './promotion/promotion.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
 import { RewardModule } from './reward/reward.module';
 import { SubscriptionModule } from './subscription/subscription.module';
@@ -29,6 +30,7 @@ import { UserModule } from './user/user.module';
     DashboardModule,
     MediaModule,
     NotificationModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

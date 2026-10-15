@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 
 import { UniqueConstraintViolationException } from '@mikro-orm/core';
@@ -14,6 +15,7 @@ import { CreatePromotionDto } from './dto/create-promotion.dto';
 import { GetUserPromotionsQueryDto } from './dto/get-user-promotions-query.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { Promotion, PromotionInternalStatus } from './entities/promotion.entity';
+import { PROMOTION_USED_EVENT, PromotionUsedEvent } from './events/promotion-used.event';
 import { PromotionRepository } from './repositories/promotion.repository';
 
 /** Contenu du token d'utilisation d'une promotion : l'utilisateur (sub) et la promotion demandée */
@@ -28,6 +30,7 @@ export class PromotionService {
     @InjectRepository(Promotion)
     private readonly promotionRepository: PromotionRepository,
     private readonly jwtService: JwtService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async getRestaurantPromotions(restaurantId: string): Promise<Promotion[]> {
@@ -93,6 +96,11 @@ export class PromotionService {
       }
       throw error;
     }
+
+    this.eventEmitter.emit(
+      PROMOTION_USED_EVENT,
+      new PromotionUsedEvent(payload.sub, restaurantId, promotion.id),
+    );
     return promotion;
   }
 

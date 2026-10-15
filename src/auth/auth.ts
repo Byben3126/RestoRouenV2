@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MikroORM } from '@mikro-orm/core';
 import { betterAuth } from 'better-auth';
 import { mikroOrmAdapter } from 'better-auth-mikro-orm';
-import { admin } from 'better-auth/plugins';
+import { admin, bearer } from 'better-auth/plugins';
 
 import { AUTH_USER_CREATED_EVENT, AuthUserCreatedEvent } from './events/auth-user-created.event';
 
@@ -34,7 +34,8 @@ export const auth = (orm: MikroORM, eventEmitter?: EventEmitter2) =>
         redirectURI: `${process.env.API_URL}/auth/callback/google`,
       },
     },
-    plugins: [admin()],
+    // bearer : l'app React Native s'authentifie par token (header Authorization) plutôt que par cookie
+    plugins: [admin(), bearer()],
 
     ...(eventEmitter && {
       databaseHooks: {

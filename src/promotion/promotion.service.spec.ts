@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -43,6 +44,7 @@ describe('PromotionService', () => {
     updateForRestaurant: jest.fn(),
     setStatusForRestaurant: jest.fn(),
   };
+  const mockEventEmitter = { emit: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -52,6 +54,7 @@ describe('PromotionService', () => {
         PromotionService,
         { provide: getRepositoryToken(Promotion), useValue: mockRepo },
         { provide: JwtService, useValue: jwtService },
+        { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
     }).compile();
 
@@ -164,6 +167,11 @@ describe('PromotionService', () => {
       expect(mockRepo.findAvailableByIdForUser).toHaveBeenCalledWith('promo-1', 'user-1');
       expect(mockRepo.markUsedByUser).toHaveBeenCalledWith(promotion, 'user-1');
       expect(result).toBe(promotion);
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith('promotion.used', {
+        userId: 'user-1',
+        restaurantId: 'resto-1',
+        promotionId: 'promo-1',
+      });
     });
 
     it('throws BadRequestException when the token is not signed by the server', async () => {
@@ -212,6 +220,7 @@ describe('PromotionService', () => {
       await expect(service.usePromotion('resto-1', await tokenFor())).rejects.toThrow(
         ConflictException,
       );
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
   });
 
