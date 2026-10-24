@@ -6,7 +6,7 @@ export const ONESIGNAL_CLIENT = Symbol('ONESIGNAL_CLIENT');
 
 export interface PushMessage {
   headings: { en: string } & OneSignal.LanguageStringMap;
-  contents: { en: string } & OneSignal.LanguageStringMap
+  contents: { en: string } & OneSignal.LanguageStringMap;
   data?: object;
 }
 
@@ -19,9 +19,7 @@ export class PushNotificationService {
     @Inject(ONESIGNAL_CLIENT) private readonly client: OneSignal.DefaultApi | null,
   ) {}
 
-
   async sendToUsers(userIds: string[], message: PushMessage): Promise<void> {
-
     if (userIds.length === 0) return;
 
     if (!this.client) {

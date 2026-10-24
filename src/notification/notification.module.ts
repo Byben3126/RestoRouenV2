@@ -3,19 +3,22 @@ import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import * as OneSignal from '@onesignal/node-onesignal';
 
-import { NotificationPreferences } from './entities';
+import { Notification, NotificationPreferences } from './entities';
 import { NotificationPreferencesService } from './notification-preferences.service';
-import { PushNotificationListener } from './push-notification.listener';
+import { NotificationListener } from './notification.listener';
+import { NotificationService } from './notification.service';
 import { ONESIGNAL_CLIENT, PushNotificationService } from './push-notification.service';
 import { UserNotificationPreferencesController } from './user-notification-preferences.controller';
+import { UserNotificationController } from './user-notification.controller';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([NotificationPreferences])],
-  controllers: [UserNotificationPreferencesController],
+  imports: [MikroOrmModule.forFeature([Notification, NotificationPreferences])],
+  controllers: [UserNotificationController, UserNotificationPreferencesController],
   providers: [
+    NotificationService,
     NotificationPreferencesService,
     PushNotificationService,
-    PushNotificationListener,
+    NotificationListener,
     {
       provide: ONESIGNAL_CLIENT,
       useFactory: () =>
