@@ -16,6 +16,8 @@ describe('NotificationPreferencesService', () => {
     updateForUser: jest.fn(),
     setRestaurantEnabled: jest.fn(),
     isRestaurantEnabled: jest.fn(),
+    findUsersWithCategoryDisabled: jest.fn(),
+    findUsersWithRestaurantEnabled: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -103,6 +105,48 @@ describe('NotificationPreferencesService', () => {
 
       expect(result).toBe(true);
       expect(mockRepo.isRestaurantEnabled).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('filterEnabled', () => {
+    it('keeps the users who did not turn off the category nor the restaurant', async () => {
+      mockRepo.findUsersWithCategoryDisabled.mockResolvedValue(['user-2']);
+      mockRepo.findUsersWithRestaurantEnabled.mockResolvedValue(['user-1']);
+
+      const result = await service.filterEnabled(
+        ['user-1', 'user-2', 'user-3'],
+        'points',
+        'resto-1',
+      );
+
+      expect(mockRepo.findUsersWithCategoryDisabled).toHaveBeenCalledWith(
+        ['user-1', 'user-2', 'user-3'],
+        'points',
+      );
+      // user-2 a coupé les points : inutile de vérifier le restaurant pour lui
+      expect(mockRepo.findUsersWithRestaurantEnabled).toHaveBeenCalledWith(
+        ['user-1', 'user-3'],
+        'resto-1',
+      );
+      expect(result).toEqual(['user-1']);
+    });
+
+    it('does not query the restaurant when every user turned off the category', async () => {
+      mockRepo.findUsersWithCategoryDisabled.mockResolvedValue(['user-1']);
+
+      const result = await service.filterEnabled(['user-1'], 'points', 'resto-1');
+
+      expect(result).toEqual([]);
+      expect(mockRepo.findUsersWithRestaurantEnabled).not.toHaveBeenCalled();
+    });
+
+    it('only checks the category for an app notification, without restaurant', async () => {
+      mockRepo.findUsersWithCategoryDisabled.mockResolvedValue(['user-2']);
+
+      const result = await service.filterEnabled(['user-1', 'user-2'], 'promotions');
+
+      expect(result).toEqual(['user-1']);
+      expect(mockRepo.findUsersWithRestaurantEnabled).not.toHaveBeenCalled();
     });
   });
 

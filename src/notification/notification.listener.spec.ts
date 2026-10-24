@@ -39,7 +39,7 @@ describe('NotificationListener', () => {
       await listener.handlePointsAdded(event);
 
       expect(mockNotificationService.notify).toHaveBeenCalledWith(
-        'user-1',
+        ['user-1'],
         'points',
         {
           headings: {
@@ -64,7 +64,7 @@ describe('NotificationListener', () => {
       await listener.handlePointsAdded(new CustomerPointsAddedEvent('user-1', 'resto-1', 1, 101));
 
       expect(mockNotificationService.notify).toHaveBeenCalledWith(
-        'user-1',
+        ['user-1'],
         'points',
         expect.objectContaining({
           headings: {

@@ -142,7 +142,7 @@ describe('UserNotificationController (integration)', () => {
 
       await RequestContext.create(orm.em, () =>
         app.get(NotificationService).notify(
-          TEST_USER_ID,
+          [TEST_USER_ID],
           'points',
           {
             headings: { en: '+50 points at Test Restaurant!' },
@@ -162,7 +162,7 @@ describe('UserNotificationController (integration)', () => {
 
     it('saves an app notification without restaurant', async () => {
       await RequestContext.create(orm.em, () =>
-        app.get(NotificationService).notify(TEST_USER_ID, 'promotions', {
+        app.get(NotificationService).notify([TEST_USER_ID], 'promotions', {
           headings: { en: 'Welcome!' },
           contents: { en: 'Discover the restaurants around you.' },
         }),

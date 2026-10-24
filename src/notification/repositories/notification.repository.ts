@@ -4,18 +4,21 @@ import { Notification } from '../entities/notification.entity';
 import type { PushMessage } from '../push-notification.service';
 
 export class NotificationRepository extends EntityRepository<Notification> {
-  async createForUser(
-    userId: string,
+  /** Une notification par utilisateur, enregistrées en un seul flush */
+  async createForUsers(
+    userIds: string[],
     message: PushMessage,
     restaurantId?: string,
-  ): Promise<Notification> {
-    const notification = this.create({
-      user: userId,
-      restaurant: restaurantId,
-      ...message,
-    } as RequiredEntityData<Notification>);
+  ): Promise<Notification[]> {
+    const notifications = userIds.map((userId) =>
+      this.create({
+        user: userId,
+        restaurant: restaurantId,
+        ...message,
+      } as RequiredEntityData<Notification>),
+    );
     await this.em.flush();
-    return notification;
+    return notifications;
   }
 
   /** Les plus récentes d'abord. Par curseur : une nouvelle notification ne décale pas les pages suivantes */

@@ -3,6 +3,7 @@ import { EntityRepository, RequiredEntityData } from '@mikro-orm/postgresql';
 import { Customer } from '../../customer/entities/customer.entity';
 import { UpdateNotificationPreferencesDto } from '../dto/notification-preferences.dto';
 import { NotificationPreferences } from '../entities/notification-preferences.entity';
+import type { NotificationCategory } from '../notification-preferences.service';
 
 export class NotificationPreferencesRepository extends EntityRepository<NotificationPreferences> {
   findByUser(userId: string): Promise<NotificationPreferences | null> {
@@ -31,6 +32,32 @@ export class NotificationPreferencesRepository extends EntityRepository<Notifica
       notificationsEnabled: true,
     });
     return count > 0;
+  }
+
+  /** Parmi ces utilisateurs, ceux qui ont coupé cette catégorie */
+  async findUsersWithCategoryDisabled(
+    userIds: string[],
+    category: NotificationCategory,
+  ): Promise<string[]> {
+    const preferences = await this.find(
+      { user: { $in: userIds }, [category]: false },
+      { fields: ['user'] },
+    );
+    return preferences.map((p) => p.user.id);
+  }
+
+  /** Parmi ces utilisateurs, les clients de ce restaurant qui n'en ont pas coupé les notifications */
+  async findUsersWithRestaurantEnabled(userIds: string[], restaurantId: string): Promise<string[]> {
+    const customers = await this.em.find(
+      Customer,
+      {
+        user: { $in: userIds },
+        restaurant: { id: restaurantId, isActive: true },
+        notificationsEnabled: true,
+      },
+      { fields: ['user'] },
+    );
+    return customers.map((c) => c.user.id);
   }
 
   /** null si l'utilisateur n'est pas client de ce restaurant */

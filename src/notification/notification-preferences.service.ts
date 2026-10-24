@@ -43,6 +43,20 @@ export class NotificationPreferencesService {
     return this.preferencesRepository.isRestaurantEnabled(userId, restaurantId);
   }
 
+  /** Comme isEnabled, pour plusieurs utilisateurs : ceux qui veulent recevoir cette notification */
+  async filterEnabled(
+    userIds: string[],
+    category: NotificationCategory,
+    restaurantId?: string,
+  ): Promise<string[]> {
+    const disabled = new Set(
+      await this.preferencesRepository.findUsersWithCategoryDisabled(userIds, category),
+    );
+    const enabled = userIds.filter((userId) => !disabled.has(userId));
+    if (!restaurantId || enabled.length === 0) return enabled;
+    return this.preferencesRepository.findUsersWithRestaurantEnabled(enabled, restaurantId);
+  }
+
   async setRestaurantEnabled(userId: string, restaurantId: string, enabled: boolean) {
     const customer = await this.preferencesRepository.setRestaurantEnabled(
       userId,

@@ -31,7 +31,7 @@ export class NotificationListener {
         const { name } = await this.orm.em.findOneOrFail(Restaurant, restaurantId);
         const plural = amount > 1;
         await this.notificationService.notify(
-          userId,
+          [userId],
           'points',
           {
             headings: {

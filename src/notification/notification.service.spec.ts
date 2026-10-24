@@ -18,13 +18,13 @@ describe('NotificationService', () => {
   let service: NotificationService;
 
   const mockRepo = {
-    createForUser: jest.fn(),
+    createForUsers: jest.fn(),
     findPageForUser: jest.fn(),
     hasUnread: jest.fn(),
     markAsRead: jest.fn(),
     markAllAsRead: jest.fn(),
   };
-  const mockPreferencesService = { isEnabled: jest.fn() };
+  const mockPreferencesService = { filterEnabled: jest.fn() };
   const mockPushService = { sendToUsers: jest.fn() };
 
   beforeEach(async () => {
@@ -43,43 +43,44 @@ describe('NotificationService', () => {
   });
 
   describe('notify', () => {
-    beforeEach(() => {
-      mockRepo.createForUser.mockResolvedValue({ id: 'notif-1' });
-    });
+    it('saves a notification for every user and pushes only to those who want it', async () => {
+      mockPreferencesService.filterEnabled.mockResolvedValue(['user-1']);
 
-    it('saves the notification and sends the push with its id', async () => {
-      mockPreferencesService.isEnabled.mockResolvedValue(true);
+      await service.notify(['user-1', 'user-2'], 'points', MESSAGE, 'resto-1');
 
-      await service.notify('user-1', 'points', MESSAGE, 'resto-1');
-
-      expect(mockRepo.createForUser).toHaveBeenCalledWith('user-1', MESSAGE, 'resto-1');
-      expect(mockPreferencesService.isEnabled).toHaveBeenCalledWith('user-1', 'points', 'resto-1');
-      expect(mockPushService.sendToUsers).toHaveBeenCalledWith(['user-1'], {
-        ...MESSAGE,
-        data: { type: 'points.added', restaurantId: 'resto-1', notificationId: 'notif-1' },
-      });
-    });
-
-    it('still saves the notification when the user turned off the push', async () => {
-      mockPreferencesService.isEnabled.mockResolvedValue(false);
-
-      await service.notify('user-1', 'points', MESSAGE, 'resto-1');
-
-      expect(mockRepo.createForUser).toHaveBeenCalled();
-      expect(mockPushService.sendToUsers).not.toHaveBeenCalled();
+      expect(mockRepo.createForUsers).toHaveBeenCalledWith(
+        ['user-1', 'user-2'],
+        MESSAGE,
+        'resto-1',
+      );
+      expect(mockPreferencesService.filterEnabled).toHaveBeenCalledWith(
+        ['user-1', 'user-2'],
+        'points',
+        'resto-1',
+      );
+      expect(mockPushService.sendToUsers).toHaveBeenCalledWith(['user-1'], MESSAGE);
     });
 
     it('saves an app notification without restaurant', async () => {
-      mockPreferencesService.isEnabled.mockResolvedValue(true);
+      mockPreferencesService.filterEnabled.mockResolvedValue(['user-1']);
       const message = { headings: { en: 'Welcome!' }, contents: { en: 'Hello' } };
 
-      await service.notify('user-1', 'promotions', message);
+      await service.notify(['user-1'], 'promotions', message);
 
-      expect(mockRepo.createForUser).toHaveBeenCalledWith('user-1', message, undefined);
-      expect(mockPushService.sendToUsers).toHaveBeenCalledWith(['user-1'], {
-        ...message,
-        data: { notificationId: 'notif-1' },
-      });
+      expect(mockRepo.createForUsers).toHaveBeenCalledWith(['user-1'], message, undefined);
+      expect(mockPreferencesService.filterEnabled).toHaveBeenCalledWith(
+        ['user-1'],
+        'promotions',
+        undefined,
+      );
+      expect(mockPushService.sendToUsers).toHaveBeenCalledWith(['user-1'], message);
+    });
+
+    it('does nothing without users', async () => {
+      await service.notify([], 'points', MESSAGE, 'resto-1');
+
+      expect(mockRepo.createForUsers).not.toHaveBeenCalled();
+      expect(mockPushService.sendToUsers).not.toHaveBeenCalled();
     });
   });
 

@@ -22,29 +22,22 @@ export class NotificationService {
   ) {}
 
   /**
-   * Ajoute la notification au centre de notifications, toujours.
-   * Le push n'est envoyé que si l'utilisateur veut cette catégorie (et ce restaurant).
+   * Ajoute la notification au centre de notifications de chaque utilisateur, toujours.
+   * Un seul push, aux utilisateurs qui veulent cette catégorie (et ce restaurant) : son data est
+   * le même pour tous, il ne peut donc pas porter l'id de chaque notification.
    */
   async notify(
-    userId: string,
+    userIds: string[],
     category: NotificationCategory,
     message: PushMessage,
     restaurantId?: string,
   ): Promise<void> {
-    const notification = await this.notificationRepository.createForUser(
-      userId,
-      message,
-      restaurantId,
-    );
+    if (userIds.length === 0) return;
 
-    const enabled = await this.preferencesService.isEnabled(userId, category, restaurantId);
-    if (!enabled) return;
+    await this.notificationRepository.createForUsers(userIds, message, restaurantId);
 
-    // Au tap sur le push, l'app ouvre cette notification et la marque comme lue
-    await this.pushService.sendToUsers([userId], {
-      ...message,
-      data: { ...message.data, notificationId: notification.id },
-    });
+    const recipients = await this.preferencesService.filterEnabled(userIds, category, restaurantId);
+    await this.pushService.sendToUsers(recipients, message);
   }
 
   async getNotifications(userId: string, { after, limit }: GetNotificationsQueryDto) {
