@@ -8,6 +8,7 @@ import {
   CustomerPointsAddedEvent,
 } from '../customer/events/customer-points-added.event';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
+import { pointsAddedMessage } from './messages';
 import { NotificationService } from './notification.service';
 
 /**
@@ -28,24 +29,11 @@ export class NotificationListener {
     try {
       await RequestContext.create(this.orm.em, async () => {
         // Pour citer le restaurant dans le message
-        const { name } = await this.orm.em.findOneOrFail(Restaurant, restaurantId);
-        const plural = amount > 1;
+        const restaurant = await this.orm.em.findOneOrFail(Restaurant, restaurantId);
         await this.notificationService.notify(
           [userId],
           'points',
-          {
-            headings: {
-              fr: `+${amount} point${plural ? 's' : ''} chez ${name} !`,
-              en: `+${amount} point${plural ? 's' : ''} at ${name}!`,
-              es: `¡+${amount} punto${plural ? 's' : ''} en ${name}!`,
-            },
-            contents: {
-              fr: `Votre solde : ${balance} points.`,
-              en: `Your balance: ${balance} points.`,
-              es: `Tu saldo: ${balance} puntos.`,
-            },
-            data: { type: 'points.added', restaurantId },
-          },
+          pointsAddedMessage(amount, balance, restaurant),
           restaurantId,
         );
       });
