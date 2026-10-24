@@ -172,4 +172,24 @@ describe('UserNotificationController (integration)', () => {
       expect(res.body.data.items[0]).toMatchObject({ restaurant: null, data: null });
     });
   });
+
+  // ── Purge ───────────────────────────────────────────────────────────────────
+
+  describe('NotificationService.purgeOld', () => {
+    it('deletes the notifications older than 90 days', async () => {
+      const [old] = await seedNotifications('old', 'recent');
+      await em.fork().nativeUpdate(
+        Notification,
+        { id: old.id },
+        {
+          createdAt: new Date(Date.now() - 91 * 24 * 60 * 60 * 1000),
+        },
+      );
+
+      await RequestContext.create(orm.em, () => app.get(NotificationService).purgeOld());
+
+      const res = await request(app.getHttpServer()).get('/users/me/notifications').expect(200);
+      expect(headingsOf(res.body.data.items)).toEqual(['recent']);
+    });
+  });
 });

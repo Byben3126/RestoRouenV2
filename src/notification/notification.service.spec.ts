@@ -23,6 +23,7 @@ describe('NotificationService', () => {
     hasUnread: jest.fn(),
     markAsRead: jest.fn(),
     markAllAsRead: jest.fn(),
+    deleteCreatedBefore: jest.fn(),
   };
   const mockPreferencesService = { filterEnabled: jest.fn() };
   const mockPushService = { sendToUsers: jest.fn() };
@@ -141,6 +142,19 @@ describe('NotificationService', () => {
       mockRepo.markAsRead.mockResolvedValue(null);
 
       await expect(service.markAsRead('user-1', 'notif-x')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('purgeOld', () => {
+    it('deletes the notifications created more than 90 days ago', async () => {
+      mockRepo.deleteCreatedBefore.mockResolvedValue(12);
+
+      expect(await service.purgeOld()).toBe(12);
+
+      const [before] = mockRepo.deleteCreatedBefore.mock.calls[0] as [Date];
+      const days = (Date.now() - before.getTime()) / (24 * 60 * 60 * 1000);
+      // À une heure près (changement d'heure)
+      expect(days).toBeCloseTo(90, 1);
     });
   });
 });

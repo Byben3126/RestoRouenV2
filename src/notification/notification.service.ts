@@ -12,6 +12,8 @@ import {
 import { PushMessage, PushNotificationService } from './push-notification.service';
 import { NotificationRepository } from './repositories/notification.repository';
 
+const NOTIFICATION_RETENTION_DAYS = 90;
+
 @Injectable()
 export class NotificationService {
   constructor(
@@ -65,5 +67,12 @@ export class NotificationService {
 
   markAllAsRead(userId: string): Promise<void> {
     return this.notificationRepository.markAllAsRead(userId);
+  }
+
+  /** Supprime les notifications de plus de 90 jours ; retourne leur nombre */
+  purgeOld(): Promise<number> {
+    const before = new Date();
+    before.setDate(before.getDate() - NOTIFICATION_RETENTION_DAYS);
+    return this.notificationRepository.deleteCreatedBefore(before);
   }
 }
