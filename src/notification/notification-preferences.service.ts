@@ -57,6 +57,13 @@ export class NotificationPreferencesService {
     return this.preferencesRepository.findUsersWithRestaurantEnabled(enabled, restaurantId);
   }
 
+  /** Les notifications de ce restaurant sont-elles activées ? */
+  async getRestaurantSetting(userId: string, restaurantId: string) {
+    const customer = await this.preferencesRepository.findCustomer(userId, restaurantId);
+    if (!customer) throw new NotFoundException('Not a customer of this restaurant');
+    return { restaurant: customer.restaurant, enabled: customer.notificationsEnabled };
+  }
+
   async setRestaurantEnabled(userId: string, restaurantId: string, enabled: boolean) {
     const customer = await this.preferencesRepository.setRestaurantEnabled(
       userId,

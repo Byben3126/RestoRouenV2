@@ -15,6 +15,7 @@ describe('NotificationPreferencesService', () => {
     findByUser: jest.fn(),
     updateForUser: jest.fn(),
     setRestaurantEnabled: jest.fn(),
+    findCustomer: jest.fn(),
     isRestaurantEnabled: jest.fn(),
     findUsersWithCategoryDisabled: jest.fn(),
     findUsersWithRestaurantEnabled: jest.fn(),
@@ -147,6 +148,28 @@ describe('NotificationPreferencesService', () => {
 
       expect(result).toEqual(['user-1']);
       expect(mockRepo.findUsersWithRestaurantEnabled).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getRestaurantSetting', () => {
+    it('tells whether the notifications of the restaurant are on', async () => {
+      mockRepo.findCustomer.mockResolvedValue({
+        restaurant: RESTAURANT,
+        notificationsEnabled: true,
+      });
+
+      const result = await service.getRestaurantSetting('user-1', 'resto-1');
+
+      expect(mockRepo.findCustomer).toHaveBeenCalledWith('user-1', 'resto-1');
+      expect(result).toEqual({ restaurant: RESTAURANT, enabled: true });
+    });
+
+    it('throws NotFoundException for a restaurant the user is not a customer of', async () => {
+      mockRepo.findCustomer.mockResolvedValue(null);
+
+      await expect(service.getRestaurantSetting('user-1', 'resto-x')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

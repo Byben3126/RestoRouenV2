@@ -107,6 +107,26 @@ describe('UserNotificationPreferencesController (integration)', () => {
       await fork.flush();
     });
 
+    it('tells whether the notifications of a restaurant are on, and on by default', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/users/me/notification-preferences/restaurants/${restaurantId}`)
+        .expect(200);
+      expect(res.body.data).toEqual({
+        restaurant: { id: restaurantId, name: 'Test Restaurant' },
+        enabled: true,
+      });
+
+      await request(app.getHttpServer())
+        .patch(`/users/me/notification-preferences/restaurants/${restaurantId}`)
+        .send({ enabled: false })
+        .expect(200);
+
+      const saved = await request(app.getHttpServer())
+        .get(`/users/me/notification-preferences/restaurants/${restaurantId}`)
+        .expect(200);
+      expect(saved.body.data.enabled).toBe(false);
+    });
+
     it('turns off then back on every notification of a restaurant', async () => {
       const disabled = await request(app.getHttpServer())
         .patch(`/users/me/notification-preferences/restaurants/${restaurantId}`)
@@ -129,6 +149,9 @@ describe('UserNotificationPreferencesController (integration)', () => {
     });
 
     it('returns 404 for a restaurant the user is not a customer of', async () => {
+      await request(app.getHttpServer())
+        .get(`/users/me/notification-preferences/restaurants/${UNKNOWN_ID}`)
+        .expect(404);
       await request(app.getHttpServer())
         .patch(`/users/me/notification-preferences/restaurants/${UNKNOWN_ID}`)
         .send({ enabled: false })

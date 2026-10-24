@@ -61,6 +61,15 @@ export class NotificationPreferencesRepository extends EntityRepository<Notifica
   }
 
   /** null si l'utilisateur n'est pas client de ce restaurant */
+  findCustomer(userId: string, restaurantId: string): Promise<Customer | null> {
+    return this.em.findOne(
+      Customer,
+      { user: userId, restaurant: { id: restaurantId, isActive: true } },
+      { populate: ['restaurant'] },
+    );
+  }
+
+  /** null si l'utilisateur n'est pas client de ce restaurant */
   async setRestaurantEnabled(
     userId: string,
     restaurantId: string,
