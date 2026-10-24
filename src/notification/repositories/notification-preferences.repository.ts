@@ -17,7 +17,8 @@ export class NotificationPreferencesRepository extends EntityRepository<Notifica
     const preferences =
       (await this.findByUser(userId)) ??
       this.create({ user: userId } as RequiredEntityData<NotificationPreferences>);
-    this.assign(preferences, dto);
+    // Les catégories non envoyées sont undefined dans le DTO : on les garde telles quelles
+    this.assign(preferences, dto, { ignoreUndefined: true });
     await this.em.flush();
     return preferences;
   }
