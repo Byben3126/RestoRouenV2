@@ -100,16 +100,6 @@ describe('UserNotificationPreferencesController (integration)', () => {
       await fork.flush();
     });
 
-    it('lists the restaurants of the user, all enabled by default', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/users/me/notification-preferences/restaurants')
-        .expect(200);
-
-      expect(res.body.data).toEqual([
-        { restaurant: { id: restaurantId, name: 'Test Restaurant' }, enabled: true },
-      ]);
-    });
-
     it('turns off then back on every notification of a restaurant', async () => {
       const disabled = await request(app.getHttpServer())
         .patch(`/users/me/notification-preferences/restaurants/${restaurantId}`)

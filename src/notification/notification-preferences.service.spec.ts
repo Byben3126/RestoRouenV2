@@ -14,8 +14,8 @@ describe('NotificationPreferencesService', () => {
   const mockRepo = {
     findByUser: jest.fn(),
     updateForUser: jest.fn(),
-    findCustomersOfUser: jest.fn(),
     setRestaurantEnabled: jest.fn(),
+    isRestaurantEnabled: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -66,15 +66,43 @@ describe('NotificationPreferencesService', () => {
     });
   });
 
-  describe('getRestaurantSettings', () => {
-    it('lists the restaurants of the user with their setting', async () => {
-      mockRepo.findCustomersOfUser.mockResolvedValue([
-        { restaurant: RESTAURANT, notificationsEnabled: false },
-      ]);
+  describe('isEnabled', () => {
+    it('is enabled when the user never changed anything', async () => {
+      mockRepo.findByUser.mockResolvedValue(null);
+      mockRepo.isRestaurantEnabled.mockResolvedValue(true);
 
-      expect(await service.getRestaurantSettings('user-1')).toEqual([
-        { restaurant: RESTAURANT, enabled: false },
-      ]);
+      const result = await service.isEnabled('user-1', 'points', 'resto-1');
+
+      expect(mockRepo.isRestaurantEnabled).toHaveBeenCalledWith('user-1', 'resto-1');
+      expect(result).toBe(true);
+    });
+
+    it('is disabled without querying the restaurant when the category is off', async () => {
+      const preferences = Object.assign(new NotificationPreferences(), { points: false });
+      mockRepo.findByUser.mockResolvedValue(preferences);
+
+      const result = await service.isEnabled('user-1', 'points', 'resto-1');
+
+      expect(result).toBe(false);
+      expect(mockRepo.isRestaurantEnabled).not.toHaveBeenCalled();
+    });
+
+    it('is disabled when the user turned off this restaurant', async () => {
+      mockRepo.findByUser.mockResolvedValue(null);
+      mockRepo.isRestaurantEnabled.mockResolvedValue(false);
+
+      const result = await service.isEnabled('user-1', 'points', 'resto-1');
+
+      expect(result).toBe(false);
+    });
+
+    it('only checks the category for an app notification, without restaurant', async () => {
+      mockRepo.findByUser.mockResolvedValue(null);
+
+      const result = await service.isEnabled('user-1', 'promotions');
+
+      expect(result).toBe(true);
+      expect(mockRepo.isRestaurantEnabled).not.toHaveBeenCalled();
     });
   });
 

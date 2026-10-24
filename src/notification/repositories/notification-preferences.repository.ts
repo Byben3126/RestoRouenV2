@@ -22,13 +22,14 @@ export class NotificationPreferencesRepository extends EntityRepository<Notifica
     return preferences;
   }
 
-  /** Restaurants dont l'utilisateur est client, avec leur réglage */
-  findCustomersOfUser(userId: string): Promise<Customer[]> {
-    return this.em.find(
-      Customer,
-      { user: userId, restaurant: { isActive: true } },
-      { populate: ['restaurant'], orderBy: { restaurant: { name: 'ASC' } } },
-    );
+  /** false si l'utilisateur n'est pas client de ce restaurant ou en a coupé les notifications */
+  async isRestaurantEnabled(userId: string, restaurantId: string): Promise<boolean> {
+    const count = await this.em.count(Customer, {
+      user: userId,
+      restaurant: { id: restaurantId, isActive: true },
+      notificationsEnabled: true,
+    });
+    return count > 0;
   }
 
   /** null si l'utilisateur n'est pas client de ce restaurant */

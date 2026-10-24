@@ -6,6 +6,8 @@ import { UpdateNotificationPreferencesDto } from './dto/notification-preferences
 import { NotificationPreferences } from './entities/notification-preferences.entity';
 import { NotificationPreferencesRepository } from './repositories/notification-preferences.repository';
 
+export type NotificationCategory = 'points' | 'rewards' | 'promotions' | 'ratings';
+
 @Injectable()
 export class NotificationPreferencesService {
   constructor(
@@ -25,9 +27,20 @@ export class NotificationPreferencesService {
     return this.preferencesRepository.updateForUser(userId, dto);
   }
 
-  async getRestaurantSettings(userId: string) {
-    const customers = await this.preferencesRepository.findCustomersOfUser(userId);
-    return customers.map((c) => ({ restaurant: c.restaurant, enabled: c.notificationsEnabled }));
+  /**
+   * L'utilisateur veut-il recevoir cette catégorie de notification ?
+   * Avec un restaurant, il ne doit pas non plus l'avoir coupé.
+   * Sans restaurant, c'est une notification de l'app : seule la catégorie compte.
+   */
+  async isEnabled(
+    userId: string,
+    category: NotificationCategory,
+    restaurantId?: string,
+  ): Promise<boolean> {
+    const preferences = await this.getPreferences(userId);
+    if (!preferences[category]) return false;
+    if (!restaurantId) return true;
+    return this.preferencesRepository.isRestaurantEnabled(userId, restaurantId);
   }
 
   async setRestaurantEnabled(userId: string, restaurantId: string, enabled: boolean) {

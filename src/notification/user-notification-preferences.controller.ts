@@ -34,14 +34,6 @@ export class UserNotificationPreferencesController {
     return this.preferencesService.updatePreferences(userId, dto);
   }
 
-  /** Restaurants dont l'utilisateur est client, avec leurs notifications activées ou non */
-  @Get('restaurants')
-  @Serialize(RestaurantNotificationSettingDto)
-  @ApiOkResponse({ type: RestaurantNotificationSettingDto, isArray: true })
-  getRestaurantSettings(@CurrentUser() userId: string) {
-    return this.preferencesService.getRestaurantSettings(userId);
-  }
-
   /** Active ou coupe toutes les notifications d'un restaurant */
   @Patch('restaurants/:restaurantId')
   @Serialize(RestaurantNotificationSettingDto)
