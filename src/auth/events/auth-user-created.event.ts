@@ -7,5 +7,8 @@ export class AuthUserCreatedEvent {
     public readonly id: string,
     public readonly email: string,
     public readonly name: string,
+    // Inscription par email uniquement ; avec Google, seul name est connu
+    public readonly firstName?: string,
+    public readonly lastName?: string,
   ) {}
 }

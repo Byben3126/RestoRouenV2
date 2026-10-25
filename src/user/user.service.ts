@@ -53,8 +53,9 @@ export class UserService {
 
   async createFromAuthUser(payload: {
     userId: string;
-    name: string;
     email: string;
+    firstName: string;
+    lastName?: string;
   }): Promise<void> {
     await this.appUserRepo.createFromAuthUser(payload);
   }

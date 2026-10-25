@@ -16,13 +16,18 @@ export class UserEventsListener {
     private readonly userService: UserService,
   ) {}
 
-  @OnEvent(AUTH_USER_CREATED_EVENT, { async: true })
+  /**
+   * Attendu par l'inscription (emitAsync) : l'AppUser et la Person existent dès la réponse.
+   * suppressErrors: false pour que l'inscription voie l'échec et annule la création du compte.
+   */
+  @OnEvent(AUTH_USER_CREATED_EVENT, { suppressErrors: false })
   async handleAuthUserCreated(payload: AuthUserCreatedEvent) {
     await RequestContext.create(this.orm.em, () =>
       this.userService.createFromAuthUser({
         userId: payload.id,
-        name: payload.name,
         email: payload.email,
+        firstName: payload.firstName ?? payload.name,
+        lastName: payload.lastName,
       }),
     );
   }

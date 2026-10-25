@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { INestApplication } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
@@ -7,6 +8,10 @@ import request from 'supertest';
 import { Account } from '../src/auth/entities/account.entity';
 import { Session } from '../src/auth/entities/session.entity';
 import { User } from '../src/auth/entities/user.entity';
+import {
+  AUTH_USER_CREATED_EVENT,
+  AuthUserCreatedEvent,
+} from '../src/auth/events/auth-user-created.event';
 import { Customer } from '../src/customer/entities/customer.entity';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
@@ -134,6 +139,64 @@ describe('UserController (integration)', () => {
       await patchMe({ gender: 'other' }).expect(400);
       await patchMe({ language: 'de' }).expect(400);
       await patchMe({ dateOfBirth: 'not-a-date' }).expect(400);
+    });
+  });
+
+  describe('sign-up (auth.user.created)', () => {
+    const SIGN_UP_USER_ID = 'test-sign-up-user';
+    // Comme le hook d'inscription de Better Auth : attend la fin de la création
+    const signUp = (event: AuthUserCreatedEvent) =>
+      app.get(EventEmitter2).emitAsync(AUTH_USER_CREATED_EVENT, event);
+
+    beforeEach(async () => {
+      const fork = em.fork();
+      // Better Auth a déjà créé le User quand l'événement est émis
+      fork.create(User, {
+        id: SIGN_UP_USER_ID,
+        name: 'Marie Curie Sklodowska',
+        email: 'sign-up@test.com',
+        emailVerified: false,
+      } as any);
+      await fork.flush();
+    });
+
+    afterEach(async () => {
+      const fork = em.fork();
+      await fork.nativeDelete(Person, { user: SIGN_UP_USER_ID });
+      await fork.nativeDelete(AppUser, { authUser: SIGN_UP_USER_ID });
+      await fork.nativeDelete(User, { id: SIGN_UP_USER_ID });
+    });
+
+    it('creates the AppUser and the Person with the first and last names sent', async () => {
+      await signUp(
+        new AuthUserCreatedEvent(
+          SIGN_UP_USER_ID,
+          'sign-up@test.com',
+          'Jean Dupont',
+          'Jean',
+          'Dupont',
+        ),
+      );
+
+      const person = await em.fork().findOneOrFail(Person, { user: SIGN_UP_USER_ID });
+      expect(person).toMatchObject({ firstName: 'Jean', lastName: 'Dupont' });
+    });
+
+    it('keeps the full name as first name for a Google sign-up', async () => {
+      await signUp(
+        new AuthUserCreatedEvent(SIGN_UP_USER_ID, 'sign-up@test.com', 'Marie Curie Sklodowska'),
+      );
+
+      const person = await em.fork().findOneOrFail(Person, { user: SIGN_UP_USER_ID });
+      expect(person).toMatchObject({ firstName: 'Marie Curie Sklodowska', lastName: null });
+    });
+
+    it('fails without leaving an AppUser when the creation fails', async () => {
+      // Aucun User avec cet id : la clé étrangère fait échouer la création
+      await expect(
+        signUp(new AuthUserCreatedEvent('unknown-auth-user', 'x@test.com', 'X Y', 'X', 'Y')),
+      ).rejects.toThrow();
+      expect(await em.fork().count(AppUser, { authUser: 'unknown-auth-user' })).toBe(0);
     });
   });
 

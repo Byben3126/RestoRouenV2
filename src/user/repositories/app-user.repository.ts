@@ -79,10 +79,12 @@ export class AppUserRepository extends EntityRepository<AppUser> {
     });
   }
 
+  /** AppUser et Person enregistrés ensemble (un seul flush) : l'un ne peut pas exister sans l'autre */
   async createFromAuthUser(payload: {
     userId: string;
-    name: string;
     email: string;
+    firstName: string;
+    lastName?: string;
   }): Promise<void> {
     const existing = await this.findOne({ authUser: payload.userId });
     if (existing) return;
@@ -90,13 +92,11 @@ export class AppUserRepository extends EntityRepository<AppUser> {
     const authUser = this.em.getReference(User, payload.userId);
     const appUser = this.em.create(AppUser, { authUser } as any);
 
-    const nameParts = (payload.name || payload.email.split('@')[0]).trim().split(/\s+/);
     const person = new Person();
     person.user = appUser;
-    person.firstName = nameParts[0];
-    person.lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
+    person.firstName = payload.firstName;
+    person.lastName = payload.lastName;
     this.em.persist(person);
-
     await this.em.flush();
   }
 }
