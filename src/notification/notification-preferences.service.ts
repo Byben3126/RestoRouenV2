@@ -20,6 +20,11 @@ export class NotificationPreferencesService {
     return (await this.preferencesRepository.findByUser(userId)) ?? new NotificationPreferences();
   }
 
+  /** Compte supprimé : retour aux préférences par défaut */
+  deletePreferences(userId: string): Promise<void> {
+    return this.preferencesRepository.deleteForUser(userId);
+  }
+
   updatePreferences(
     userId: string,
     dto: UpdateNotificationPreferencesDto,

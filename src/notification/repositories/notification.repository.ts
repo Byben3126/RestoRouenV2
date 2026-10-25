@@ -61,6 +61,10 @@ export class NotificationRepository extends EntityRepository<Notification> {
     await this.nativeUpdate({ user: userId, readAt: null }, { readAt: new Date() });
   }
 
+  async deleteForUser(userId: string): Promise<void> {
+    await this.nativeDelete({ user: userId });
+  }
+
   /** Tous utilisateurs confondus ; retourne le nombre de notifications supprimées */
   deleteCreatedBefore(date: Date): Promise<number> {
     return this.nativeDelete({ createdAt: { $lt: date } });

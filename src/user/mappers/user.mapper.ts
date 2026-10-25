@@ -1,5 +1,9 @@
+import { EntityData } from '@mikro-orm/core';
+
+import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserDto } from '../dto/user.dto';
 import { AppUser } from '../entities/app-user.entity';
+import { Person } from '../entities/person.entity';
 
 export class UserMapper {
   static toDto(appUser: AppUser): UserDto {
@@ -21,5 +25,22 @@ export class UserMapper {
       isRestaurantOwner: appUser.isRestaurantOwner,
       role: appUser.authUser.role,
     };
+  }
+
+  /** Les champs du profil modifiables qui vont sur AppUser */
+  static toAppUserData({ language }: UpdateUserDto): EntityData<AppUser> {
+    return { language };
+  }
+
+  /** Les champs du profil modifiables qui vont sur Person */
+  static toPersonData({
+    firstName,
+    lastName,
+    dateOfBirth,
+    gender,
+    city,
+    country,
+  }: UpdateUserDto): EntityData<Person> {
+    return { firstName, lastName, dateOfBirth, gender, city, country };
   }
 }

@@ -69,6 +69,11 @@ export class NotificationService {
     return this.notificationRepository.markAllAsRead(userId);
   }
 
+  /** Compte supprimé : vide son centre de notifications */
+  deleteForUser(userId: string): Promise<void> {
+    return this.notificationRepository.deleteForUser(userId);
+  }
+
   /** Supprime les notifications de plus de 90 jours ; retourne leur nombre */
   purgeOld(): Promise<number> {
     const before = new Date();

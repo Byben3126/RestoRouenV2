@@ -12,6 +12,7 @@ import { AuthGuard } from '../../src/common/guards/auth.guard';
 import { TransformInterceptor } from '../../src/common/interceptors/transform.interceptor';
 import { Restaurant } from '../../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../../src/user/entities/app-user.entity';
+import { Person } from '../../src/user/entities/person.entity';
 
 export const TEST_USER_ID = 'test-user-integration';
 
@@ -68,7 +69,9 @@ export async function seedUserOnly(em: EntityManager): Promise<void> {
     email: 'integration@test.com',
     emailVerified: true,
   } as any);
-  fork.create(AppUser, { authUser: fork.getReference(User, TEST_USER_ID) } as any);
+  const appUser = fork.create(AppUser, { authUser: fork.getReference(User, TEST_USER_ID) } as any);
+  // Comme à l'inscription : un AppUser a toujours sa Person
+  fork.create(Person, { user: appUser, firstName: 'Integration', lastName: 'Test User' } as any);
   await fork.flush();
 }
 
@@ -90,6 +93,7 @@ export async function cleanBaseFixtures(em: EntityManager, restaurantId?: string
   } else {
     await fork.nativeDelete(Restaurant, { user: TEST_USER_ID });
   }
+  await fork.nativeDelete(Person, { user: TEST_USER_ID });
   await fork.nativeDelete(AppUser, { authUser: TEST_USER_ID });
   await fork.nativeDelete(User, { id: TEST_USER_ID });
 }

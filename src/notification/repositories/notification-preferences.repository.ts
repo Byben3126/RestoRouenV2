@@ -10,6 +10,10 @@ export class NotificationPreferencesRepository extends EntityRepository<Notifica
     return this.findOne({ user: userId });
   }
 
+  async deleteForUser(userId: string): Promise<void> {
+    await this.nativeDelete({ user: userId });
+  }
+
   /** Crée la ligne à la première modification (avant, tout est activé par défaut) */
   async updateForUser(
     userId: string,

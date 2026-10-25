@@ -8,7 +8,9 @@ import {
   CustomerPointsAddedEvent,
 } from '../customer/events/customer-points-added.event';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
+import { USER_DELETED_EVENT, UserDeletedEvent } from '../user/events/user-deleted.event';
 import { pointsAddedMessage } from './messages';
+import { NotificationPreferencesService } from './notification-preferences.service';
 import { NotificationService } from './notification.service';
 
 /**
@@ -22,6 +24,7 @@ export class NotificationListener {
   constructor(
     private readonly orm: MikroORM,
     private readonly notificationService: NotificationService,
+    private readonly preferencesService: NotificationPreferencesService,
   ) {}
 
   @OnEvent(CUSTOMER_POINTS_ADDED_EVENT, { async: true })
@@ -39,6 +42,18 @@ export class NotificationListener {
       });
     } catch (error) {
       this.logger.error(`Points notification failed for user ${userId}`, error);
+    }
+  }
+
+  @OnEvent(USER_DELETED_EVENT, { async: true })
+  async handleUserDeleted({ userId }: UserDeletedEvent) {
+    try {
+      await RequestContext.create(this.orm.em, async () => {
+        await this.notificationService.deleteForUser(userId);
+        await this.preferencesService.deletePreferences(userId);
+      });
+    } catch (error) {
+      this.logger.error(`Notification cleanup failed for deleted user ${userId}`, error);
     }
   }
 }
