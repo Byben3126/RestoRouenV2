@@ -1,7 +1,6 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { ForeignKeyConstraintViolationException } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -14,8 +13,6 @@ import { AppUserRepository } from './repositories/app-user.repository';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
-
   constructor(
     @InjectRepository(AppUser) private readonly appUserRepo: AppUserRepository,
     private readonly eventEmitter: EventEmitter2,
@@ -52,22 +49,6 @@ export class UserService {
 
     await this.appUserRepo.anonymize(userId);
     this.eventEmitter.emit(USER_DELETED_EVENT, new UserDeletedEvent(userId));
-  }
-
-  /**
-   * Une nouvelle inscription remplace un compte jamais vérifié avec le même email.
-   * Gardé si des données y sont rattachées (la suppression les casserait) : l'inscription
-   * est alors refusée par Better Auth, comme pour un compte vérifié.
-   */
-  async deleteUnverifiedAccount(email: string): Promise<void> {
-    try {
-      await this.appUserRepo.deleteUnverifiedAccount(email);
-    } catch (error) {
-      if (!(error instanceof ForeignKeyConstraintViolationException)) throw error;
-      this.logger.warn(
-        `Unverified account ${email} not replaced, data is linked to it: ${error.message}`,
-      );
-    }
   }
 
   async createFromAuthUser(payload: {
