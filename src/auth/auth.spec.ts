@@ -2,7 +2,10 @@ import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { APIError } from 'better-auth/api';
 
 import { EmailService } from '../onesignal/email.service';
-import { EMAIL_VERIFICATION_TEMPLATE } from '../onesignal/onesignal.constants';
+import {
+  EMAIL_VERIFICATION_TEMPLATE,
+  RESET_PASSWORD_TEMPLATE,
+} from '../onesignal/onesignal.constants';
 import { UserService } from '../user/user.service';
 import { auth } from './auth';
 import { User } from './entities/user.entity';
@@ -83,6 +86,28 @@ describe('auth', () => {
       });
 
       expect(emailService.sendTemplate).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Mot de passe oublié ─────────────────────────────────────────────────────
+
+  describe('password reset', () => {
+    const sendResetPassword = options.emailAndPassword.sendResetPassword as unknown as (data: {
+      user: { email: string };
+      url: string;
+      token: string;
+    }) => Promise<void>;
+
+    it('sends the V1 template with the API URL and the token, then closes the sessions', async () => {
+      process.env.API_URL = 'https://api.restorouen.fr';
+
+      await sendResetPassword({ user: { email: 'jean@x.fr' }, url: 'unused', token: 'tok-123' });
+
+      expect(emailService.sendTemplate).toHaveBeenCalledWith('jean@x.fr', RESET_PASSWORD_TEMPLATE, {
+        host: 'https://api.restorouen.fr',
+        token: 'tok-123',
+      });
+      expect(options.emailAndPassword.revokeSessionsOnPasswordReset).toBe(true);
     });
   });
 

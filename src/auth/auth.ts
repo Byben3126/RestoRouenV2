@@ -7,7 +7,10 @@ import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { admin, bearer, emailOTP } from 'better-auth/plugins';
 
 import type { EmailService } from '../onesignal/email.service';
-import { EMAIL_VERIFICATION_TEMPLATE } from '../onesignal/onesignal.constants';
+import {
+  EMAIL_VERIFICATION_TEMPLATE,
+  RESET_PASSWORD_TEMPLATE,
+} from '../onesignal/onesignal.constants';
 import type { UserService } from '../user/user.service';
 import { User } from './entities/user.entity';
 
@@ -42,6 +45,16 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
+      // Mot de passe oublié : email avec le modèle de la V1, son lien ouvre l'app (GET /resetpassword/:token)
+      sendResetPassword: ({ user, token }) => {
+        void services?.emailService.sendTemplate(user.email, RESET_PASSWORD_TEMPLATE, {
+          host: process.env.API_URL,
+          token,
+        });
+        return Promise.resolve();
+      },
+      // Après la réinitialisation, toutes les sessions ouvertes sont fermées
+      revokeSessionsOnPasswordReset: true,
     },
     emailVerification: {
       sendOnSignIn: true,
