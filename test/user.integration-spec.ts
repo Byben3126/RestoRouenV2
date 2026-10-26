@@ -135,7 +135,7 @@ describe('UserController (integration)', () => {
     it('rejects an empty or null first name and an unknown value', async () => {
       await patchMe({ firstName: '' }).expect(400);
       await patchMe({ firstName: null }).expect(400);
-      await patchMe({ gender: 'other' }).expect(400);
+      await patchMe({ gender: 'unknown' }).expect(400);
       await patchMe({ language: 'de' }).expect(400);
       await patchMe({ dateOfBirth: 'not-a-date' }).expect(400);
     });

@@ -6,6 +6,7 @@ import { AppUser } from './app-user.entity';
 export enum Gender {
   MALE = 'male',
   FEMALE = 'female',
+  OTHER = 'other',
 }
 
 @Entity()
