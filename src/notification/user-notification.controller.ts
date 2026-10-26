@@ -9,8 +9,9 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 
+import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -32,7 +33,7 @@ export class UserNotificationController {
   /** Les plus récentes d'abord ; passer nextCursor en `after` pour la page suivante */
   @Get()
   @Serialize(NotificationPageDto)
-  @ApiOkResponse({ type: NotificationPageDto })
+  @ApiOkWrappedResponse({ type: NotificationPageDto })
   getNotifications(@CurrentUser() userId: string, @Query() query: GetNotificationsQueryDto) {
     return this.notificationService.getNotifications(userId, query);
   }
@@ -40,7 +41,7 @@ export class UserNotificationController {
   /** Au moins une notification non lue : pour la pastille de la cloche */
   @Get('has-unread')
   @Serialize(HasUnreadNotificationsDto)
-  @ApiOkResponse({ type: HasUnreadNotificationsDto })
+  @ApiOkWrappedResponse({ type: HasUnreadNotificationsDto })
   hasUnread(@CurrentUser() userId: string) {
     return this.notificationService.hasUnread(userId);
   }
@@ -55,7 +56,7 @@ export class UserNotificationController {
 
   @Patch(':id/read')
   @Serialize(NotificationDto)
-  @ApiOkResponse({ type: NotificationDto })
+  @ApiOkWrappedResponse({ type: NotificationDto })
   markAsRead(@CurrentUser() userId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.notificationService.markAsRead(userId, id);
   }

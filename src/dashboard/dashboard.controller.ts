@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
+import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -17,7 +18,7 @@ export class DashboardController {
 
   @Get('stats')
   @Serialize(DashboardStatsDto, ['owner'])
-  @ApiOkResponse({ type: DashboardStatsDto })
+  @ApiOkWrappedResponse({ type: DashboardStatsDto })
   getStats(@CurrentRestaurant() restaurantId: string, @Query() query: GetDashboardStatsQueryDto) {
     return this.dashboardService.getStats(restaurantId, query.period!);
   }

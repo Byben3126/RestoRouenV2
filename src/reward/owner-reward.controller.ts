@@ -1,6 +1,10 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
+import {
+  ApiCreatedWrappedResponse,
+  ApiOkWrappedResponse,
+} from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -18,21 +22,21 @@ export class OwnerRewardController {
 
   @Get()
   @Serialize(RewardDto, ['owner'])
-  @ApiOkResponse({ type: RewardDto, isArray: true })
+  @ApiOkWrappedResponse({ type: RewardDto, isArray: true })
   getRestaurantRewards(@CurrentRestaurant() restaurantId: string) {
     return this.rewardService.getRestaurantRewards(restaurantId);
   }
 
   @Post()
   @Serialize(RewardDto, ['owner'])
-  @ApiCreatedResponse({ type: RewardDto })
+  @ApiCreatedWrappedResponse({ type: RewardDto })
   createReward(@CurrentRestaurant() restaurantId: string, @Body() dto: CreateRewardDto) {
     return this.rewardService.createReward(restaurantId, dto);
   }
 
   @Patch(':id')
   @Serialize(RewardDto, ['owner'])
-  @ApiOkResponse({ type: RewardDto })
+  @ApiOkWrappedResponse({ type: RewardDto })
   updateReward(
     @CurrentRestaurant() restaurantId: string,
     @Param('id') rewardId: string,
@@ -43,21 +47,21 @@ export class OwnerRewardController {
 
   @Patch(':id/archive')
   @Serialize(RewardDto, ['owner'])
-  @ApiOkResponse({ type: RewardDto })
+  @ApiOkWrappedResponse({ type: RewardDto })
   archiveReward(@CurrentRestaurant() restaurantId: string, @Param('id') rewardId: string) {
     return this.rewardService.setStatus(restaurantId, rewardId, RewardStatus.ARCHIVED);
   }
 
   @Patch(':id/draft')
   @Serialize(RewardDto, ['owner'])
-  @ApiOkResponse({ type: RewardDto })
+  @ApiOkWrappedResponse({ type: RewardDto })
   draftReward(@CurrentRestaurant() restaurantId: string, @Param('id') rewardId: string) {
     return this.rewardService.setStatus(restaurantId, rewardId, RewardStatus.DRAFT);
   }
 
   @Patch(':id/publish')
   @Serialize(RewardDto, ['owner'])
-  @ApiOkResponse({ type: RewardDto })
+  @ApiOkWrappedResponse({ type: RewardDto })
   publishReward(@CurrentRestaurant() restaurantId: string, @Param('id') rewardId: string) {
     return this.rewardService.setStatus(restaurantId, rewardId, RewardStatus.ACTIVE);
   }
@@ -66,7 +70,7 @@ export class OwnerRewardController {
   @Post('use')
   @HttpCode(200)
   @Serialize(RewardDto)
-  @ApiOkResponse({ type: RewardDto })
+  @ApiOkWrappedResponse({ type: RewardDto })
   useReward(@CurrentRestaurant() restaurantId: string, @Body() dto: UseRewardDto) {
     return this.rewardService.useReward(restaurantId, dto.token);
   }

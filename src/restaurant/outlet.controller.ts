@@ -9,8 +9,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 
+import {
+  ApiCreatedWrappedResponse,
+  ApiOkWrappedResponse,
+} from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -25,21 +29,21 @@ export class OutletController {
 
   @Get()
   @Serialize(OutletDto)
-  @ApiOkResponse({ type: [OutletDto] })
+  @ApiOkWrappedResponse({ type: [OutletDto] })
   listOutlets(@CurrentUser() userId: string) {
     return this.outletService.listOutlets(userId);
   }
 
   @Post()
   @Serialize(OutletDto)
-  @ApiCreatedResponse({ type: OutletDto })
+  @ApiCreatedWrappedResponse({ type: OutletDto })
   createOutlet(@CurrentUser() userId: string, @Body() dto: CreateOutletDto) {
     return this.outletService.createOutlet(userId, dto);
   }
 
   @Patch(':id')
   @Serialize(OutletDto)
-  @ApiOkResponse({ type: OutletDto })
+  @ApiOkWrappedResponse({ type: OutletDto })
   updateOutlet(
     @CurrentUser() userId: string,
     @Param('id') id: string,

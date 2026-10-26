@@ -1,6 +1,7 @@
 import { Controller, Get, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
+import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RewardDto } from './dto';
@@ -15,7 +16,7 @@ export class RestaurantRewardController {
 
   @Get()
   @Serialize(RewardDto)
-  @ApiOkResponse({ type: RewardDto, isArray: true })
+  @ApiOkWrappedResponse({ type: RewardDto, isArray: true })
   getActiveRewards(@Param('restaurantId', ParseUUIDPipe) restaurantId: string) {
     return this.rewardService.getActiveRewards(restaurantId);
   }

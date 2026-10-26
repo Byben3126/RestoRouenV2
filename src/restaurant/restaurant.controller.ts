@@ -9,8 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
+import {
+  ApiCreatedWrappedResponse,
+  ApiOkWrappedResponse,
+} from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -33,21 +37,21 @@ export class RestaurantController {
 
   @Post()
   @Serialize(RestaurantDto, ['owner'])
-  @ApiCreatedResponse({ type: RestaurantDto })
+  @ApiCreatedWrappedResponse({ type: RestaurantDto })
   createMyRestaurant(@CurrentUser() userId: string, @Body() dto: CreateRestaurantDto) {
     return this.restaurantService.createMyRestaurant(userId, dto);
   }
 
   @Get('me')
   @Serialize(RestaurantDto, ['owner'])
-  @ApiOkResponse({ type: RestaurantDto })
+  @ApiOkWrappedResponse({ type: RestaurantDto })
   getMyRestaurant(@CurrentUser() userId: string) {
     return this.restaurantService.getMyRestaurant(userId);
   }
 
   @Patch('me')
   @Serialize(RestaurantDto, ['owner'])
-  @ApiOkResponse({ type: RestaurantDto })
+  @ApiOkWrappedResponse({ type: RestaurantDto })
   updateMyRestaurant(@CurrentUser() userId: string, @Body() dto: UpdateRestaurantDto) {
     return this.restaurantService.updateMyRestaurant(userId, dto);
   }
@@ -55,21 +59,21 @@ export class RestaurantController {
   // search et nearby sont déclarées avant :restaurantId, sinon elles seraient lues comme un id
   @Get('nearby')
   @Serialize(PaginatedNearbyRestaurantsDto)
-  @ApiOkResponse({ type: PaginatedNearbyRestaurantsDto })
+  @ApiOkWrappedResponse({ type: PaginatedNearbyRestaurantsDto })
   findNearbyRestaurants(@Query() query: NearbyRestaurantsQueryDto) {
     return this.restaurantService.findNearbyRestaurants(query);
   }
 
   @Get('search')
   @Serialize(PaginatedRestaurantsDto)
-  @ApiOkResponse({ type: PaginatedRestaurantsDto })
+  @ApiOkWrappedResponse({ type: PaginatedRestaurantsDto })
   searchRestaurants(@Query() query: SearchRestaurantsQueryDto) {
     return this.restaurantService.searchRestaurants(query);
   }
 
   @Get(':restaurantId')
   @Serialize(RestaurantDto)
-  @ApiOkResponse({ type: RestaurantDto })
+  @ApiOkWrappedResponse({ type: RestaurantDto })
   getRestaurant(@Param('restaurantId', ParseUUIDPipe) restaurantId: string) {
     return this.restaurantService.getRestaurant(restaurantId);
   }

@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
+import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
@@ -17,7 +18,7 @@ export class SubscriptionController {
 
   @Get()
   @Serialize(SubscriptionDto, ['owner'])
-  @ApiOkResponse({ type: SubscriptionDto })
+  @ApiOkWrappedResponse({ type: SubscriptionDto })
   getSubscription(@CurrentRestaurant() restaurantId: string) {
     return this.subscriptionService.getForRestaurant(restaurantId);
   }

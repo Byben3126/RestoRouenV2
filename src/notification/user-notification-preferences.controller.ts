@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
+import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -22,14 +23,14 @@ export class UserNotificationPreferencesController {
   /** Catégories activées ou coupées (points, récompenses, promotions, avis) */
   @Get()
   @Serialize(NotificationPreferencesDto)
-  @ApiOkResponse({ type: NotificationPreferencesDto })
+  @ApiOkWrappedResponse({ type: NotificationPreferencesDto })
   getPreferences(@CurrentUser() userId: string) {
     return this.preferencesService.getPreferences(userId);
   }
 
   @Patch()
   @Serialize(NotificationPreferencesDto)
-  @ApiOkResponse({ type: NotificationPreferencesDto })
+  @ApiOkWrappedResponse({ type: NotificationPreferencesDto })
   updatePreferences(@CurrentUser() userId: string, @Body() dto: UpdateNotificationPreferencesDto) {
     return this.preferencesService.updatePreferences(userId, dto);
   }
@@ -37,7 +38,7 @@ export class UserNotificationPreferencesController {
   /** Notifications d'un restaurant activées ou coupées */
   @Get('restaurants/:restaurantId')
   @Serialize(RestaurantNotificationSettingDto)
-  @ApiOkResponse({ type: RestaurantNotificationSettingDto })
+  @ApiOkWrappedResponse({ type: RestaurantNotificationSettingDto })
   getRestaurantSetting(
     @CurrentUser() userId: string,
     @Param('restaurantId', ParseUUIDPipe) restaurantId: string,
@@ -48,7 +49,7 @@ export class UserNotificationPreferencesController {
   /** Active ou coupe toutes les notifications d'un restaurant */
   @Patch('restaurants/:restaurantId')
   @Serialize(RestaurantNotificationSettingDto)
-  @ApiOkResponse({ type: RestaurantNotificationSettingDto })
+  @ApiOkWrappedResponse({ type: RestaurantNotificationSettingDto })
   setRestaurantEnabled(
     @CurrentUser() userId: string,
     @Param('restaurantId', ParseUUIDPipe) restaurantId: string,
