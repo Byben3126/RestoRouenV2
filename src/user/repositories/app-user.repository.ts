@@ -6,6 +6,7 @@ import { CreateOptions, EntityData, RequiredEntityData } from '@mikro-orm/postgr
 import { Account } from '../../auth/entities/account.entity';
 import { Session } from '../../auth/entities/session.entity';
 import { User } from '../../auth/entities/user.entity';
+import { Verification } from '../../auth/entities/verification.entity';
 import { AppUser } from '../entities/app-user.entity';
 import { Person } from '../entities/person.entity';
 import { UserCreatedEvent } from '../events/user-created.event';
@@ -76,6 +77,24 @@ export class AppUserRepository extends EntityRepository<AppUser> {
         },
       );
       await em.nativeUpdate(AppUser, { authUser: userId }, { isActive: false });
+    });
+  }
+
+  /**
+   * Compte jamais vérifié : supprimé entièrement. Il n'a jamais pu se connecter, il n'a donc
+   * normalement rien qui lui soit rattaché ; sinon la clé étrangère annule tout (transaction).
+   */
+  async deleteUnverifiedAccount(email: string): Promise<void> {
+    await this.em.transactional(async (em) => {
+      const user = await em.findOne(User, { email: email.toLowerCase(), emailVerified: false });
+      if (!user) return;
+
+      await em.nativeDelete(Person, { user: user.id });
+      await em.nativeDelete(AppUser, { authUser: user.id });
+      // Ses anciens codes ne doivent plus être acceptés
+      await em.nativeDelete(Verification, { identifier: `email-verification-otp-${user.email}` });
+      // Account (mot de passe) et Session partent en cascade
+      await em.nativeDelete(User, { id: user.id });
     });
   }
 

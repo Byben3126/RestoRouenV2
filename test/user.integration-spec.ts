@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 
 import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
@@ -8,6 +8,7 @@ import request from 'supertest';
 import { Account } from '../src/auth/entities/account.entity';
 import { Session } from '../src/auth/entities/session.entity';
 import { User } from '../src/auth/entities/user.entity';
+import { Verification } from '../src/auth/entities/verification.entity';
 import { Customer } from '../src/customer/entities/customer.entity';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
@@ -189,6 +190,102 @@ describe('UserController (integration)', () => {
         signUp({ userId: 'unknown-auth-user', email: 'x@test.com', firstName: 'X' }),
       ).rejects.toThrow();
       expect(await em.fork().count(AppUser, { authUser: 'unknown-auth-user' })).toBe(0);
+    });
+  });
+
+  describe('UserService.deleteUnverifiedAccount (nouvelle inscription)', () => {
+    const PENDING_USER_ID = 'test-pending-user';
+    const PENDING_EMAIL = 'pending@test.com';
+    const OTP_IDENTIFIER = `email-verification-otp-${PENDING_EMAIL}`;
+
+    const deleteUnverified = () =>
+      RequestContext.create(orm.em, () =>
+        app.get(UserService).deleteUnverifiedAccount('Pending@Test.com'),
+      );
+    const counts = async () => {
+      const fork = em.fork();
+      return {
+        user: await fork.count(User, { id: PENDING_USER_ID }),
+        appUser: await fork.count(AppUser, { authUser: PENDING_USER_ID }),
+        person: await fork.count(Person, { user: PENDING_USER_ID }),
+        account: await fork.count(Account, { user: PENDING_USER_ID }),
+        code: await fork.count(Verification, { identifier: OTP_IDENTIFIER }),
+      };
+    };
+
+    // Un compte inscrit qui a reçu son code, comme le laisse Better Auth
+    async function seedPendingAccount(emailVerified: boolean) {
+      const fork = em.fork();
+      fork.create(User, {
+        id: PENDING_USER_ID,
+        name: 'Jean Pending',
+        email: PENDING_EMAIL,
+        emailVerified,
+      } as any);
+      const appUser = fork.create(AppUser, {
+        authUser: fork.getReference(User, PENDING_USER_ID),
+      } as any);
+      fork.create(Person, { user: appUser, firstName: 'Jean', lastName: 'Pending' } as any);
+      fork.create(Account, {
+        id: 'test-pending-account',
+        accountId: PENDING_USER_ID,
+        providerId: 'credential',
+        password: 'hashed-password',
+        user: fork.getReference(User, PENDING_USER_ID),
+      } as any);
+      fork.create(Verification, {
+        id: 'test-pending-code',
+        identifier: OTP_IDENTIFIER,
+        value: '12345:0',
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      } as any);
+      await fork.flush();
+    }
+
+    afterEach(async () => {
+      const fork = em.fork();
+      await fork.nativeDelete(Customer, { user: PENDING_USER_ID });
+      await fork.nativeDelete(Verification, { identifier: OTP_IDENTIFIER });
+      await fork.nativeDelete(Person, { user: PENDING_USER_ID });
+      await fork.nativeDelete(AppUser, { authUser: PENDING_USER_ID });
+      await fork.nativeDelete(User, { id: PENDING_USER_ID });
+    });
+
+    it('deletes an unverified account entirely, its code included', async () => {
+      await seedPendingAccount(false);
+
+      await deleteUnverified();
+
+      expect(await counts()).toEqual({ user: 0, appUser: 0, person: 0, account: 0, code: 0 });
+    });
+
+    it('keeps a verified account', async () => {
+      await seedPendingAccount(true);
+
+      await deleteUnverified();
+
+      expect(await counts()).toMatchObject({ user: 1, appUser: 1, person: 1, account: 1 });
+    });
+
+    it('keeps, without failing, an unverified account that has history', async () => {
+      await seedPendingAccount(false);
+      const fork = em.fork();
+      fork.create(Customer, {
+        user: fork.getReference(AppUser, PENDING_USER_ID),
+        restaurant: restaurantId,
+      } as any);
+      await fork.flush();
+
+      const warn = jest.spyOn(Logger.prototype, 'warn');
+
+      await expect(deleteUnverified()).resolves.toBeUndefined();
+
+      // Transaction annulée : rien n'a été supprimé, la Person comprise
+      expect(await counts()).toEqual({ user: 1, appUser: 1, person: 1, account: 1, code: 1 });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Unverified account Pending@Test.com'),
+      );
+      warn.mockRestore();
     });
   });
 

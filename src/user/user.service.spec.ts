@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, Logger, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { ForeignKeyConstraintViolationException } from '@mikro-orm/core';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
 import { AppUser } from './entities/app-user.entity';
@@ -45,6 +46,7 @@ describe('UserService', () => {
     findByAuthUserId: jest.fn(),
     updateProfile: jest.fn(),
     anonymize: jest.fn(),
+    deleteUnverifiedAccount: jest.fn(),
   };
   const mockEventEmitter = { emit: jest.fn() };
 
@@ -159,6 +161,32 @@ describe('UserService', () => {
         USER_DELETED_EVENT,
         new UserDeletedEvent('user-1'),
       );
+    });
+  });
+
+  // ── deleteUnverifiedAccount ─────────────────────────────────────────────────
+
+  describe('deleteUnverifiedAccount', () => {
+    it('deletes the unverified account of this email', async () => {
+      await service.deleteUnverifiedAccount('jean@x.fr');
+
+      expect(mockRepo.deleteUnverifiedAccount).toHaveBeenCalledWith('jean@x.fr');
+    });
+
+    it('keeps the account and logs it when data is linked to it', async () => {
+      mockRepo.deleteUnverifiedAccount.mockRejectedValue(
+        new ForeignKeyConstraintViolationException(new Error('customer_user_id_foreign')),
+      );
+      const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+
+      await expect(service.deleteUnverifiedAccount('jean@x.fr')).resolves.toBeUndefined();
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('jean@x.fr'));
+    });
+
+    it('lets any other error through', async () => {
+      mockRepo.deleteUnverifiedAccount.mockRejectedValue(new Error('Database down'));
+
+      await expect(service.deleteUnverifiedAccount('jean@x.fr')).rejects.toThrow('Database down');
     });
   });
 });

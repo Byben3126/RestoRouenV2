@@ -14,7 +14,7 @@ import { User } from './entities/user.entity';
 const logger = new Logger('Auth');
 
 /** L'app envoie le prénom et le nom séparément à l'inscription par email */
-type SignUpBody = { firstName?: string; lastName?: string };
+type SignUpBody = { email?: string; firstName?: string; lastName?: string };
 
 /** Services Nest appelés par les hooks ; absents pour l'instance de l'AuthGuard, qui ne lit que les sessions */
 export interface AuthServices {
@@ -77,15 +77,21 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
     ],
 
     hooks: {
-      // L'app envoie firstName et lastName ; Better Auth exige name : on le construit à partir d'eux.
-      // async sans await : une erreur levée devient une promesse rejetée, comme Better Auth l'attend
-      // eslint-disable-next-line @typescript-eslint/require-await
+      // L'app envoie firstName et lastName ; Better Auth exige name : on le construit à partir d'eux
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path === '/sign-up/email') {
           const body = (ctx.body ?? {}) as SignUpBody;
 
           if (!body.firstName || !body.lastName) {
             throw new APIError('BAD_REQUEST', { message: 'firstName and lastName are required' });
+          }
+
+          // Un compte jamais vérifié n'appartient encore à personne : la nouvelle inscription le remplace
+          const { email } = body;
+          if (email && services) {
+            await RequestContext.create(orm.em, () =>
+              services.userService.deleteUnverifiedAccount(email),
+            );
           }
 
           return { context: { body: { ...body, name: `${body.firstName} ${body.lastName}` } } };

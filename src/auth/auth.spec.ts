@@ -25,7 +25,7 @@ type AfterUserCreated = (
 describe('auth', () => {
   const nativeDelete = jest.fn();
   const orm = { em: { fork: () => ({ nativeDelete }) } } as unknown as MikroORM;
-  const userService = { createFromAuthUser: jest.fn() };
+  const userService = { createFromAuthUser: jest.fn(), deleteUnverifiedAccount: jest.fn() };
   const emailService = { sendTemplate: jest.fn() };
 
   // Le double de better-auth renvoie ses options : on appelle les hooks directement
@@ -96,13 +96,20 @@ describe('auth', () => {
       });
     });
 
-    it('rejects a sign-up without first name or last name', async () => {
+    it('replaces an unverified account with the same email', async () => {
+      await before({ path: '/sign-up/email', body });
+
+      expect(userService.deleteUnverifiedAccount).toHaveBeenCalledWith('jean@x.fr');
+    });
+
+    it('rejects a sign-up without first name or last name, without touching any account', async () => {
       await expect(
         before({ path: '/sign-up/email', body: { ...body, firstName: undefined } }),
       ).rejects.toThrow(APIError);
       await expect(
         before({ path: '/sign-up/email', body: { ...body, lastName: '' } }),
       ).rejects.toThrow(APIError);
+      expect(userService.deleteUnverifiedAccount).not.toHaveBeenCalled();
     });
 
     it('rejects a sign-up without body', async () => {
@@ -110,7 +117,8 @@ describe('auth', () => {
     });
 
     it('leaves the other routes untouched', async () => {
-      expect(await before({ path: '/sign-in/email', body: {} })).toBeUndefined();
+      expect(await before({ path: '/sign-in/email', body })).toBeUndefined();
+      expect(userService.deleteUnverifiedAccount).not.toHaveBeenCalled();
     });
   });
 
