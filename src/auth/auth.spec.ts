@@ -92,20 +92,24 @@ describe('auth', () => {
   // ── Mot de passe oublié ─────────────────────────────────────────────────────
 
   describe('password reset', () => {
+    it('accepts the redirectTo of the mobile app', () => {
+      expect(options.trustedOrigins).toContain('restorouen://');
+    });
+
     const sendResetPassword = options.emailAndPassword.sendResetPassword as unknown as (data: {
       user: { email: string };
       url: string;
       token: string;
     }) => Promise<void>;
 
-    it('sends the V1 template with the API URL and the token, then closes the sessions', async () => {
-      process.env.API_URL = 'https://api.restorouen.fr';
+    it('sends the Better Auth reset link by email, then closes the sessions', async () => {
+      const url =
+        'https://api.restorouen.fr/auth/reset-password/tok-123?callbackURL=restorouen%3A%2F%2Flanding%2FNewPassword';
 
-      await sendResetPassword({ user: { email: 'jean@x.fr' }, url: 'unused', token: 'tok-123' });
+      await sendResetPassword({ user: { email: 'jean@x.fr' }, url, token: 'tok-123' });
 
       expect(emailService.sendTemplate).toHaveBeenCalledWith('jean@x.fr', RESET_PASSWORD_TEMPLATE, {
-        host: 'https://api.restorouen.fr',
-        token: 'tok-123',
+        url,
       });
       expect(options.emailAndPassword.revokeSessionsOnPasswordReset).toBe(true);
     });

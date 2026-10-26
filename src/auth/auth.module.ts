@@ -10,7 +10,6 @@ import { UserModule } from '../user/user.module';
 import { UserService } from '../user/user.service';
 import { auth } from './auth';
 import { Account, Session, User, Verification } from './entities';
-import { ResetPasswordController } from './reset-password.controller';
 
 @Module({
   imports: [
@@ -28,6 +27,5 @@ import { ResetPasswordController } from './reset-password.controller';
       inject: [MikroORM, UserService, EmailService],
     }),
   ],
-  controllers: [ResetPasswordController],
 })
 export class AuthModule {}

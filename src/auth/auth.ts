@@ -31,7 +31,9 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
     basePath: '/auth',
     database: mikroOrmAdapter(orm),
 
-    trustedOrigins: [process.env.FRONTEND_URL || ''],
+    // restorouen:// : l'app mobile envoie ses liens (ex. redirectTo du mot de passe oublié),
+    // que Better Auth refuse s'ils ne sont pas dans cette liste
+    trustedOrigins: [process.env.FRONTEND_URL || '', 'restorouen://'],
     account: {
       storeStateStrategy: 'database',
       skipStateCookieCheck: true,
@@ -45,12 +47,11 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
-      // Mot de passe oublié : email avec le modèle de la V1, son lien ouvre l'app (GET /resetpassword/:token)
-      sendResetPassword: ({ user, token }) => {
-        void services?.emailService.sendTemplate(user.email, RESET_PASSWORD_TEMPLATE, {
-          host: process.env.API_URL,
-          token,
-        });
+      // Mot de passe oublié : le lien (url) passe par GET /auth/reset-password/:token, qui vérifie
+      // le jeton puis redirige vers le redirectTo de l'app avec ?token=… ou ?error=INVALID_TOKEN
+      sendResetPassword: ({ user, url }) => {
+        console.log(`Sending reset password email to ${user.email} with url ${url}`);
+        void services?.emailService.sendTemplate(user.email, RESET_PASSWORD_TEMPLATE, { url });
         return Promise.resolve();
       },
       // Après la réinitialisation, toutes les sessions ouvertes sont fermées
