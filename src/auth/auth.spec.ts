@@ -21,11 +21,20 @@ type AfterUserCreated = (
   user: { id: string; email: string; name: string },
   ctx: { body?: object } | null,
 ) => Promise<void>;
+type AfterHook = (ctx: {
+  request?: object;
+  context: { returned: unknown };
+  json: (body: object) => object;
+}) => Promise<unknown>;
 
 describe('auth', () => {
   const nativeDelete = jest.fn();
   const orm = { em: { fork: () => ({ nativeDelete }) } } as unknown as MikroORM;
-  const userService = { createFromAuthUser: jest.fn(), deleteUnverifiedAccount: jest.fn() };
+  const userService = {
+    createFromAuthUser: jest.fn(),
+    deleteUnverifiedAccount: jest.fn(),
+    getMe: jest.fn(),
+  };
   const emailService = { sendTemplate: jest.fn() };
 
   // Le double de better-auth renvoie ses options : on appelle les hooks directement
@@ -34,6 +43,7 @@ describe('auth', () => {
     emailService: emailService as unknown as EmailService,
   });
   const before = options.hooks.before as unknown as BeforeHook;
+  const after = options.hooks.after as unknown as AfterHook;
   const afterUserCreated = options.databaseHooks!.user.create.after as unknown as AfterUserCreated;
   const { options: otpOptions } = options.plugins.find(
     (plugin) => plugin.id === 'email-otp',
@@ -119,6 +129,40 @@ describe('auth', () => {
     it('leaves the other routes untouched', async () => {
       expect(await before({ path: '/sign-in/email', body })).toBeUndefined();
       expect(userService.deleteUnverifiedAccount).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Réponses : le user de /users/me ─────────────────────────────────────────
+
+  describe('after any auth route', () => {
+    const me = { id: 'user-1', email: 'jean@x.fr', firstName: 'Jean', lastName: 'Dupont' };
+    const call = (returned: unknown, request: object | null = {}) =>
+      after({ request: request ?? undefined, context: { returned }, json: (body) => body });
+
+    it('replaces the Better Auth user with the one of GET /users/me', async () => {
+      userService.getMe.mockResolvedValue(me);
+
+      const response = await call({ token: 'abc', user: { id: 'user-1', name: 'Jean Dupont' } });
+
+      expect(userService.getMe).toHaveBeenCalledWith('user-1');
+      expect(response).toEqual({ token: 'abc', user: me });
+    });
+
+    it('leaves the internal calls of the guards untouched (no request)', async () => {
+      expect(await call({ user: { id: 'user-1' } }, null)).toBeUndefined();
+      expect(userService.getMe).not.toHaveBeenCalled();
+    });
+
+    it('leaves the responses without user and the errors untouched', async () => {
+      expect(await call({ status: true })).toBeUndefined();
+      expect(await call(new APIError('BAD_REQUEST', { message: 'Invalid OTP' }))).toBeUndefined();
+      expect(userService.getMe).not.toHaveBeenCalled();
+    });
+
+    it('keeps the Better Auth user rather than failing when the AppUser is missing', async () => {
+      userService.getMe.mockRejectedValue(new Error('AppUser not found'));
+
+      expect(await call({ user: { id: 'user-1' } })).toBeUndefined();
     });
   });
 

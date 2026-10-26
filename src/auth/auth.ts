@@ -64,8 +64,6 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
         expiresIn: 10 * 60,
         overrideDefaultEmailVerification: true,
         sendVerificationOTP: ({ email, otp, type }) => {
-          // Seule la vérification de l'email passe par un code. Sans attendre l'envoi :
-          // le temps de réponse ne doit pas révéler si l'adresse a un compte
           if (type === 'email-verification') {
             void services?.emailService.sendTemplate(email, EMAIL_VERIFICATION_TEMPLATE, {
               code: otp,
@@ -95,6 +93,26 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
           }
 
           return { context: { body: { ...body, name: `${body.firstName} ${body.lastName}` } } };
+        }
+      }),
+
+      // Toute réponse de Better Auth qui contient un user renvoie le même que GET /users/me
+      after: createAuthMiddleware(async (ctx) => {
+        const returned = ctx.context.returned as { user?: { id?: string } } | undefined;
+        // Sans requête : appel interne (getSession des guards), rien n'est renvoyé à l'app
+        if (!services || !ctx.request || returned instanceof APIError) return;
+
+        const userId = returned?.user?.id;
+        if (!userId) return;
+
+        try {
+          const user = await RequestContext.create(orm.em, () =>
+            services.userService.getMe(userId),
+          );
+          return ctx.json({ ...returned, user });
+        } catch (error) {
+          // Le user de Better Auth reste dans la réponse plutôt que de la faire échouer
+          logger.warn(`User ${userId} not mapped in the auth response: ${String(error)}`);
         }
       }),
     },
