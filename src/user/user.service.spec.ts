@@ -45,6 +45,7 @@ describe('UserService', () => {
     findByAuthUserId: jest.fn(),
     updateProfile: jest.fn(),
     anonymize: jest.fn(),
+    hasActivity: jest.fn(),
   };
   const mockEventEmitter = { emit: jest.fn() };
 
@@ -129,6 +130,42 @@ describe('UserService', () => {
         { city: 'Rouen' },
       );
       expect(dto.city).toBe('Rouen');
+    });
+  });
+
+  // ── getEnrichmentStatus ─────────────────────────────────────────────────────
+
+  describe('getEnrichmentStatus', () => {
+    const completePerson = {
+      firstName: 'John',
+      gender: 'male',
+      city: 'Rouen',
+      dateOfBirth: new Date('1990-05-12'),
+      country: 'France',
+    };
+
+    it('is false when the profile is complete, without looking at the activity', async () => {
+      mockRepo.findByAuthUserId.mockResolvedValue(makeAppUser({ person: completePerson }));
+
+      expect(await service.getEnrichmentStatus('user-1')).toEqual({ needsEnrichment: false });
+      expect(mockRepo.hasActivity).not.toHaveBeenCalled();
+    });
+
+    it('is true when the profile is incomplete and the user has used the app', async () => {
+      mockRepo.findByAuthUserId.mockResolvedValue(
+        makeAppUser({ person: { ...completePerson, city: undefined } }),
+      );
+      mockRepo.hasActivity.mockResolvedValue(true);
+
+      expect(await service.getEnrichmentStatus('user-1')).toEqual({ needsEnrichment: true });
+      expect(mockRepo.hasActivity).toHaveBeenCalledWith('user-1');
+    });
+
+    it('is false when the user has not used the app yet', async () => {
+      mockRepo.findByAuthUserId.mockResolvedValue(makeAppUser());
+      mockRepo.hasActivity.mockResolvedValue(false);
+
+      expect(await service.getEnrichmentStatus('user-1')).toEqual({ needsEnrichment: false });
     });
   });
 

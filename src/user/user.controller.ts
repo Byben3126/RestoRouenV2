@@ -15,6 +15,12 @@ export class UserController {
     return this.userService.getMe(userId);
   }
 
+  @UseGuards(AuthGuard)
+  @Get('me/enrichment-status')
+  getEnrichmentStatus(@CurrentUser() userId: string) {
+    return this.userService.getEnrichmentStatus(userId);
+  }
+
   /** Profil (Person) et langue ; l'email et le mot de passe se changent via Better Auth */
   @UseGuards(AuthGuard)
   @Patch('me')

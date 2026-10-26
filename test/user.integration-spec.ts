@@ -9,6 +9,7 @@ import { Account } from '../src/auth/entities/account.entity';
 import { Session } from '../src/auth/entities/session.entity';
 import { User } from '../src/auth/entities/user.entity';
 import { Customer } from '../src/customer/entities/customer.entity';
+import { PointsTransaction } from '../src/customer/entities/points-transaction.entity';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
 import { Person } from '../src/user/entities/person.entity';
@@ -138,6 +139,53 @@ describe('UserController (integration)', () => {
       await patchMe({ gender: 'unknown' }).expect(400);
       await patchMe({ language: 'de' }).expect(400);
       await patchMe({ dateOfBirth: 'not-a-date' }).expect(400);
+    });
+  });
+
+  describe('GET /users/me/enrichment-status', () => {
+    const getStatus = async () => {
+      const res = await request(app.getHttpServer()).get('/users/me/enrichment-status').expect(200);
+      return res.body.data as { needsEnrichment: boolean };
+    };
+
+    beforeEach(async () => {
+      await em
+        .fork()
+        .nativeUpdate(
+          Person,
+          { user: TEST_USER_ID },
+          { gender: null, city: null, dateOfBirth: null, country: null },
+        );
+    });
+
+    afterEach(async () => {
+      const fork = em.fork();
+      const customers = await fork.find(Customer, { user: TEST_USER_ID });
+      await fork.nativeDelete(PointsTransaction, { customer: { $in: customers } });
+      await fork.nativeDelete(Customer, { user: TEST_USER_ID });
+    });
+
+    it('is false while the user has not used the app', async () => {
+      expect(await getStatus()).toEqual({ needsEnrichment: false });
+    });
+
+    it('is true once the user has points, until the profile is complete', async () => {
+      const fork = em.fork();
+      const customer = fork.create(Customer, {
+        user: fork.getReference(AppUser, TEST_USER_ID),
+        restaurant: restaurantId,
+      } as any);
+      customer.addPoints(10);
+      await fork.flush();
+
+      expect(await getStatus()).toEqual({ needsEnrichment: true });
+
+      await request(app.getHttpServer())
+        .patch('/users/me')
+        .send({ gender: 'other', city: 'Rouen', dateOfBirth: '1990-05-12', country: 'France' })
+        .expect(200);
+
+      expect(await getStatus()).toEqual({ needsEnrichment: false });
     });
   });
 

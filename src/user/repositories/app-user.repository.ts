@@ -6,6 +6,8 @@ import { CreateOptions, EntityData, RequiredEntityData } from '@mikro-orm/postgr
 import { Account } from '../../auth/entities/account.entity';
 import { Session } from '../../auth/entities/session.entity';
 import { User } from '../../auth/entities/user.entity';
+import { PointsTransaction } from '../../customer/entities/points-transaction.entity';
+import { PromotionUsed } from '../../promotion/entities/promotion-used.entity';
 import { AppUser } from '../entities/app-user.entity';
 import { Person } from '../entities/person.entity';
 import { UserCreatedEvent } from '../events/user-created.event';
@@ -33,6 +35,14 @@ export class AppUserRepository extends EntityRepository<AppUser> {
 
   async findByLinkCode(linkCode: string): Promise<AppUser | null> {
     return this.findOne({ linkCode }, { populate: ['authUser', 'person'] });
+  }
+
+  /** A déjà gagné ou perdu des points, ou utilisé une promotion */
+  async hasActivity(userId: string): Promise<boolean> {
+    const transactions = await this.em.count(PointsTransaction, { customer: { user: userId } });
+    if (transactions > 0) return true;
+    const promotionsUsed = await this.em.count(PromotionUsed, { customer: { user: userId } });
+    return promotionsUsed > 0;
   }
 
   /** Nom complet recopié sur le User de Better Auth (emails, admin) */

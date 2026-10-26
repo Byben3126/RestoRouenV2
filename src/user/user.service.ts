@@ -39,6 +39,17 @@ export class UserService {
     return UserMapper.toDto(updated);
   }
 
+  /** Compléter son profil n'est demandé qu'une fois que l'utilisateur a utilisé l'app */
+  async getEnrichmentStatus(userId: string): Promise<{ needsEnrichment: boolean }> {
+    const appUser = await this.appUserRepo.findByAuthUserId(userId);
+    if (!appUser) throw new NotFoundException(`AppUser not found for auth user ${userId}`);
+
+    const { gender, city, dateOfBirth, country } = appUser.person ?? {};
+    if (gender && city && dateOfBirth && country) return { needsEnrichment: false };
+
+    return { needsEnrichment: await this.appUserRepo.hasActivity(userId) };
+  }
+
   /** Impossible tant que l'utilisateur a un restaurant : il doit d'abord le supprimer */
   async deleteMe(userId: string): Promise<void> {
     const appUser = await this.appUserRepo.findByAuthUserId(userId);
