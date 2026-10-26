@@ -1,21 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { INestApplication } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
 import { Account } from '../src/auth/entities/account.entity';
 import { Session } from '../src/auth/entities/session.entity';
 import { User } from '../src/auth/entities/user.entity';
-import {
-  AUTH_USER_CREATED_EVENT,
-  AuthUserCreatedEvent,
-} from '../src/auth/events/auth-user-created.event';
 import { Customer } from '../src/customer/entities/customer.entity';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
 import { Person } from '../src/user/entities/person.entity';
+import { UserService } from '../src/user/user.service';
 import {
   TEST_USER_ID,
   cleanBaseFixtures,
@@ -25,12 +22,14 @@ import {
 
 describe('UserController (integration)', () => {
   let app: INestApplication;
+  let orm: MikroORM;
   let em: EntityManager;
   let restaurantId: string;
 
   beforeAll(async () => {
     const ctx = await createTestApp();
     app = ctx.app;
+    orm = ctx.orm;
     em = ctx.em;
     ({ restaurantId } = await seedBaseFixtures(em));
   });
@@ -142,15 +141,19 @@ describe('UserController (integration)', () => {
     });
   });
 
-  describe('sign-up (auth.user.created)', () => {
+  describe('UserService.createFromAuthUser (inscription)', () => {
     const SIGN_UP_USER_ID = 'test-sign-up-user';
-    // Comme le hook d'inscription de Better Auth : attend la fin de la création
-    const signUp = (event: AuthUserCreatedEvent) =>
-      app.get(EventEmitter2).emitAsync(AUTH_USER_CREATED_EVENT, event);
+    // Comme le hook d'inscription de Better Auth
+    const signUp = (payload: {
+      userId: string;
+      email: string;
+      firstName: string;
+      lastName?: string;
+    }) => RequestContext.create(orm.em, () => app.get(UserService).createFromAuthUser(payload));
 
     beforeEach(async () => {
       const fork = em.fork();
-      // Better Auth a déjà créé le User quand l'événement est émis
+      // Better Auth a déjà créé le User quand le hook s'exécute
       fork.create(User, {
         id: SIGN_UP_USER_ID,
         name: 'Marie Curie Sklodowska',
@@ -167,34 +170,23 @@ describe('UserController (integration)', () => {
       await fork.nativeDelete(User, { id: SIGN_UP_USER_ID });
     });
 
-    it('creates the AppUser and the Person with the first and last names sent', async () => {
-      await signUp(
-        new AuthUserCreatedEvent(
-          SIGN_UP_USER_ID,
-          'sign-up@test.com',
-          'Jean Dupont',
-          'Jean',
-          'Dupont',
-        ),
-      );
+    it('creates the AppUser and the Person with the first and last names', async () => {
+      await signUp({
+        userId: SIGN_UP_USER_ID,
+        email: 'sign-up@test.com',
+        firstName: 'Jean',
+        lastName: 'Dupont',
+      });
 
       const person = await em.fork().findOneOrFail(Person, { user: SIGN_UP_USER_ID });
       expect(person).toMatchObject({ firstName: 'Jean', lastName: 'Dupont' });
-    });
-
-    it('keeps the full name as first name for a Google sign-up', async () => {
-      await signUp(
-        new AuthUserCreatedEvent(SIGN_UP_USER_ID, 'sign-up@test.com', 'Marie Curie Sklodowska'),
-      );
-
-      const person = await em.fork().findOneOrFail(Person, { user: SIGN_UP_USER_ID });
-      expect(person).toMatchObject({ firstName: 'Marie Curie Sklodowska', lastName: null });
+      expect(await em.fork().count(AppUser, { authUser: SIGN_UP_USER_ID })).toBe(1);
     });
 
     it('fails without leaving an AppUser when the creation fails', async () => {
       // Aucun User avec cet id : la clé étrangère fait échouer la création
       await expect(
-        signUp(new AuthUserCreatedEvent('unknown-auth-user', 'x@test.com', 'X Y', 'X', 'Y')),
+        signUp({ userId: 'unknown-auth-user', email: 'x@test.com', firstName: 'X' }),
       ).rejects.toThrow();
       expect(await em.fork().count(AppUser, { authUser: 'unknown-auth-user' })).toBe(0);
     });

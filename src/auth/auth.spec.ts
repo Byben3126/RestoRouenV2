@@ -1,13 +1,22 @@
-import { EventEmitter2 } from '@nestjs/event-emitter';
-
-import { MikroORM } from '@mikro-orm/core';
+import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { APIError } from 'better-auth/api';
 
+import { EmailService } from '../onesignal/email.service';
+import { EMAIL_VERIFICATION_TEMPLATE } from '../onesignal/onesignal.constants';
+import { UserService } from '../user/user.service';
 import { auth } from './auth';
 import { User } from './entities/user.entity';
-import { AUTH_USER_CREATED_EVENT, AuthUserCreatedEvent } from './events/auth-user-created.event';
 
 type BeforeHook = (ctx: { path: string; body?: object }) => Promise<unknown>;
+type EmailOtpOptions = {
+  otpLength: number;
+  overrideDefaultEmailVerification: boolean;
+  sendVerificationOTP: (data: {
+    email: string;
+    otp: string;
+    type: 'sign-in' | 'email-verification' | 'forget-password';
+  }) => Promise<void>;
+};
 type AfterUserCreated = (
   user: { id: string; email: string; name: string },
   ctx: { body?: object } | null,
@@ -16,14 +25,60 @@ type AfterUserCreated = (
 describe('auth', () => {
   const nativeDelete = jest.fn();
   const orm = { em: { fork: () => ({ nativeDelete }) } } as unknown as MikroORM;
-  const eventEmitter = { emitAsync: jest.fn() };
+  const userService = { createFromAuthUser: jest.fn() };
+  const emailService = { sendTemplate: jest.fn() };
 
   // Le double de better-auth renvoie ses options : on appelle les hooks directement
-  const { options } = auth(orm, eventEmitter as unknown as EventEmitter2);
+  const { options } = auth(orm, {
+    userService: userService as unknown as UserService,
+    emailService: emailService as unknown as EmailService,
+  });
   const before = options.hooks.before as unknown as BeforeHook;
   const afterUserCreated = options.databaseHooks!.user.create.after as unknown as AfterUserCreated;
+  const { options: otpOptions } = options.plugins.find(
+    (plugin) => plugin.id === 'email-otp',
+  ) as unknown as { options: EmailOtpOptions };
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Pas de vraie base ici : le contexte MikroORM exécute simplement la fonction
+    jest
+      .spyOn(RequestContext, 'create')
+      .mockImplementation((_em, next: () => unknown) => next() as never);
+  });
+
+  // ── Vérification de l'email ────────────────────────────────────────────────
+
+  describe('email verification', () => {
+    it('requires a verified email to sign in, with a 5-digit code', () => {
+      expect(options.emailAndPassword.requireEmailVerification).toBe(true);
+      expect(otpOptions).toMatchObject({ otpLength: 5, overrideDefaultEmailVerification: true });
+    });
+
+    it('sends the code by email with the V1 template', async () => {
+      await otpOptions.sendVerificationOTP({
+        email: 'jean@x.fr',
+        otp: '12345',
+        type: 'email-verification',
+      });
+
+      expect(emailService.sendTemplate).toHaveBeenCalledWith(
+        'jean@x.fr',
+        EMAIL_VERIFICATION_TEMPLATE,
+        { code: '12345' },
+      );
+    });
+
+    it('sends nothing for the other kinds of code', async () => {
+      await otpOptions.sendVerificationOTP({
+        email: 'jean@x.fr',
+        otp: '12345',
+        type: 'forget-password',
+      });
+
+      expect(emailService.sendTemplate).not.toHaveBeenCalled();
+    });
+  });
 
   // ── Inscription : avant ─────────────────────────────────────────────────────
 
@@ -64,31 +119,31 @@ describe('auth', () => {
   describe('after the user is created', () => {
     const user = { id: 'user-1', email: 'jean@x.fr', name: 'Jean Dupont' };
 
-    it('waits for the AppUser and the Person, with the first and last names', async () => {
-      eventEmitter.emitAsync.mockResolvedValue([]);
-
+    it('creates the AppUser and the Person with the first and last names', async () => {
       await afterUserCreated(user, { body: { firstName: 'Jean', lastName: 'Dupont' } });
 
-      expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
-        AUTH_USER_CREATED_EVENT,
-        new AuthUserCreatedEvent('user-1', 'jean@x.fr', 'Jean Dupont', 'Jean', 'Dupont'),
-      );
+      expect(userService.createFromAuthUser).toHaveBeenCalledWith({
+        userId: 'user-1',
+        email: 'jean@x.fr',
+        firstName: 'Jean',
+        lastName: 'Dupont',
+      });
       expect(nativeDelete).not.toHaveBeenCalled();
     });
 
-    it('only passes the full name for a Google sign-up', async () => {
-      eventEmitter.emitAsync.mockResolvedValue([]);
-
+    it('uses the full name as first name for a Google sign-up', async () => {
       await afterUserCreated(user, { body: { provider: 'google' } });
 
-      expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
-        AUTH_USER_CREATED_EVENT,
-        new AuthUserCreatedEvent('user-1', 'jean@x.fr', 'Jean Dupont', undefined, undefined),
-      );
+      expect(userService.createFromAuthUser).toHaveBeenCalledWith({
+        userId: 'user-1',
+        email: 'jean@x.fr',
+        firstName: 'Jean Dupont',
+        lastName: undefined,
+      });
     });
 
     it('deletes the user and fails the sign-up when the AppUser or the Person fails', async () => {
-      eventEmitter.emitAsync.mockRejectedValue(new Error('Database down'));
+      userService.createFromAuthUser.mockRejectedValue(new Error('Database down'));
 
       await expect(afterUserCreated(user, { body: {} })).rejects.toThrow(APIError);
       expect(nativeDelete).toHaveBeenCalledWith(User, { id: 'user-1' });

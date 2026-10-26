@@ -1,21 +1,28 @@
 import { Logger } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { MikroORM } from '@mikro-orm/core';
+import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { betterAuth } from 'better-auth';
 import { mikroOrmAdapter } from 'better-auth-mikro-orm';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { admin, bearer } from 'better-auth/plugins';
+import { admin, bearer, emailOTP } from 'better-auth/plugins';
 
+import type { EmailService } from '../onesignal/email.service';
+import { EMAIL_VERIFICATION_TEMPLATE } from '../onesignal/onesignal.constants';
+import type { UserService } from '../user/user.service';
 import { User } from './entities/user.entity';
-import { AUTH_USER_CREATED_EVENT, AuthUserCreatedEvent } from './events/auth-user-created.event';
 
 const logger = new Logger('Auth');
 
 /** L'app envoie le prénom et le nom séparément à l'inscription par email */
 type SignUpBody = { firstName?: string; lastName?: string };
 
-export const auth = (orm: MikroORM, eventEmitter?: EventEmitter2) =>
+/** Services Nest appelés par les hooks ; absents pour l'instance de l'AuthGuard, qui ne lit que les sessions */
+export interface AuthServices {
+  userService: UserService;
+  emailService: EmailService;
+}
+
+export const auth = (orm: MikroORM, services?: AuthServices) =>
   betterAuth({
     baseURL: process.env.API_URL,
     basePath: '/auth',
@@ -34,6 +41,11 @@ export const auth = (orm: MikroORM, eventEmitter?: EventEmitter2) =>
     },
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: true,
+    },
+    emailVerification: {
+      sendOnSignIn: true,
+      autoSignInAfterVerification: true,
     },
     socialProviders: {
       google: {
@@ -43,7 +55,26 @@ export const auth = (orm: MikroORM, eventEmitter?: EventEmitter2) =>
       },
     },
     // bearer : l'app React Native s'authentifie par token (header Authorization) plutôt que par cookie
-    plugins: [admin(), bearer()],
+    plugins: [
+      admin(),
+      bearer(),
+      // Vérification de l'email par un code à saisir dans l'app, comme en V1
+      emailOTP({
+        otpLength: 5,
+        expiresIn: 10 * 60,
+        overrideDefaultEmailVerification: true,
+        sendVerificationOTP: ({ email, otp, type }) => {
+          // Seule la vérification de l'email passe par un code. Sans attendre l'envoi :
+          // le temps de réponse ne doit pas révéler si l'adresse a un compte
+          if (type === 'email-verification') {
+            void services?.emailService.sendTemplate(email, EMAIL_VERIFICATION_TEMPLATE, {
+              code: otp,
+            });
+          }
+          return Promise.resolve();
+        },
+      }),
+    ],
 
     hooks: {
       // L'app envoie firstName et lastName ; Better Auth exige name : on le construit à partir d'eux.
@@ -62,17 +93,22 @@ export const auth = (orm: MikroORM, eventEmitter?: EventEmitter2) =>
       }),
     },
 
-    ...(eventEmitter && {
+    ...(services && {
       databaseHooks: {
         user: {
           create: {
             after: async (user, ctx) => {
               const { firstName, lastName } = (ctx?.body ?? {}) as SignUpBody;
               try {
-                // Attend l'AppUser et la Person : le compte est complet dès la réponse d'inscription
-                await eventEmitter.emitAsync(
-                  AUTH_USER_CREATED_EVENT,
-                  new AuthUserCreatedEvent(user.id, user.email, user.name, firstName, lastName),
+                // Attend l'AppUser et la Person : le compte est complet dès la réponse d'inscription.
+                // Inscription Google : seul le nom complet est connu, il devient le prénom
+                await RequestContext.create(orm.em, () =>
+                  services.userService.createFromAuthUser({
+                    userId: user.id,
+                    email: user.email,
+                    firstName: firstName ?? user.name,
+                    lastName,
+                  }),
                 );
               } catch (error) {
                 logger.error(`Sign-up failed for ${user.email}, user deleted`, error);

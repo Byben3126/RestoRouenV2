@@ -1,10 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import {
-  ONESIGNAL_CLIENT,
-  PushMessage,
-  PushNotificationService,
-} from './push-notification.service';
+import { ONESIGNAL_CLIENT } from '../onesignal/onesignal.constants';
+import { PushMessage, PushNotificationService } from './push-notification.service';
 
 const MESSAGE: PushMessage = {
   headings: { en: '+50 points at Le Bistrot!', fr: '+50 points chez Le Bistrot !' },

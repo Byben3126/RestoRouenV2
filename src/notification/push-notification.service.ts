@@ -2,7 +2,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import * as OneSignal from '@onesignal/node-onesignal';
 
-export const ONESIGNAL_CLIENT = Symbol('ONESIGNAL_CLIENT');
+import type { OneSignalClient } from '../onesignal/onesignal.client';
+import { ONESIGNAL_CLIENT } from '../onesignal/onesignal.constants';
 
 export interface PushMessage {
   headings: { en: string } & OneSignal.LanguageStringMap;
@@ -14,10 +15,7 @@ export interface PushMessage {
 export class PushNotificationService {
   private readonly logger = new Logger(PushNotificationService.name);
 
-  constructor(
-    // null quand OneSignal n'est pas configuré (local, tests) : rien n'est envoyé
-    @Inject(ONESIGNAL_CLIENT) private readonly client: OneSignal.DefaultApi | null,
-  ) {}
+  constructor(@Inject(ONESIGNAL_CLIENT) private readonly client: OneSignalClient) {}
 
   async sendToUsers(userIds: string[], message: PushMessage): Promise<void> {
     if (userIds.length === 0) return;
