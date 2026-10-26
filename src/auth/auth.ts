@@ -4,7 +4,7 @@ import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { betterAuth } from 'better-auth';
 import { mikroOrmAdapter } from 'better-auth-mikro-orm';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { admin, bearer, emailOTP } from 'better-auth/plugins';
+import { admin, bearer, emailOTP, openAPI } from 'better-auth/plugins';
 
 import type { EmailService } from '../onesignal/email.service';
 import {
@@ -47,17 +47,11 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
-      // Mot de passe oublié : le lien (url) passe par GET /auth/reset-password/:token, qui vérifie
-      // le jeton puis redirige vers le redirectTo de l'app avec ?token=… ou ?error=INVALID_TOKEN
       sendResetPassword: ({ user, url }) => {
-        console.log(`Sending reset password email to ${user.email} with url ${url}`);
         void services?.emailService.sendTemplate(user.email, RESET_PASSWORD_TEMPLATE, { url });
         return Promise.resolve();
       },
-      // Après la réinitialisation, toutes les sessions ouvertes sont fermées
       revokeSessionsOnPasswordReset: true,
-      // Le lien n'a été envoyé qu'à cette adresse : l'avoir utilisé prouve qu'elle appartient à
-      // l'utilisateur, inutile de lui envoyer en plus un code de vérification à la connexion
       onPasswordReset: async ({ user }) => {
         if (!user.emailVerified) {
           await orm.em.fork().nativeUpdate(User, { id: user.id }, { emailVerified: true });
@@ -79,7 +73,6 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
     plugins: [
       admin(),
       bearer(),
-      // Vérification de l'email par un code à saisir dans l'app, comme en V1
       emailOTP({
         otpLength: 5,
         expiresIn: 10 * 60,
@@ -93,6 +86,7 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
           return Promise.resolve();
         },
       }),
+      openAPI({ disableDefaultReference: true }),
     ],
 
     hooks: {

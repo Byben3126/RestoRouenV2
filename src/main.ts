@@ -42,7 +42,7 @@ async function bootstrap() {
 
   // Monté avant les body parsers : AdminJS lit lui-même ses formulaires
   setupAdmin(app);
-  setupSwagger(app);
+  await setupSwagger(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }
