@@ -23,3 +23,7 @@ export class UserDto {
   @Expose() stripeCustomerId?: string;
   @Expose() role?: string;
 }
+
+export class EnrichmentStatusDto {
+  needsEnrichment!: boolean;
+}

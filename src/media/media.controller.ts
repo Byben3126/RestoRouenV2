@@ -1,10 +1,7 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreatedWrappedResponse,
-  ApiOkWrappedResponse,
-} from '../common/decorators/api-response.decorator';
+import { ApiCreatedWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentOwner } from '../common/decorators/current-owner.decorator';
 import { ConfirmResponseDto } from './dto/confirm-response.dto';
 import { RequestUploadDto } from './dto/request-upload.dto';
@@ -26,7 +23,7 @@ export class MediaController {
   }
 
   @Post(':id/confirm')
-  @ApiOkWrappedResponse({ type: ConfirmResponseDto })
+  @ApiCreatedWrappedResponse({ type: ConfirmResponseDto })
   confirm(
     @CurrentOwner() ownerId: string,
     @Param('id') mediaId: string,

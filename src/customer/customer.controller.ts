@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
+import {
+  ApiCreatedWrappedResponse,
+  ApiOkWrappedResponse,
+} from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -33,7 +36,7 @@ export class CustomerController {
 
   @Post(':id/points')
   @Serialize(CustomerDto, ['owner'])
-  @ApiOkWrappedResponse({ type: CustomerDto })
+  @ApiCreatedWrappedResponse({ type: CustomerDto })
   addPoints(
     @CurrentRestaurant() restaurantId: string,
     @Param('id') customerId: string,
