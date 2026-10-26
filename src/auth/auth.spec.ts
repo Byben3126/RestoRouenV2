@@ -32,7 +32,8 @@ type AfterHook = (ctx: {
 
 describe('auth', () => {
   const nativeDelete = jest.fn();
-  const orm = { em: { fork: () => ({ nativeDelete }) } } as unknown as MikroORM;
+  const nativeUpdate = jest.fn();
+  const orm = { em: { fork: () => ({ nativeDelete, nativeUpdate }) } } as unknown as MikroORM;
   const userService = { createFromAuthUser: jest.fn(), getMe: jest.fn() };
   const emailService = { sendTemplate: jest.fn() };
 
@@ -112,6 +113,24 @@ describe('auth', () => {
         url,
       });
       expect(options.emailAndPassword.revokeSessionsOnPasswordReset).toBe(true);
+    });
+
+    describe('after the password is reset', () => {
+      const onPasswordReset = options.emailAndPassword.onPasswordReset as unknown as (data: {
+        user: { id: string; emailVerified: boolean };
+      }) => Promise<void>;
+
+      it('verifies the email: the link proved the user owns the address', async () => {
+        await onPasswordReset({ user: { id: 'user-1', emailVerified: false } });
+
+        expect(nativeUpdate).toHaveBeenCalledWith(User, { id: 'user-1' }, { emailVerified: true });
+      });
+
+      it('leaves an already verified email untouched', async () => {
+        await onPasswordReset({ user: { id: 'user-1', emailVerified: true } });
+
+        expect(nativeUpdate).not.toHaveBeenCalled();
+      });
     });
   });
 

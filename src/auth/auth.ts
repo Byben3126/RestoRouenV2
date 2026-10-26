@@ -56,6 +56,13 @@ export const auth = (orm: MikroORM, services?: AuthServices) =>
       },
       // Après la réinitialisation, toutes les sessions ouvertes sont fermées
       revokeSessionsOnPasswordReset: true,
+      // Le lien n'a été envoyé qu'à cette adresse : l'avoir utilisé prouve qu'elle appartient à
+      // l'utilisateur, inutile de lui envoyer en plus un code de vérification à la connexion
+      onPasswordReset: async ({ user }) => {
+        if (!user.emailVerified) {
+          await orm.em.fork().nativeUpdate(User, { id: user.id }, { emailVerified: true });
+        }
+      },
     },
     emailVerification: {
       sendOnSignIn: true,
