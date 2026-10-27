@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+
+import { Exclude, Expose, Transform, Type, plainToInstance } from 'class-transformer';
 
 import { MediaDto } from '../../common/dto/media.dto';
+import { RewardDto } from '../../reward/dto/reward.dto';
 import { NearbyOutletDto, OutletDto } from './outlet.dto';
 
 @Exclude()
@@ -31,8 +34,32 @@ export class RestaurantDto {
   outlets!: OutletDto[];
 }
 
+/** Carte de fidélité de l'utilisateur dans ce restaurant */
 @Exclude()
-export class NearbyRestaurantDto extends RestaurantDto {
+export class RestaurantLoyaltyDto {
+  @Expose() points!: number;
+  @Expose() totalPointsGained!: number;
+  @Expose() lastVisitDate?: Date;
+  @Expose() availableRewardCount!: number;
+
+  /** null quand toutes les récompenses sont atteintes, ou que le restaurant n'en a pas */
+  @ApiProperty({ type: () => RewardDto, nullable: true })
+  @Expose()
+  @Type(() => RewardDto)
+  nextReward!: RewardDto | null;
+}
+
+/** Restaurant vu par un utilisateur, avec sa carte de fidélité */
+@Exclude()
+export class UserRestaurantDto extends RestaurantDto {
+  /** null tant que l'utilisateur n'a pas de carte dans ce restaurant */
+  @Expose()
+  @Type(() => RestaurantLoyaltyDto)
+  loyalty!: RestaurantLoyaltyDto | null;
+}
+
+@Exclude()
+export class NearbyRestaurantDto extends UserRestaurantDto {
   /** Uniquement les points de vente du rayon, du plus proche au plus loin */
   @Expose()
   @Transform(({ obj }) =>
@@ -58,9 +85,9 @@ export class PaginatedNearbyRestaurantsDto {
 export class PaginatedRestaurantsDto {
   @Expose()
   @Transform(({ obj }) =>
-    plainToInstance(RestaurantDto, obj.items ?? [], { excludeExtraneousValues: true }),
+    plainToInstance(UserRestaurantDto, obj.items ?? [], { excludeExtraneousValues: true }),
   )
-  items!: RestaurantDto[];
+  items!: UserRestaurantDto[];
 
   @Expose() total!: number;
   @Expose() page!: number;

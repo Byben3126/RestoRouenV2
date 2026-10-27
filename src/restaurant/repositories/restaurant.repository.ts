@@ -9,7 +9,6 @@ import { Restaurant } from '../entities/restaurant.entity';
 
 export type NearbyOutlet = Outlet & { distance: number };
 export type NearbyRestaurant = Restaurant & { nearbyOutlets: NearbyOutlet[] };
-export type UserRestaurant = Restaurant & { loyalty: Customer };
 
 const USER_RESTAURANT_ORDER = {
   [UserRestaurantSortBy.POINTS]: { points: QueryOrder.DESC },
@@ -179,7 +178,7 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
     sortBy: UserRestaurantSortBy,
     page: number,
     limit: number,
-  ): Promise<{ items: UserRestaurant[]; total: number }> {
+  ): Promise<{ items: Restaurant[]; total: number }> {
     const [customers, total] = await this.em.findAndCount(
       Customer,
       { user: userId, restaurant: { isActive: true } },
@@ -192,10 +191,21 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
     );
     await this.loadMediasForMany(customers.map((c) => c.restaurant));
 
-    const items = customers.map((customer) =>
-      Object.assign(customer.restaurant, { loyalty: customer }),
+    for (const customer of customers) customer.restaurant.loyalty = customer;
+    return { items: customers.map((c) => c.restaurant), total };
+  }
+
+  /** Ajoute à chaque restaurant la carte de fidélité de l'utilisateur, null s'il n'en a pas */
+  async loadLoyaltyForMany(restaurants: Restaurant[], userId: string): Promise<void> {
+    if (!restaurants.length) return;
+    const customers = await this.em.find(
+      Customer,
+      { user: userId, restaurant: { $in: restaurants } },
+      { populate: ['nextReward', 'availableRewardCount'] },
     );
-    return { items, total };
+    for (const restaurant of restaurants) {
+      restaurant.loyalty = customers.find((c) => c.restaurant.id === restaurant.id) ?? null;
+    }
   }
 
   async loadWithMedias(restaurant: Restaurant): Promise<Restaurant> {

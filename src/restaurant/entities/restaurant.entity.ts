@@ -9,6 +9,7 @@ import {
 } from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
 
+import type { Customer } from '../../customer/entities/customer.entity';
 import type { Media } from '../../media/entities/media.entity';
 import { AppUser } from '../../user/entities/app-user.entity';
 import { RestaurantRepository } from '../repositories/restaurant.repository';
@@ -33,6 +34,9 @@ export class Restaurant {
   mediaIds: string[] = [];
 
   medias?: Media[];
+
+  /** Carte de fidélité de l'utilisateur connecté, null s'il n'en a pas (non stockée) */
+  loyalty?: Customer | null;
 
   @Property({ type: 'double' })
   averageRating: number = 0;

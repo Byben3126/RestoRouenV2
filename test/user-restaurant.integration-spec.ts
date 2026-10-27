@@ -16,7 +16,7 @@ import {
   seedBaseFixtures,
 } from './helpers/app.helper';
 
-const OWNER_IDS = ['test-loyalty-owner-a', 'test-loyalty-owner-b'];
+const OWNER_IDS = ['test-loyalty-owner-a', 'test-loyalty-owner-b', 'test-loyalty-owner-c'];
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
@@ -25,6 +25,7 @@ describe('UserRestaurantController (integration)', () => {
   let em: EntityManager;
   let restaurantId: string;
   let otherRestaurantId: string;
+  let noCardRestaurantId: string;
 
   beforeAll(async () => {
     const ctx = await createTestApp();
@@ -33,7 +34,8 @@ describe('UserRestaurantController (integration)', () => {
     ({ restaurantId } = await seedBaseFixtures(em));
 
     const fork = em.fork();
-    const [otherRestaurant, inactiveRestaurant] = OWNER_IDS.map((ownerId, i) => {
+    // 0 : avec une carte ; 1 : désactivé ; 2 : sans carte
+    const [otherRestaurant, inactiveRestaurant, noCardRestaurant] = OWNER_IDS.map((ownerId, i) => {
       fork.create(User, {
         id: ownerId,
         name: ownerId,
@@ -44,10 +46,11 @@ describe('UserRestaurantController (integration)', () => {
       return fork.create(Restaurant, {
         user: owner,
         name: `Other Restaurant ${i}`,
-        isActive: i === 0,
+        isActive: i !== 1,
       } as any);
     });
     otherRestaurantId = otherRestaurant.id;
+    noCardRestaurantId = noCardRestaurant.id;
 
     const card = (restaurant: string, data: object) =>
       fork.create(Customer, {
@@ -134,6 +137,36 @@ describe('UserRestaurantController (integration)', () => {
 
     expect(data).toMatchObject({ total: 2, page: 2, limit: 1 });
     expect(names(data)).toEqual(['Test Restaurant']);
+  });
+
+  it('adds the card to the search results, null where the user has none', async () => {
+    const res = await request(app.getHttpServer()).get('/restaurant/search?q=Other').expect(200);
+
+    expect(res.body.data.items).toHaveLength(2);
+    expect(res.body.data.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: otherRestaurantId,
+          loyalty: expect.objectContaining({ points: 120, availableRewardCount: 2 }),
+        }),
+        expect.objectContaining({ id: noCardRestaurantId, loyalty: null }),
+      ]),
+    );
+  });
+
+  it('adds the card to a single restaurant', async () => {
+    const withCard = await request(app.getHttpServer())
+      .get(`/restaurant/${otherRestaurantId}`)
+      .expect(200);
+    expect(withCard.body.data.loyalty).toMatchObject({
+      points: 120,
+      nextReward: { pointRequired: 150 },
+    });
+
+    const withoutCard = await request(app.getHttpServer())
+      .get(`/restaurant/${noCardRestaurantId}`)
+      .expect(200);
+    expect(withoutCard.body.data.loyalty).toBeNull();
   });
 
   it('rejects an unknown sort', async () => {

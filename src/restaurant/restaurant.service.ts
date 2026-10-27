@@ -34,18 +34,16 @@ export class RestaurantService {
     return restaurant;
   }
 
-  async searchRestaurants({ q, page, limit }: SearchRestaurantsQueryDto) {
+  async searchRestaurants(userId: string, { q, page, limit }: SearchRestaurantsQueryDto) {
     const { items, total } = await this.restaurantRepository.searchByName(q, page, limit);
+    await this.restaurantRepository.loadLoyaltyForMany(items, userId);
     return { items, total, page, limit };
   }
 
-  async findNearbyRestaurants({
-    latitude,
-    longitude,
-    radius,
-    page,
-    limit,
-  }: NearbyRestaurantsQueryDto) {
+  async findNearbyRestaurants(
+    userId: string,
+    { latitude, longitude, radius, page, limit }: NearbyRestaurantsQueryDto,
+  ) {
     const { items, total } = await this.restaurantRepository.findNearby(
       latitude,
       longitude,
@@ -53,6 +51,7 @@ export class RestaurantService {
       page,
       limit,
     );
+    await this.restaurantRepository.loadLoyaltyForMany(items, userId);
     return { items, total, page, limit };
   }
 
@@ -66,9 +65,10 @@ export class RestaurantService {
     return { items, total, page, limit };
   }
 
-  async getRestaurant(restaurantId: string): Promise<Restaurant> {
+  async getRestaurant(userId: string, restaurantId: string): Promise<Restaurant> {
     const restaurant = await this.restaurantRepository.findActiveById(restaurantId);
     if (!restaurant) throw new NotFoundException('Restaurant not found');
+    await this.restaurantRepository.loadLoyaltyForMany([restaurant], userId);
     return restaurant;
   }
 

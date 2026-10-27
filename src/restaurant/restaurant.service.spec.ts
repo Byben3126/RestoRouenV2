@@ -34,6 +34,7 @@ describe('RestaurantService', () => {
     createOne: jest.fn(),
     loadWithMedias: jest.fn(),
     updateForUser: jest.fn(),
+    loadLoyaltyForMany: jest.fn(),
   };
 
   const mockSubscriptionService = {
@@ -138,9 +139,14 @@ describe('RestaurantService', () => {
       const restaurant = makeRestaurant();
       mockRepo.searchByName.mockResolvedValue({ items: [restaurant], total: 1 });
 
-      const result = await service.searchRestaurants({ q: 'bistrot', page: 2, limit: 10 });
+      const result = await service.searchRestaurants('user-1', {
+        q: 'bistrot',
+        page: 2,
+        limit: 10,
+      });
 
       expect(mockRepo.searchByName).toHaveBeenCalledWith('bistrot', 2, 10);
+      expect(mockRepo.loadLoyaltyForMany).toHaveBeenCalledWith([restaurant], 'user-1');
       expect(result).toEqual({ items: [restaurant], total: 1, page: 2, limit: 10 });
     });
   });
@@ -152,7 +158,7 @@ describe('RestaurantService', () => {
       const restaurant = makeRestaurant({ nearbyOutlets: [] });
       mockRepo.findNearby.mockResolvedValue({ items: [restaurant], total: 1 });
 
-      const result = await service.findNearbyRestaurants({
+      const result = await service.findNearbyRestaurants('user-1', {
         latitude: 49.44,
         longitude: 1.09,
         radius: 5,
@@ -161,6 +167,7 @@ describe('RestaurantService', () => {
       });
 
       expect(mockRepo.findNearby).toHaveBeenCalledWith(49.44, 1.09, 5, 1, 20);
+      expect(mockRepo.loadLoyaltyForMany).toHaveBeenCalledWith([restaurant], 'user-1');
       expect(result).toEqual({ items: [restaurant], total: 1, page: 1, limit: 20 });
     });
   });
@@ -171,16 +178,17 @@ describe('RestaurantService', () => {
     it('throws NotFoundException when restaurant does not exist or is inactive', async () => {
       mockRepo.findActiveById.mockResolvedValue(null);
 
-      await expect(service.getRestaurant('resto-1')).rejects.toThrow(NotFoundException);
+      await expect(service.getRestaurant('user-1', 'resto-1')).rejects.toThrow(NotFoundException);
     });
 
     it('returns the restaurant when found', async () => {
       const restaurant = makeRestaurant();
       mockRepo.findActiveById.mockResolvedValue(restaurant);
 
-      const result = await service.getRestaurant('resto-1');
+      const result = await service.getRestaurant('user-1', 'resto-1');
 
       expect(mockRepo.findActiveById).toHaveBeenCalledWith('resto-1');
+      expect(mockRepo.loadLoyaltyForMany).toHaveBeenCalledWith([restaurant], 'user-1');
       expect(result).toBe(restaurant);
     });
   });

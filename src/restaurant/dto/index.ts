@@ -5,8 +5,8 @@ export {
   PaginatedNearbyRestaurantsDto,
   PaginatedRestaurantsDto,
   RestaurantDto,
+  UserRestaurantDto,
 } from './restaurant.dto';
 export { SearchRestaurantsQueryDto } from './search-restaurants-query.dto';
 export { UpdateRestaurantDto } from './update-restaurant.dto';
 export { GetUserRestaurantsQueryDto, UserRestaurantSortBy } from './get-user-restaurants-query.dto';
-export { PaginatedUserRestaurantsDto, UserRestaurantDto } from './user-restaurant.dto';

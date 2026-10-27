@@ -26,6 +26,7 @@ import {
   RestaurantDto,
   SearchRestaurantsQueryDto,
   UpdateRestaurantDto,
+  UserRestaurantDto,
 } from './dto';
 import { RestaurantService } from './restaurant.service';
 
@@ -60,21 +61,24 @@ export class RestaurantController {
   @Get('nearby')
   @Serialize(PaginatedNearbyRestaurantsDto)
   @ApiOkWrappedResponse({ type: PaginatedNearbyRestaurantsDto })
-  findNearbyRestaurants(@Query() query: NearbyRestaurantsQueryDto) {
-    return this.restaurantService.findNearbyRestaurants(query);
+  findNearbyRestaurants(@CurrentUser() userId: string, @Query() query: NearbyRestaurantsQueryDto) {
+    return this.restaurantService.findNearbyRestaurants(userId, query);
   }
 
   @Get('search')
   @Serialize(PaginatedRestaurantsDto)
   @ApiOkWrappedResponse({ type: PaginatedRestaurantsDto })
-  searchRestaurants(@Query() query: SearchRestaurantsQueryDto) {
-    return this.restaurantService.searchRestaurants(query);
+  searchRestaurants(@CurrentUser() userId: string, @Query() query: SearchRestaurantsQueryDto) {
+    return this.restaurantService.searchRestaurants(userId, query);
   }
 
   @Get(':restaurantId')
-  @Serialize(RestaurantDto)
-  @ApiOkWrappedResponse({ type: RestaurantDto })
-  getRestaurant(@Param('restaurantId', ParseUUIDPipe) restaurantId: string) {
-    return this.restaurantService.getRestaurant(restaurantId);
+  @Serialize(UserRestaurantDto)
+  @ApiOkWrappedResponse({ type: UserRestaurantDto })
+  getRestaurant(
+    @CurrentUser() userId: string,
+    @Param('restaurantId', ParseUUIDPipe) restaurantId: string,
+  ) {
+    return this.restaurantService.getRestaurant(userId, restaurantId);
   }
 }
