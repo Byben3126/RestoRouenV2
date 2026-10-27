@@ -6,6 +6,7 @@ import request from 'supertest';
 
 import { User } from '../src/auth/entities/user.entity';
 import { Customer } from '../src/customer/entities/customer.entity';
+import { Outlet } from '../src/restaurant/entities/outlet.entity';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { Reward, RewardStatus } from '../src/reward/entities/reward.entity';
 import { AppUser } from '../src/user/entities/app-user.entity';
@@ -19,6 +20,10 @@ import {
 const OWNER_IDS = ['test-loyalty-owner-a', 'test-loyalty-owner-b', 'test-loyalty-owner-c'];
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+// Loin de toute donnée réelle (Géorgie du Sud) ; 0.01° de latitude ≈ 1,1 km
+const LAT = -54.28;
+const LON = -36.51;
 
 describe('UserRestaurantController (integration)', () => {
   let app: INestApplication;
@@ -51,6 +56,18 @@ describe('UserRestaurantController (integration)', () => {
     });
     otherRestaurantId = otherRestaurant.id;
     noCardRestaurantId = noCardRestaurant.id;
+    fork.create(Outlet, {
+      restaurant: otherRestaurant,
+      name: 'Centre',
+      latitude: LAT,
+      longitude: LON,
+    } as any);
+    fork.create(Outlet, {
+      restaurant: noCardRestaurant,
+      name: 'Centre',
+      latitude: LAT + 0.01,
+      longitude: LON,
+    } as any);
 
     const card = (restaurant: string, data: object) =>
       fork.create(Customer, {
@@ -83,6 +100,7 @@ describe('UserRestaurantController (integration)', () => {
     const fork = em.fork();
     await fork.nativeDelete(Reward, { restaurant: otherRestaurantId });
     await fork.nativeDelete(Customer, { user: TEST_USER_ID });
+    await fork.nativeDelete(Outlet, { restaurant: { user: { $in: OWNER_IDS } } });
     await fork.nativeDelete(Restaurant, { user: { $in: OWNER_IDS } });
     await fork.nativeDelete(AppUser, { authUser: { $in: OWNER_IDS } });
     await fork.nativeDelete(User, { id: { $in: OWNER_IDS } });
@@ -152,6 +170,25 @@ describe('UserRestaurantController (integration)', () => {
         expect.objectContaining({ id: noCardRestaurantId, loyalty: null }),
       ]),
     );
+  });
+
+  it('adds the card to the nearby restaurants, null where the user has none', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/restaurant/nearby')
+      .query({ latitude: LAT, longitude: LON, radius: 5 })
+      .expect(200);
+
+    expect(res.body.data.items).toEqual([
+      expect.objectContaining({
+        id: otherRestaurantId,
+        loyalty: expect.objectContaining({
+          points: 120,
+          availableRewardCount: 2,
+          nextReward: expect.objectContaining({ pointRequired: 150 }),
+        }),
+      }),
+      expect.objectContaining({ id: noCardRestaurantId, loyalty: null }),
+    ]);
   });
 
   it('adds the card to a single restaurant', async () => {
