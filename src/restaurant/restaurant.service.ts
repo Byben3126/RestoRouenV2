@@ -4,6 +4,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 
 import { SubscriptionService } from '../subscription/subscription.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
+import { GetUserRestaurantsQueryDto } from './dto/get-user-restaurants-query.dto';
 import { NearbyRestaurantsQueryDto } from './dto/nearby-restaurants-query.dto';
 import { SearchRestaurantsQueryDto } from './dto/search-restaurants-query.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
@@ -49,6 +50,16 @@ export class RestaurantService {
       latitude,
       longitude,
       radius,
+      page,
+      limit,
+    );
+    return { items, total, page, limit };
+  }
+
+  async getUserRestaurants(userId: string, { sortBy, page, limit }: GetUserRestaurantsQueryDto) {
+    const { items, total } = await this.restaurantRepository.findForCustomer(
+      userId,
+      sortBy,
       page,
       limit,
     );

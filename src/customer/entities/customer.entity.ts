@@ -2,6 +2,7 @@ import {
   Collection,
   Entity,
   EntityRepositoryType,
+  Formula,
   Index,
   ManyToOne,
   OneToMany,
@@ -11,6 +12,7 @@ import {
 import { randomUUID } from 'crypto';
 
 import { Restaurant } from '../../restaurant/entities/restaurant.entity';
+import { Reward } from '../../reward/entities/reward.entity';
 import { AppUser } from '../../user/entities/app-user.entity';
 import { CustomerRepository } from '../repositories/customer.repository';
 import { PointsTransaction, PointsTransactionType } from './points-transaction.entity';
@@ -46,6 +48,27 @@ export class Customer {
 
   @OneToMany(() => PointsTransaction, (t) => t.customer)
   pointsTransactions = new Collection<PointsTransaction>(this);
+
+  /** Récompenses actives que les points permettent déjà d'obtenir */
+  @Formula(
+    ({ alias }) => `(select count(*)::int from reward r
+      where r.restaurant_id = ${alias}.restaurant_id and r.status = 'active'
+        and r.point_required <= ${alias}.points)`,
+    { lazy: true },
+  )
+  availableRewardCount?: number;
+
+  /** Récompense active la moins chère que les points ne permettent pas encore d'obtenir */
+  @ManyToOne(() => Reward, {
+    formula: ({ alias }) => `(select r.id from reward r
+      where r.restaurant_id = ${alias}.restaurant_id and r.status = 'active'
+        and r.point_required > ${alias}.points
+      order by r.point_required, r.id limit 1)`,
+    persist: false,
+    nullable: true,
+    lazy: true,
+  })
+  nextReward?: Reward;
 
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();

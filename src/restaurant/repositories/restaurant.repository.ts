@@ -1,12 +1,22 @@
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { EntityRepository, QueryOrder } from '@mikro-orm/postgresql';
 
+import { Customer } from '../../customer/entities/customer.entity';
 import { Media } from '../../media/entities/media.entity';
+import { UserRestaurantSortBy } from '../dto/get-user-restaurants-query.dto';
 import { UpdateRestaurantDto } from '../dto/update-restaurant.dto';
 import { Outlet } from '../entities/outlet.entity';
 import { Restaurant } from '../entities/restaurant.entity';
 
 export type NearbyOutlet = Outlet & { distance: number };
 export type NearbyRestaurant = Restaurant & { nearbyOutlets: NearbyOutlet[] };
+export type UserRestaurant = Restaurant & { loyalty: Customer };
+
+const USER_RESTAURANT_ORDER = {
+  [UserRestaurantSortBy.POINTS]: { points: QueryOrder.DESC },
+  [UserRestaurantSortBy.TOTAL_POINTS_GAINED]: { totalPointsGained: QueryOrder.DESC },
+  [UserRestaurantSortBy.LAST_VISIT]: { lastVisitDate: QueryOrder.DESC_NULLS_LAST },
+  [UserRestaurantSortBy.CREATED_AT]: { createdAt: QueryOrder.DESC },
+};
 
 export class RestaurantRepository extends EntityRepository<Restaurant> {
   async createOne(userId: string, data: Pick<Restaurant, 'name'>): Promise<Restaurant> {
@@ -158,6 +168,34 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
       });
 
     return { items, total: Number(total) };
+  }
+
+  /**
+   * Restaurants actifs où l'utilisateur a une carte de fidélité, avec ses points et la prochaine
+   * récompense à atteindre. Le tri porte sur la carte (points, dernière visite…).
+   */
+  async findForCustomer(
+    userId: string,
+    sortBy: UserRestaurantSortBy,
+    page: number,
+    limit: number,
+  ): Promise<{ items: UserRestaurant[]; total: number }> {
+    const [customers, total] = await this.em.findAndCount(
+      Customer,
+      { user: userId, restaurant: { isActive: true } },
+      {
+        populate: ['restaurant', 'nextReward', 'availableRewardCount'],
+        orderBy: [USER_RESTAURANT_ORDER[sortBy], { id: QueryOrder.ASC }],
+        limit,
+        offset: (page - 1) * limit,
+      },
+    );
+    await this.loadMediasForMany(customers.map((c) => c.restaurant));
+
+    const items = customers.map((customer) =>
+      Object.assign(customer.restaurant, { loyalty: customer }),
+    );
+    return { items, total };
   }
 
   async loadWithMedias(restaurant: Restaurant): Promise<Restaurant> {
