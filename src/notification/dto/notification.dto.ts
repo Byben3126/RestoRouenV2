@@ -10,16 +10,29 @@ export class NotificationDto {
   @Expose() id!: string;
 
   /** Par langue (fr, en, es) ; en est toujours présente */
-  @ApiProperty({ example: { fr: '+50 points chez Le Bistrot !', en: '+50 points at Le Bistrot!' } })
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { fr: '+50 points chez Le Bistrot !', en: '+50 points at Le Bistrot!' },
+  })
   @Expose()
   headings!: Record<string, string>;
 
-  @ApiProperty({ example: { fr: 'Votre solde : 150 points.', en: 'Your balance: 150 points.' } })
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    example: { fr: 'Votre solde : 150 points.', en: 'Your balance: 150 points.' },
+  })
   @Expose()
   contents!: Record<string, string>;
 
   /** type (ex. points.added) et identifiants utiles à la navigation */
-  @ApiProperty({ example: { type: 'points.added', restaurantId: 'uuid' }, nullable: true })
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    example: { type: 'points.added', restaurantId: 'uuid' },
+  })
   @Expose()
   data!: Record<string, unknown> | null;
 
