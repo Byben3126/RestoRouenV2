@@ -6,6 +6,10 @@ import request from 'supertest';
 
 import { User } from '../src/auth/entities/user.entity';
 import { Customer } from '../src/customer/entities/customer.entity';
+import {
+  PointsTransaction,
+  PointsTransactionType,
+} from '../src/customer/entities/points-transaction.entity';
 import { Outlet } from '../src/restaurant/entities/outlet.entity';
 import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
 import { Reward, RewardStatus } from '../src/reward/entities/reward.entity';
@@ -76,8 +80,31 @@ describe('UserRestaurantController (integration)', () => {
         ...data,
       } as any);
     card(restaurantId, { points: 30, totalPointsGained: 300, lastVisitDate: daysAgo(10) });
-    card(otherRestaurant.id, { points: 120, totalPointsGained: 150, lastVisitDate: daysAgo(1) });
+    const otherCard = card(otherRestaurant.id, {
+      points: 120,
+      totalPointsGained: 150,
+      lastVisitDate: daysAgo(1),
+    });
     card(inactiveRestaurant.id, { points: 999, totalPointsGained: 999, lastVisitDate: daysAgo(0) });
+    // Carte d'un autre client dans le même restaurant : son historique ne doit pas remonter
+    const strangerCard = fork.create(Customer, {
+      user: fork.getReference(AppUser, OWNER_IDS[2]),
+      restaurant: otherRestaurant,
+    } as any);
+
+    const transaction = (
+      customer: Customer,
+      type: PointsTransactionType,
+      amount: number,
+      days: number,
+    ) => {
+      const tx = new PointsTransaction({ customer, type, amount, reason: `${type} ${amount}` });
+      tx.createdAt = daysAgo(days);
+      fork.persist(tx);
+    };
+    transaction(otherCard, PointsTransactionType.GAIN, 150, 5);
+    transaction(otherCard, PointsTransactionType.LOSS, 30, 1);
+    transaction(strangerCard, PointsTransactionType.GAIN, 10, 2);
 
     for (const [pointRequired, status] of [
       [50, RewardStatus.ACTIVE],
@@ -99,7 +126,9 @@ describe('UserRestaurantController (integration)', () => {
   afterAll(async () => {
     const fork = em.fork();
     await fork.nativeDelete(Reward, { restaurant: otherRestaurantId });
-    await fork.nativeDelete(Customer, { user: TEST_USER_ID });
+    const cardUsers = [TEST_USER_ID, OWNER_IDS[2]];
+    await fork.nativeDelete(PointsTransaction, { customer: { user: { $in: cardUsers } } });
+    await fork.nativeDelete(Customer, { user: { $in: cardUsers } });
     await fork.nativeDelete(Outlet, { restaurant: { user: { $in: OWNER_IDS } } });
     await fork.nativeDelete(Restaurant, { user: { $in: OWNER_IDS } });
     await fork.nativeDelete(AppUser, { authUser: { $in: OWNER_IDS } });
@@ -204,6 +233,41 @@ describe('UserRestaurantController (integration)', () => {
       .get(`/restaurant/${noCardRestaurantId}`)
       .expect(200);
     expect(withoutCard.body.data.loyalty).toBeNull();
+  });
+
+  describe('GET /users/me/restaurants/:restaurantId/points-transactions', () => {
+    const getHistory = (restaurant: string, query: Record<string, unknown> = {}) =>
+      request(app.getHttpServer())
+        .get(`/users/me/restaurants/${restaurant}/points-transactions`)
+        .query(query);
+
+    it("pages through the user's history, newest first", async () => {
+      const first = await getHistory(otherRestaurantId, { limit: 1 }).expect(200);
+      expect(first.body.data.items).toMatchObject([
+        { type: 'loss', amount: 30, reason: 'loss 30' },
+      ]);
+      expect(first.body.data.nextCursor).toEqual(expect.any(String));
+
+      const second = await getHistory(otherRestaurantId, {
+        limit: 1,
+        after: first.body.data.nextCursor,
+      }).expect(200);
+      // La transaction de l'autre client du restaurant ne remonte pas
+      expect(second.body.data).toMatchObject({
+        items: [{ type: 'gain', amount: 150, reason: 'gain 150' }],
+        nextCursor: null,
+      });
+    });
+
+    it('returns an empty history where the user has no card', async () => {
+      const res = await getHistory(noCardRestaurantId).expect(200);
+
+      expect(res.body.data).toEqual({ items: [], nextCursor: null });
+    });
+
+    it('rejects an invalid cursor', async () => {
+      await getHistory(otherRestaurantId, { after: 'not-a-cursor' }).expect(400);
+    });
   });
 
   it('rejects an unknown sort', async () => {

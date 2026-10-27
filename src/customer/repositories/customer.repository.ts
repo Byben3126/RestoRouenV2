@@ -103,4 +103,18 @@ export class CustomerRepository extends EntityRepository<Customer> {
       { orderBy: { createdAt: 'DESC' } },
     );
   }
+
+  /** Historique de la carte de l'utilisateur dans ce restaurant ; vide s'il n'en a pas */
+  findPointsTransactionsPageForUser(
+    userId: string,
+    restaurantId: string,
+    limit: number,
+    after?: string,
+  ) {
+    return this.em.findByCursor(
+      PointsTransaction,
+      { customer: { user: userId, restaurant: restaurantId } },
+      { first: limit, after, orderBy: { createdAt: 'DESC', id: 'DESC' }, includeCount: false },
+    );
+  }
 }

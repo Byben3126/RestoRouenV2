@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { Cursor } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 
 import { AddCustomerPointsDto } from './dto/add-customer-points.dto';
 import { GetCustomersQueryDto } from './dto/get-customers-query.dto';
+import { GetPointsTransactionsQueryDto } from './dto/get-points-transactions-query.dto';
 import { Customer } from './entities/customer.entity';
 import { PointsTransaction } from './entities/points-transaction.entity';
 import {
@@ -64,5 +66,27 @@ export class CustomerService {
     );
     if (!transactions) throw new NotFoundException('Customer not found');
     return transactions;
+  }
+
+  async getUserPointsTransactions(
+    userId: string,
+    restaurantId: string,
+    { after, limit }: GetPointsTransactionsQueryDto,
+  ) {
+    if (after) {
+      try {
+        Cursor.decode(after);
+      } catch {
+        throw new BadRequestException('Invalid cursor');
+      }
+    }
+
+    const page = await this.customerRepository.findPointsTransactionsPageForUser(
+      userId,
+      restaurantId,
+      limit,
+      after,
+    );
+    return { items: page.items, nextCursor: page.hasNextPage ? page.endCursor : null };
   }
 }
