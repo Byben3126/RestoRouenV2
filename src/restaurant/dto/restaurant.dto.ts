@@ -42,6 +42,9 @@ export class RestaurantLoyaltyDto {
   @Expose() lastVisitDate?: Date;
   @Expose() availableRewardCount!: number;
 
+  /** La dernière visite peut être notée (POST /users/me/restaurants/:restaurantId/ratings) */
+  @Expose() canSubmitRating!: boolean;
+
   /** null quand toutes les récompenses sont atteintes, ou que le restaurant n'en a pas */
   @ApiProperty({ type: () => RewardDto, nullable: true })
   @Expose()

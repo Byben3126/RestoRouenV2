@@ -11,6 +11,7 @@ import { DatabaseModule } from './database';
 import { MediaModule } from './media/media.module';
 import { NotificationModule } from './notification/notification.module';
 import { PromotionModule } from './promotion/promotion.module';
+import { RatingModule } from './rating/rating.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
 import { RewardModule } from './reward/reward.module';
@@ -28,6 +29,7 @@ import { UserModule } from './user/user.module';
     CustomerModule,
     RewardModule,
     PromotionModule,
+    RatingModule,
     SubscriptionModule,
     DashboardModule,
     MediaModule,

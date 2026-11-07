@@ -36,6 +36,7 @@ export class Customer {
   @Property()
   totalPointsGained: number = 0;
 
+  /** true après une visite, jusqu'à ce que le client la note */
   @Property()
   canSubmitRating: boolean = false;
 
@@ -120,6 +121,7 @@ export class Customer {
     const transaction = new PointsTransaction({ customer: this, type, amount, reason });
     this.pointsTransactions.add(transaction);
     this.lastVisitDate = new Date();
+    this.canSubmitRating = true;
     return transaction;
   }
 }
