@@ -10,6 +10,9 @@ import { Restaurant } from '../entities/restaurant.entity';
 export type NearbyOutlet = Outlet & { distance: number };
 export type NearbyRestaurant = Restaurant & { nearbyOutlets: NearbyOutlet[] };
 
+/** Ce qu'il faut charger sur une carte de fidélité pour l'exposer dans restaurant.loyalty */
+const LOYALTY_POPULATE = ['nextReward', 'availableRewardCount'] as const;
+
 const USER_RESTAURANT_ORDER = {
   [UserRestaurantSortBy.POINTS]: { points: QueryOrder.DESC },
   [UserRestaurantSortBy.TOTAL_POINTS_GAINED]: { totalPointsGained: QueryOrder.DESC },
@@ -179,11 +182,13 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
     page: number,
     limit: number,
   ): Promise<{ items: Restaurant[]; total: number }> {
+    // joined : carte, restaurant et prochaine récompense en une seule requête
     const [customers, total] = await this.em.findAndCount(
       Customer,
       { user: userId, restaurant: { isActive: true } },
       {
-        populate: ['restaurant', 'nextReward', 'availableRewardCount'],
+        populate: ['restaurant', ...LOYALTY_POPULATE],
+        strategy: 'joined',
         orderBy: [USER_RESTAURANT_ORDER[sortBy], { id: QueryOrder.ASC }],
         limit,
         offset: (page - 1) * limit,
@@ -195,16 +200,20 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
     return { items: customers.map((c) => c.restaurant), total };
   }
 
-  /** Ajoute à chaque restaurant la carte de fidélité de l'utilisateur, null s'il n'en a pas */
+  /**
+   * Renseigne restaurant.loyalty : la carte de fidélité de l'utilisateur, null s'il n'en a pas.
+   * Une seule requête quel que soit le nombre de restaurants.
+   */
   async loadLoyaltyForMany(restaurants: Restaurant[], userId: string): Promise<void> {
     if (!restaurants.length) return;
     const customers = await this.em.find(
       Customer,
       { user: userId, restaurant: { $in: restaurants } },
-      { populate: ['nextReward', 'availableRewardCount'] },
+      { populate: LOYALTY_POPULATE, strategy: 'joined' },
     );
+    const customerByRestaurant = new Map(customers.map((c) => [c.restaurant.id, c]));
     for (const restaurant of restaurants) {
-      restaurant.loyalty = customers.find((c) => c.restaurant.id === restaurant.id) ?? null;
+      restaurant.loyalty = customerByRestaurant.get(restaurant.id) ?? null;
     }
   }
 

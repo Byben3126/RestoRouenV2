@@ -35,7 +35,10 @@ export class Restaurant {
 
   medias?: Media[];
 
-  /** Carte de fidélité de l'utilisateur connecté, null s'il n'en a pas (non stockée) */
+  /**
+   * Carte de fidélité de l'utilisateur connecté, null s'il n'en a pas.
+   * Non stockée et non chargée par défaut : voir RestaurantRepository.loadLoyaltyForMany.
+   */
   loyalty?: Customer | null;
 
   @Property({ type: 'double' })
