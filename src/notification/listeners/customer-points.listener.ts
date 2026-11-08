@@ -47,6 +47,7 @@ export class CustomerPointsListener {
           delay: RATING_REQUEST_DELAY_MS,
           // Une nouvelle visite avant l'envoi n'ajoute pas une seconde demande
           key: `rating-request-${userId}-${restaurantId}`,
+          duplicationMode: 'ignore',
         });
       });
     } catch (error) {

@@ -26,6 +26,12 @@ describe('Notification queue (integration)', () => {
 
   const ratingKey = () => `rating-request-${CUSTOMER_USER_ID}-${restaurantId}`;
 
+  /** Demandes d'avis de ce client encore dans la file (programmées, en attente ou en cours) */
+  async function findRatingJobs(): Promise<Job[]> {
+    const jobs = await queue.getJobs(['delayed', 'waiting', 'active']);
+    return jobs.filter((job) => job.opts.deduplication?.id === ratingKey());
+  }
+
   /** Les notifications sont envoyées par le worker : on attend qu'elles arrivent en base */
   async function waitForNotifications(type: string, count = 1): Promise<Notification[]> {
     for (let i = 0; i < 100; i++) {
@@ -70,12 +76,13 @@ describe('Notification queue (integration)', () => {
   });
 
   afterAll(async () => {
-    // Le dernier test fait traiter la demande d'avis : un job en cours ne peut pas être supprimé
-    const job = await queue.getJob(ratingKey());
-    for (let i = 0; job && i < 50 && (await job.getState()) === 'active'; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    // Un job en cours ne peut pas être supprimé : on attend la fin de ceux que le worker traite
+    for (const job of await findRatingJobs()) {
+      for (let i = 0; i < 50 && (await job.getState()) === 'active'; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      await job.remove();
     }
-    await job?.remove();
     const fork = em.fork();
     await fork.nativeDelete(Notification, { user: { authUser: CUSTOMER_USER_ID } });
     // Par utilisateur plutôt que par id : nettoie aussi ce qu'un run interrompu a laissé
@@ -95,22 +102,40 @@ describe('Notification queue (integration)', () => {
   });
 
   it('keeps a single rating request, 20 minutes after the first visit', async () => {
-    const first = (await queue.getJob(ratingKey())) as Job;
+    const [first] = await findRatingJobs();
     expect(await first.getState()).toBe('delayed');
     expect(first.delay).toBe(RATING_REQUEST_DELAY_MS);
 
     await addPoints();
     await waitForNotifications('points.added', 2);
 
-    const delayed = (await queue.getDelayed()).filter((job) => job.id === ratingKey());
-    expect(delayed).toHaveLength(1);
-    expect(delayed[0].timestamp).toBe(first.timestamp);
+    const jobs = await findRatingJobs();
+    expect(jobs.map((job) => job.id)).toEqual([first.id]);
   });
 
   it('sends the rating request when it is due', async () => {
-    await (await queue.getJob(ratingKey()))!.promote();
+    const [job] = await findRatingJobs();
+    await job.promote();
 
     const [notification] = await waitForNotifications('rating.request');
     expect(notification.headings).toMatchObject({ fr: expect.stringContaining('Comment s') });
+  });
+
+  it('schedules a new rating request on a visit after the previous one was sent', async () => {
+    // La clé est libérée quand le worker a terminé le job, juste après l'envoi
+    for (let i = 0; i < 50 && (await findRatingJobs()).length > 0; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    await addPoints();
+    await waitForNotifications('points.added', 3);
+
+    // Le listener est asynchrone : on attend que la nouvelle demande soit programmée
+    let jobs: Job[] = [];
+    for (let i = 0; i < 50 && jobs.length === 0; i++) {
+      jobs = (await findRatingJobs()).filter((job) => job.delay === RATING_REQUEST_DELAY_MS);
+      if (jobs.length === 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    expect(jobs).toHaveLength(1);
+    expect(await jobs[0].getState()).toBe('delayed');
   });
 });

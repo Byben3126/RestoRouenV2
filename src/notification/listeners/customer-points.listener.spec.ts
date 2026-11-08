@@ -59,6 +59,7 @@ describe('CustomerPointsListener', () => {
         restaurantId: 'resto-1',
         delay: RATING_REQUEST_DELAY_MS,
         key: 'rating-request-user-1-resto-1',
+        duplicationMode: 'ignore',
       });
       expect(RATING_REQUEST_DELAY_MS).toBe(20 * 60 * 1000);
     });

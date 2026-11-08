@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { getRepositoryToken } from '@mikro-orm/nestjs';
+import type { JobsOptions } from 'bullmq';
 
 import { Notification } from './entities/notification.entity';
 import { NotificationService } from './notification.service';
@@ -63,7 +64,7 @@ describe('NotificationService', () => {
       expect(mockRepo.createForUsers).not.toHaveBeenCalled();
     });
 
-    it('delays the notification and uses the key as job id, outside of the job data', async () => {
+    it('delays the notification and ignores duplicates by key, outside of the job data', async () => {
       await service.notify({
         userIds: ['user-1'],
         category: 'ratings',
@@ -71,13 +72,43 @@ describe('NotificationService', () => {
         restaurantId: 'resto-1',
         delay: 60_000,
         key: 'rating-request-user-1-resto-1',
+        duplicationMode: 'ignore',
       });
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         SEND_NOTIFICATION_JOB,
         { userIds: ['user-1'], category: 'ratings', message: MESSAGE, restaurantId: 'resto-1' },
-        { delay: 60_000, jobId: 'rating-request-user-1-resto-1' },
+        { delay: 60_000, deduplication: { id: 'rating-request-user-1-resto-1', replace: false } },
       );
+    });
+
+    it('replaces the pending notification of the same key', async () => {
+      await service.notify({
+        userIds: ['user-1'],
+        category: 'ratings',
+        message: MESSAGE,
+        delay: 60_000,
+        key: 'rating-request-user-1-resto-1',
+        duplicationMode: 'replace',
+      });
+
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        SEND_NOTIFICATION_JOB,
+        { userIds: ['user-1'], category: 'ratings', message: MESSAGE },
+        { delay: 60_000, deduplication: { id: 'rating-request-user-1-resto-1', replace: true } },
+      );
+    });
+
+    it('queues every notification when no duplication mode is given', async () => {
+      await service.notify({
+        userIds: ['user-1'],
+        category: 'ratings',
+        message: MESSAGE,
+        key: 'rating-request-user-1-resto-1',
+      });
+
+      const [, , opts] = mockQueue.add.mock.calls[0] as [string, unknown, JobsOptions];
+      expect(opts.deduplication).toBeUndefined();
     });
 
     it('queues nothing without users', async () => {

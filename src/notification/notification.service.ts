@@ -3,7 +3,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 
 import { Cursor } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Queue } from 'bullmq';
+import { JobsOptions, Queue } from 'bullmq';
 
 import { GetNotificationsQueryDto } from './dto/get-notifications-query.dto';
 import { Notification } from './entities/notification.entity';
@@ -16,6 +16,8 @@ const NOTIFICATION_RETENTION_DAYS = 90;
 export interface NotifyParams extends NotificationToSend {
   delay?: number;
   key?: string;
+  /** Sans mode, la clé est sans effet. replace ne remplace qu'une notification encore différée */
+  duplicationMode?: 'ignore' | 'replace';
 }
 
 @Injectable()
@@ -26,12 +28,14 @@ export class NotificationService {
     @InjectQueue(NOTIFICATIONS_QUEUE) private readonly queue: Queue,
   ) {}
 
-  async notify({ delay, key, ...notification }: NotifyParams): Promise<void> {
+  async notify({ delay, key, duplicationMode, ...notification }: NotifyParams): Promise<void> {
     if (notification.userIds.length === 0) return;
-    await this.queue.add(SEND_NOTIFICATION_JOB, notification satisfies NotificationToSend, {
+    const addOpts: JobsOptions = {
       delay,
-      jobId: key,
-    });
+      deduplication:
+        key && duplicationMode ? { id: key, replace: duplicationMode === 'replace' } : undefined,
+    };
+    await this.queue.add(SEND_NOTIFICATION_JOB, notification satisfies NotificationToSend, addOpts);
   }
 
   async getNotifications(userId: string, { after, limit }: GetNotificationsQueryDto) {
