@@ -70,11 +70,17 @@ describe('Notification queue (integration)', () => {
   });
 
   afterAll(async () => {
-    await (await queue.getJob(ratingKey()))?.remove();
+    // Le dernier test fait traiter la demande d'avis : un job en cours ne peut pas être supprimé
+    const job = await queue.getJob(ratingKey());
+    for (let i = 0; job && i < 50 && (await job.getState()) === 'active'; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    await job?.remove();
     const fork = em.fork();
     await fork.nativeDelete(Notification, { user: { authUser: CUSTOMER_USER_ID } });
-    await fork.nativeDelete(PointsTransaction, { customer: customerId });
-    await fork.nativeDelete(Customer, { id: customerId });
+    // Par utilisateur plutôt que par id : nettoie aussi ce qu'un run interrompu a laissé
+    await fork.nativeDelete(PointsTransaction, { customer: { user: CUSTOMER_USER_ID } });
+    await fork.nativeDelete(Customer, { user: CUSTOMER_USER_ID });
     await fork.nativeDelete(AppUser, { authUser: CUSTOMER_USER_ID });
     await fork.nativeDelete(User, { id: CUSTOMER_USER_ID });
     await cleanBaseFixtures(em, restaurantId);
