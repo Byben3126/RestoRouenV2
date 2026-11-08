@@ -7,6 +7,7 @@ import { PromotionDataSeeder } from '../../promotion/seeders/promotion-data.seed
 import { RestaurantDataSeeder } from '../../restaurant/seeders/restaurant-data.seed';
 import { RewardDataSeeder } from '../../reward/seeders/reward-data.seed';
 import { UserDataSeeder } from '../../user/seeders/user-data.seed';
+import { TestUserSeeder } from './test-user.seed';
 
 export class DatabaseSeeder extends Seeder {
   run(em: EntityManager): Promise<void> {
@@ -17,6 +18,7 @@ export class DatabaseSeeder extends Seeder {
       CustomerDataSeeder,
       RewardDataSeeder,
       PromotionDataSeeder,
+      TestUserSeeder,
     ]);
   }
 }

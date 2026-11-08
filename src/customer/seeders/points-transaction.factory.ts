@@ -28,6 +28,7 @@ export function createPointsTransaction(
     amount: number;
     createdAt: Date;
     reactivatedCustomer?: boolean;
+    reason?: string;
   },
 ): PointsTransaction {
   const tx = new PointsTransaction({
@@ -35,9 +36,10 @@ export function createPointsTransaction(
     type: opts.type,
     amount: opts.amount,
     reason:
-      opts.type === PointsTransactionType.GAIN
+      opts.reason ??
+      (opts.type === PointsTransactionType.GAIN
         ? faker.helpers.arrayElement(GAIN_REASONS)
-        : faker.helpers.arrayElement(LOSS_REASONS),
+        : faker.helpers.arrayElement(LOSS_REASONS)),
   });
   // Données historiques : on impose les valeurs au lieu de les calculer
   tx.reactivatedCustomer = opts.reactivatedCustomer ?? false;
