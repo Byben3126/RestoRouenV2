@@ -30,7 +30,6 @@
   "dependencies": {
     "@adminjs/express": "^6.1.1",
     "@adminjs/mikroorm": "^4.1.0",
-    "@adminjs/nestjs": "^7.0.0",
     "@aws-sdk/client-s3": "^3.1075.0",
     "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@bull-board/api": "^9.11.0",
