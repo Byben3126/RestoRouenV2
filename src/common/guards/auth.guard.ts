@@ -1,7 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { EntityManager, MikroORM } from '@mikro-orm/core';
-import { betterAuth } from 'better-auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { IncomingMessage } from 'http';
 
@@ -9,8 +8,7 @@ import { auth } from '../../auth/auth';
 import { User } from '../../auth/entities/user.entity';
 import { AppUser } from '../../user/entities/app-user.entity';
 
-type BetterAuthInstance = ReturnType<typeof betterAuth>;
-type SessionResult = Awaited<ReturnType<BetterAuthInstance['api']['getSession']>>;
+type BetterAuthInstance = ReturnType<typeof auth>;
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -26,9 +24,9 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<IncomingMessage & { userId: string }>();
 
-    const session = (await this.betterAuth.api.getSession({
+    const session = await this.betterAuth.api.getSession({
       headers: fromNodeHeaders(request.headers),
-    })) as SessionResult;
+    });
 
     if (!session) throw new UnauthorizedException();
 

@@ -20,7 +20,7 @@ import { Account, Session, User, Verification } from './entities';
       useFactory: (orm: MikroORM, userService: UserService, emailService: EmailService) => ({
         auth: auth(orm, { userService, emailService }),
         // Le body brut est conservé pour la vérification de signature du webhook Stripe
-        enableRawBodyParser: true,
+        bodyParser: { rawBody: true },
         // Le CORS est configuré une seule fois dans main.ts
         disableTrustedOriginsCors: true,
       }),
