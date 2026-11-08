@@ -72,6 +72,8 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.13",
+    "@babel/preset-env": "^7.29.7",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@faker-js/faker": "^10.4.0",
@@ -86,6 +88,8 @@
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
     "@types/uuid": "^11.0.0",
+    "babel-jest": "^30.5.2",
+    "babel-plugin-transform-import-meta": "^2.3.3",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

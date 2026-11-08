@@ -1,13 +1,15 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": ["js", "mjs", "json", "ts"],
   "rootDir": "..",
   "testEnvironment": "node",
   "testRegex": "test/.+\\.integration-spec\\.ts$",
   "maxWorkers": 1,
   "testTimeout": 30000,
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.ts$": "ts-jest",
+    "^.+\\.m?js$": ["babel-jest", { "rootMode": "upward" }]
   },
+  "transformIgnorePatterns": ["/node_modules/(?!@thallesp/nestjs-better-auth/)"],
   "moduleNameMapper": {
     "^better-auth$": "<rootDir>/src/auth/__mocks__/better-auth.js",
     "^better-auth/api$": "<rootDir>/src/auth/__mocks__/better-auth-api.js",

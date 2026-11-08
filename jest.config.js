@@ -1,11 +1,14 @@
 module.exports = {
-  moduleFileExtensions: ['js', 'json', 'ts'],
+  moduleFileExtensions: ['js', 'mjs', 'json', 'ts'],
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
+  // .js et .mjs par Babel (babel.config.js) : les paquets publiés en ESM seul passent en CommonJS.
+  // rootMode upward : rootDir est src/, babel.config.js est à la racine du projet
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.m?js$': ['babel-jest', { rootMode: 'upward' }],
   },
-  transformIgnorePatterns: [],
+  transformIgnorePatterns: ['/node_modules/(?!@thallesp/nestjs-better-auth/)'],
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
