@@ -1,12 +1,12 @@
+import { getQueueToken } from '@nestjs/bullmq';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 
 import { Notification } from './entities/notification.entity';
-import { NotificationPreferencesService } from './notification-preferences.service';
 import { NotificationService } from './notification.service';
-import { PushNotificationService } from './push-notification.service';
+import { NOTIFICATIONS_QUEUE, SEND_NOTIFICATION_JOB } from './queue/notification.constants';
 
 const MESSAGE = {
   headings: { fr: '+50 points chez Le Bistrot !', en: '+50 points at Le Bistrot!' },
@@ -25,8 +25,7 @@ describe('NotificationService', () => {
     markAllAsRead: jest.fn(),
     deleteCreatedBefore: jest.fn(),
   };
-  const mockPreferencesService = { filterEnabled: jest.fn() };
-  const mockPushService = { sendToUsers: jest.fn() };
+  const mockQueue = { add: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -35,8 +34,7 @@ describe('NotificationService', () => {
       providers: [
         NotificationService,
         { provide: getRepositoryToken(Notification), useValue: mockRepo },
-        { provide: NotificationPreferencesService, useValue: mockPreferencesService },
-        { provide: PushNotificationService, useValue: mockPushService },
+        { provide: getQueueToken(NOTIFICATIONS_QUEUE), useValue: mockQueue },
       ],
     }).compile();
 
@@ -44,44 +42,48 @@ describe('NotificationService', () => {
   });
 
   describe('notify', () => {
-    it('saves a notification for every user and pushes only to those who want it', async () => {
-      mockPreferencesService.filterEnabled.mockResolvedValue(['user-1']);
+    it('puts the notification in the queue instead of sending it', async () => {
+      await service.notify({
+        userIds: ['user-1', 'user-2'],
+        category: 'points',
+        message: MESSAGE,
+        restaurantId: 'resto-1',
+      });
 
-      await service.notify(['user-1', 'user-2'], 'points', MESSAGE, 'resto-1');
-
-      expect(mockRepo.createForUsers).toHaveBeenCalledWith(
-        ['user-1', 'user-2'],
-        MESSAGE,
-        'resto-1',
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        SEND_NOTIFICATION_JOB,
+        {
+          userIds: ['user-1', 'user-2'],
+          category: 'points',
+          message: MESSAGE,
+          restaurantId: 'resto-1',
+        },
+        {},
       );
-      expect(mockPreferencesService.filterEnabled).toHaveBeenCalledWith(
-        ['user-1', 'user-2'],
-        'points',
-        'resto-1',
-      );
-      expect(mockPushService.sendToUsers).toHaveBeenCalledWith(['user-1'], MESSAGE);
-    });
-
-    it('saves an app notification without restaurant', async () => {
-      mockPreferencesService.filterEnabled.mockResolvedValue(['user-1']);
-      const message = { headings: { en: 'Welcome!' }, contents: { en: 'Hello' } };
-
-      await service.notify(['user-1'], 'promotions', message);
-
-      expect(mockRepo.createForUsers).toHaveBeenCalledWith(['user-1'], message, undefined);
-      expect(mockPreferencesService.filterEnabled).toHaveBeenCalledWith(
-        ['user-1'],
-        'promotions',
-        undefined,
-      );
-      expect(mockPushService.sendToUsers).toHaveBeenCalledWith(['user-1'], message);
-    });
-
-    it('does nothing without users', async () => {
-      await service.notify([], 'points', MESSAGE, 'resto-1');
-
       expect(mockRepo.createForUsers).not.toHaveBeenCalled();
-      expect(mockPushService.sendToUsers).not.toHaveBeenCalled();
+    });
+
+    it('delays the notification and uses the key as job id, outside of the job data', async () => {
+      await service.notify({
+        userIds: ['user-1'],
+        category: 'ratings',
+        message: MESSAGE,
+        restaurantId: 'resto-1',
+        delay: 60_000,
+        key: 'rating-request-user-1-resto-1',
+      });
+
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        SEND_NOTIFICATION_JOB,
+        { userIds: ['user-1'], category: 'ratings', message: MESSAGE, restaurantId: 'resto-1' },
+        { delay: 60_000, jobId: 'rating-request-user-1-resto-1' },
+      );
+    });
+
+    it('queues nothing without users', async () => {
+      await service.notify({ userIds: [], category: 'points', message: MESSAGE });
+
+      expect(mockQueue.add).not.toHaveBeenCalled();
     });
   });
 

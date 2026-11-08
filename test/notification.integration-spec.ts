@@ -134,42 +134,52 @@ describe('UserNotificationController (integration)', () => {
   // ── notify ──────────────────────────────────────────────────────────────────
 
   describe('NotificationService.notify', () => {
+    /** notify passe par la file : la notification arrive en base une fois traitée par le worker */
+    async function getSentNotifications(): Promise<unknown[]> {
+      for (let i = 0; i < 100; i++) {
+        const res = await request(app.getHttpServer()).get('/users/me/notifications').expect(200);
+        if (res.body.data.items.length > 0) return res.body.data.items as unknown[];
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      throw new Error('No notification sent after 10 s');
+    }
+
     it('adds the notification to the center even when the user turned off the push', async () => {
       await request(app.getHttpServer())
         .patch('/users/me/notification-preferences')
         .send({ points: false })
         .expect(200);
 
-      await RequestContext.create(orm.em, () =>
-        app.get(NotificationService).notify(
-          [TEST_USER_ID],
-          'points',
-          {
-            headings: { en: '+50 points at Test Restaurant!' },
-            contents: { en: 'Your balance: 150 points.' },
-          },
-          restaurantId,
-        ),
-      );
+      await app.get(NotificationService).notify({
+        userIds: [TEST_USER_ID],
+        category: 'points',
+        message: {
+          headings: { en: '+50 points at Test Restaurant!' },
+          contents: { en: 'Your balance: 150 points.' },
+        },
+        restaurantId,
+      });
 
-      const res = await request(app.getHttpServer()).get('/users/me/notifications').expect(200);
-      expect(res.body.data.items).toHaveLength(1);
-      expect(res.body.data.items[0]).toMatchObject({
+      const items = await getSentNotifications();
+      expect(items).toHaveLength(1);
+      expect(items[0]).toMatchObject({
         headings: { en: '+50 points at Test Restaurant!' },
         restaurant: { id: restaurantId },
       });
     });
 
     it('saves an app notification without restaurant', async () => {
-      await RequestContext.create(orm.em, () =>
-        app.get(NotificationService).notify([TEST_USER_ID], 'promotions', {
+      await app.get(NotificationService).notify({
+        userIds: [TEST_USER_ID],
+        category: 'promotions',
+        message: {
           headings: { en: 'Welcome!' },
           contents: { en: 'Discover the restaurants around you.' },
-        }),
-      );
+        },
+      });
 
-      const res = await request(app.getHttpServer()).get('/users/me/notifications').expect(200);
-      expect(res.body.data.items[0]).toMatchObject({ restaurant: null, data: null });
+      const [item] = await getSentNotifications();
+      expect(item).toMatchObject({ restaurant: null, data: null });
     });
   });
 

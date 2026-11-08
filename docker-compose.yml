@@ -12,6 +12,17 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # --- FILES D'ATTENTE (BullMQ) ---
+  redis:
+    image: redis:7.4-alpine
+    restart: always
+    # appendonly : les jobs programmés survivent à un redémarrage ; noeviction : requis par BullMQ
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    ports:
+      - '127.0.0.1:6379:6379'
+    volumes:
+      - redis_data:/data
+
   # --- API ---
   api:
     image: ghcr.io/byben3126/restorouen-api:latest
@@ -21,8 +32,11 @@ services:
     restart: always
     depends_on:
       - db
+      - redis
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       PORT: ${PORT}
       API_URL: ${API_URL}
       FRONTEND_URL: ${FRONTEND_URL}
@@ -51,3 +65,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

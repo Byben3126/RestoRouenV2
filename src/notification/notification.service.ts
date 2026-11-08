@@ -1,45 +1,37 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { Cursor } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import { Queue } from 'bullmq';
 
 import { GetNotificationsQueryDto } from './dto/get-notifications-query.dto';
 import { Notification } from './entities/notification.entity';
-import {
-  NotificationCategory,
-  NotificationPreferencesService,
-} from './notification-preferences.service';
-import { PushMessage, PushNotificationService } from './push-notification.service';
+import { NotificationToSend } from './notification.sender';
+import { NOTIFICATIONS_QUEUE, SEND_NOTIFICATION_JOB } from './queue/notification.constants';
 import { NotificationRepository } from './repositories/notification.repository';
 
 const NOTIFICATION_RETENTION_DAYS = 90;
+
+export interface NotifyParams extends NotificationToSend {
+  delay?: number;
+  key?: string;
+}
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: NotificationRepository,
-    private readonly preferencesService: NotificationPreferencesService,
-    private readonly pushService: PushNotificationService,
+    @InjectQueue(NOTIFICATIONS_QUEUE) private readonly queue: Queue,
   ) {}
 
-  /**
-   * Ajoute la notification au centre de notifications de chaque utilisateur, toujours.
-   * Un seul push, aux utilisateurs qui veulent cette catégorie (et ce restaurant) : son data est
-   * le même pour tous, il ne peut donc pas porter l'id de chaque notification.
-   */
-  async notify(
-    userIds: string[],
-    category: NotificationCategory,
-    message: PushMessage,
-    restaurantId?: string,
-  ): Promise<void> {
-    if (userIds.length === 0) return;
-
-    await this.notificationRepository.createForUsers(userIds, message, restaurantId);
-
-    const recipients = await this.preferencesService.filterEnabled(userIds, category, restaurantId);
-    await this.pushService.sendToUsers(recipients, message);
+  async notify({ delay, key, ...notification }: NotifyParams): Promise<void> {
+    if (notification.userIds.length === 0) return;
+    await this.queue.add(SEND_NOTIFICATION_JOB, notification satisfies NotificationToSend, {
+      delay,
+      jobId: key,
+    });
   }
 
   async getNotifications(userId: string, { after, limit }: GetNotificationsQueryDto) {
