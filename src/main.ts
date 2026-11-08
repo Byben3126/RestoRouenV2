@@ -6,11 +6,9 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 
 import { MikroORM, RequestContext } from '@mikro-orm/core';
 
-import { setupAdmin } from './admin/admin.setup';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { setupSwagger } from './config/swagger.config';
-import { setupDev } from './dev/dev.setup';
 
 async function bootstrap() {
   // Le parsing du body est délégué au module better-auth : il laisse /auth intact
@@ -41,9 +39,6 @@ async function bootstrap() {
     }),
   );
 
-  // Montés avant les body parsers : AdminJS lit lui-même ses formulaires
-  setupAdmin(app);
-  setupDev(app);
   await setupSwagger(app);
 
   await app.listen(process.env.PORT ?? 3000);

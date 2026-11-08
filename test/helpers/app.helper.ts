@@ -5,7 +5,9 @@ import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import { MikroORM } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { AuthService as BetterAuthService } from '@thallesp/nestjs-better-auth';
+import type { RequestHandler } from 'express';
 
+import { ADMIN_ROUTER } from '../../src/admin/admin.router';
 import { AppModule } from '../../src/app.module';
 import { User } from '../../src/auth/entities/user.entity';
 import { TransformInterceptor } from '../../src/common/interceptors/transform.interceptor';
@@ -14,6 +16,11 @@ import { AppUser } from '../../src/user/entities/app-user.entity';
 import { Person } from '../../src/user/entities/person.entity';
 
 export const TEST_USER_ID = 'test-user-integration';
+
+/** AdminJS ne se charge pas sous Jest (publié en ESM, bundle front généré au démarrage) : remplacé */
+export const fakeAdminRouter: RequestHandler = (_req, res) => {
+  res.send('AdminJS');
+};
 
 export interface AppTestContext {
   app: INestApplication;
@@ -27,7 +34,9 @@ export async function createTestApp(options?: {
   // Le guard global de nestjs-better-auth lit la session via getSession, simulée plus bas
   let builder: TestingModuleBuilder = Test.createTestingModule({
     imports: [AppModule],
-  });
+  })
+    .overrideProvider(ADMIN_ROUTER)
+    .useValue(fakeAdminRouter);
 
   if (options?.extraOverrides) {
     builder = options.extraOverrides(builder);

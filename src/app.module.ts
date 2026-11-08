@@ -3,12 +3,14 @@ import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CustomerModule } from './customer/customer.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseModule } from './database';
+import { DevModule } from './dev/dev.module';
 import { MediaModule } from './media/media.module';
 import { NotificationModule } from './notification/notification.module';
 import { PromotionModule } from './promotion/promotion.module';
@@ -44,6 +46,8 @@ import { UserModule } from './user/user.module';
     MediaModule,
     NotificationModule,
     RealtimeModule,
+    AdminModule,
+    DevModule,
   ],
   controllers: [AppController],
   providers: [AppService],
