@@ -1,8 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Patch } from '@nestjs/common';
 
 import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EnrichmentStatusDto, UserDto } from './dto/user.dto';
 import { UserService } from './user.service';
@@ -11,14 +10,12 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(AuthGuard)
   @Get('me')
   @ApiOkWrappedResponse({ type: UserDto })
   getMe(@CurrentUser() userId: string) {
     return this.userService.getMe(userId);
   }
 
-  @UseGuards(AuthGuard)
   @Get('me/enrichment-status')
   @ApiOkWrappedResponse({ type: EnrichmentStatusDto })
   getEnrichmentStatus(@CurrentUser() userId: string) {
@@ -26,7 +23,6 @@ export class UserController {
   }
 
   /** Profil (Person) et langue ; l'email et le mot de passe se changent via Better Auth */
-  @UseGuards(AuthGuard)
   @Patch('me')
   @ApiOkWrappedResponse({ type: UserDto })
   updateMe(@CurrentUser() userId: string, @Body() dto: UpdateUserDto) {
@@ -34,7 +30,6 @@ export class UserController {
   }
 
   /** Supprime le compte (anonymisé) ; 409 tant que l'utilisateur a un restaurant */
-  @UseGuards(AuthGuard)
   @Delete('me')
   @HttpCode(204)
   deleteMe(@CurrentUser() userId: string) {

@@ -8,13 +8,12 @@ import {
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
 import { CreateCheckoutDto, SessionUrlDto, SubscriptionDto } from './dto';
 import { SubscriptionService } from './subscription.service';
 
 @ApiTags('Subscription')
-@UseGuards(AuthGuard, RestaurantOwnerGuard)
+@UseGuards(RestaurantOwnerGuard)
 @Controller('subscription')
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}

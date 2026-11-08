@@ -7,14 +7,12 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { GetNotificationsQueryDto } from './dto/get-notifications-query.dto';
 import {
   HasUnreadNotificationsDto,
@@ -25,7 +23,6 @@ import { NotificationService } from './notification.service';
 
 /** Centre de notifications de l'utilisateur connecté */
 @ApiTags('Notifications')
-@UseGuards(AuthGuard)
 @Controller('users/me/notifications')
 export class UserNotificationController {
   constructor(private readonly notificationService: NotificationService) {}

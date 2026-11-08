@@ -1,10 +1,9 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import {
   NotificationPreferencesDto,
   RestaurantNotificationSettingDto,
@@ -15,7 +14,6 @@ import { NotificationPreferencesService } from './notification-preferences.servi
 
 /** Préférences de notifications de l'utilisateur connecté */
 @ApiTags('Notifications')
-@UseGuards(AuthGuard)
 @Controller('users/me/notification-preferences')
 export class UserNotificationPreferencesController {
   constructor(private readonly preferencesService: NotificationPreferencesService) {}

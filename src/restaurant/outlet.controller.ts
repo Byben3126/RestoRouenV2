@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 import { ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 
 import {
@@ -17,12 +7,10 @@ import {
 } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { CreateOutletDto, OutletDto, UpdateOutletDto } from './dto/outlet.dto';
 import { OutletService } from './outlet.service';
 
 @ApiTags('Restaurant')
-@UseGuards(AuthGuard)
 @Controller('restaurant/me/outlets')
 export class OutletController {
   constructor(private readonly outletService: OutletService) {}

@@ -19,7 +19,7 @@ const logger = new Logger('Auth');
 /** L'app envoie le prénom et le nom séparément à l'inscription par email */
 type SignUpBody = { firstName?: string; lastName?: string };
 
-/** Services Nest appelés par les hooks ; absents pour l'instance de l'AuthGuard, qui ne lit que les sessions */
+/** Services Nest appelés par les hooks : création du compte, envoi des emails */
 export interface AuthServices {
   userService: UserService;
   emailService: EmailService;

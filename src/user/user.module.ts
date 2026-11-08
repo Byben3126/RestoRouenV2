@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 
-import { AuthGuard } from '../common/guards/auth.guard';
 import { AppUser, Person } from './entities';
 import { AppUserRepository } from './repositories/app-user.repository';
 import { UserController } from './user.controller';
@@ -11,7 +10,7 @@ import { UserService } from './user.service';
 @Module({
   imports: [MikroOrmModule.forFeature([AppUser, Person])],
   controllers: [UserController],
-  providers: [UserService, AuthGuard, AppUserRepository],
+  providers: [UserService, AppUserRepository],
   // Better Auth crée l'AppUser et la Person à l'inscription
   exports: [UserService],
 })

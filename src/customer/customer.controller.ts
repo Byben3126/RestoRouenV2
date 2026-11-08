@@ -7,7 +7,6 @@ import {
 } from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
 import { CustomerService } from './customer.service';
 import {
@@ -19,7 +18,7 @@ import {
 } from './dto';
 
 @ApiTags('Customers')
-@UseGuards(AuthGuard, RestaurantOwnerGuard)
+@UseGuards(RestaurantOwnerGuard)
 @Controller('customers')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}

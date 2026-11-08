@@ -7,7 +7,6 @@ import {
 } from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
 import { CreatePromotionDto } from './dto/create-promotion.dto';
 import { PromotionDto } from './dto/promotion.dto';
@@ -17,7 +16,7 @@ import { PromotionService } from './promotion.service';
 
 /** Gestion des promotions par le propriétaire du restaurant connecté */
 @ApiTags('Promotions')
-@UseGuards(AuthGuard, RestaurantOwnerGuard)
+@UseGuards(RestaurantOwnerGuard)
 @Controller('promotions')
 export class OwnerPromotionController {
   constructor(private readonly promotionService: PromotionService) {}

@@ -4,14 +4,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
 import { DashboardService } from './dashboard.service';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { GetDashboardStatsQueryDto } from './dto/get-dashboard-stats-query.dto';
 
 @ApiTags('Dashboard')
-@UseGuards(AuthGuard, RestaurantOwnerGuard)
+@UseGuards(RestaurantOwnerGuard)
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}

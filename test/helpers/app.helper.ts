@@ -8,7 +8,6 @@ import { AuthService as BetterAuthService } from '@thallesp/nestjs-better-auth';
 
 import { AppModule } from '../../src/app.module';
 import { User } from '../../src/auth/entities/user.entity';
-import { AuthGuard } from '../../src/common/guards/auth.guard';
 import { TransformInterceptor } from '../../src/common/interceptors/transform.interceptor';
 import { Restaurant } from '../../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../../src/user/entities/app-user.entity';
@@ -25,17 +24,10 @@ export interface AppTestContext {
 export async function createTestApp(options?: {
   extraOverrides?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
 }): Promise<AppTestContext> {
+  // Le guard global de nestjs-better-auth lit la session via getSession, simulée plus bas
   let builder: TestingModuleBuilder = Test.createTestingModule({
     imports: [AppModule],
-  })
-    .overrideGuard(AuthGuard)
-    .useValue({
-      canActivate: (ctx: any) => {
-        const req = ctx.switchToHttp().getRequest();
-        req.userId = TEST_USER_ID;
-        return true;
-      },
-    });
+  });
 
   if (options?.extraOverrides) {
     builder = options.extraOverrides(builder);

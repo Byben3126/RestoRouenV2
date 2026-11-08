@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import {
@@ -17,7 +7,6 @@ import {
 } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import {
   CreateRestaurantDto,
   NearbyRestaurantsQueryDto,
@@ -31,7 +20,6 @@ import {
 import { RestaurantService } from './restaurant.service';
 
 @ApiTags('Restaurant')
-@UseGuards(AuthGuard)
 @Controller('restaurant')
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}

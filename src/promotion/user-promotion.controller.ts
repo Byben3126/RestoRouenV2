@@ -1,10 +1,9 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { GetUserPromotionsQueryDto } from './dto/get-user-promotions-query.dto';
 import { PromotionTokenDto } from './dto/promotion-token.dto';
 import { PaginatedUserPromotionsDto } from './dto/promotion.dto';
@@ -12,7 +11,6 @@ import { PromotionService } from './promotion.service';
 
 /** Promotions disponibles pour l'utilisateur connecté, tous restaurants confondus */
 @ApiTags('Promotions')
-@UseGuards(AuthGuard)
 @Controller('users/me/promotions')
 export class UserPromotionController {
   constructor(private readonly promotionService: PromotionService) {}

@@ -7,7 +7,6 @@ import {
 } from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
-import { AuthGuard } from '../common/guards/auth.guard';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
 import { CreateRewardDto, RewardDto, UpdateRewardDto, UseRewardDto } from './dto';
 import { RewardStatus } from './entities/reward.entity';
@@ -15,7 +14,7 @@ import { RewardService } from './reward.service';
 
 /** Gestion des récompenses par le propriétaire du restaurant connecté */
 @ApiTags('Rewards')
-@UseGuards(AuthGuard, RestaurantOwnerGuard)
+@UseGuards(RestaurantOwnerGuard)
 @Controller('rewards')
 export class OwnerRewardController {
   constructor(private readonly rewardService: RewardService) {}
