@@ -1,7 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { GetUserRestaurantsQueryDto, PaginatedRestaurantsDto } from './dto';
@@ -16,7 +15,7 @@ export class UserRestaurantController {
   /** sortBy=points pour le top des restaurants, lastVisit (par défaut) pour les derniers visités */
   @Get()
   @Serialize(PaginatedRestaurantsDto)
-  @ApiOkWrappedResponse({ type: PaginatedRestaurantsDto })
+  @ApiOkResponse({ type: PaginatedRestaurantsDto })
   getUserRestaurants(@CurrentUser() userId: string, @Query() query: GetUserRestaurantsQueryDto) {
     return this.restaurantService.getUserRestaurants(userId, query);
   }

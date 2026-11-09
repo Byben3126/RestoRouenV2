@@ -1,10 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreatedWrappedResponse,
-  ApiOkWrappedResponse,
-} from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
@@ -25,7 +21,7 @@ export class CustomerController {
 
   @Get()
   @Serialize(PaginatedCustomersDto, ['owner'])
-  @ApiOkWrappedResponse({ type: PaginatedCustomersDto })
+  @ApiOkResponse({ type: PaginatedCustomersDto })
   getRestaurantCustomers(
     @CurrentRestaurant() restaurantId: string,
     @Query() query: GetCustomersQueryDto,
@@ -35,7 +31,7 @@ export class CustomerController {
 
   @Post(':id/points')
   @Serialize(CustomerDto, ['owner'])
-  @ApiCreatedWrappedResponse({ type: CustomerDto })
+  @ApiCreatedResponse({ type: CustomerDto })
   addPoints(
     @CurrentRestaurant() restaurantId: string,
     @Param('id') customerId: string,
@@ -46,7 +42,7 @@ export class CustomerController {
 
   @Get(':id/points-transactions')
   @Serialize(PointsTransactionDto, ['owner'])
-  @ApiOkWrappedResponse({ type: PointsTransactionDto, isArray: true })
+  @ApiOkResponse({ type: PointsTransactionDto, isArray: true })
   getPointsTransactions(
     @CurrentRestaurant() restaurantId: string,
     @Param('id') customerId: string,

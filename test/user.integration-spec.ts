@@ -44,8 +44,7 @@ describe('UserController (integration)', () => {
     it('returns 200 with the authenticated user data', async () => {
       const res = await request(app.getHttpServer()).get('/users/me').expect(200);
 
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toMatchObject({
+      expect(res.body).toMatchObject({
         id: TEST_USER_ID,
         email: 'integration@test.com',
         name: 'Integration Test User',
@@ -55,21 +54,12 @@ describe('UserController (integration)', () => {
     });
 
     it('response contains profile and meta fields', async () => {
-      const { body } = await request(app.getHttpServer()).get('/users/me').expect(200);
-      const user = body.data;
+      const { body: user } = await request(app.getHttpServer()).get('/users/me').expect(200);
 
       expect(user.id).toBeDefined();
       expect(user.language).toBeDefined();
       expect(user.linkCode).toBeDefined();
       expect(user.isRestaurantOwner).toBe(true);
-    });
-
-    it('response is wrapped in { success, data, timestamp }', async () => {
-      const { body } = await request(app.getHttpServer()).get('/users/me').expect(200);
-
-      expect(body.success).toBe(true);
-      expect(body.timestamp).toBeDefined();
-      expect(body.data).toBeDefined();
     });
   });
 
@@ -86,10 +76,10 @@ describe('UserController (integration)', () => {
         country: 'France',
         language: 'en',
       }).expect(200);
-      expect(res.body.data).toMatchObject({ firstName: 'Jean', name: 'Jean Dupont' });
+      expect(res.body).toMatchObject({ firstName: 'Jean', name: 'Jean Dupont' });
 
       const saved = await request(app.getHttpServer()).get('/users/me').expect(200);
-      expect(saved.body.data).toMatchObject({
+      expect(saved.body).toMatchObject({
         firstName: 'Jean',
         lastName: 'Dupont',
         gender: 'male',
@@ -98,7 +88,7 @@ describe('UserController (integration)', () => {
         language: 'en',
         name: 'Jean Dupont',
       });
-      expect(saved.body.data.dateOfBirth).toContain('1990-05-12');
+      expect(saved.body.dateOfBirth).toContain('1990-05-12');
     });
 
     it('only changes the fields sent', async () => {
@@ -106,7 +96,7 @@ describe('UserController (integration)', () => {
       await patchMe({ city: 'Paris' }).expect(200);
 
       const saved = await request(app.getHttpServer()).get('/users/me').expect(200);
-      expect(saved.body.data).toMatchObject({ firstName: 'Jean', city: 'Paris' });
+      expect(saved.body).toMatchObject({ firstName: 'Jean', city: 'Paris' });
     });
 
     it('clears an optional field with null', async () => {
@@ -114,8 +104,8 @@ describe('UserController (integration)', () => {
       await patchMe({ lastName: null }).expect(200);
 
       const saved = await request(app.getHttpServer()).get('/users/me').expect(200);
-      expect(saved.body.data.lastName).toBeNull();
-      expect(saved.body.data.name).toBe('Jean');
+      expect(saved.body.lastName).toBeNull();
+      expect(saved.body.name).toBe('Jean');
     });
 
     it('returns 404 without creating the Person when it is missing', async () => {
@@ -145,7 +135,7 @@ describe('UserController (integration)', () => {
   describe('GET /users/me/enrichment-status', () => {
     const getStatus = async () => {
       const res = await request(app.getHttpServer()).get('/users/me/enrichment-status').expect(200);
-      return res.body.data as { needsEnrichment: boolean };
+      return res.body as { needsEnrichment: boolean };
     };
 
     beforeEach(async () => {

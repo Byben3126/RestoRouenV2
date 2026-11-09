@@ -1,10 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreatedWrappedResponse,
-  ApiOkWrappedResponse,
-} from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
@@ -20,20 +16,20 @@ export class SubscriptionController {
 
   @Get()
   @Serialize(SubscriptionDto, ['owner'])
-  @ApiOkWrappedResponse({ type: SubscriptionDto })
+  @ApiOkResponse({ type: SubscriptionDto })
   getSubscription(@CurrentRestaurant() restaurantId: string) {
     return this.subscriptionService.getForRestaurant(restaurantId);
   }
 
   @Post('portal')
-  @ApiCreatedWrappedResponse({ type: SessionUrlDto })
+  @ApiCreatedResponse({ type: SessionUrlDto })
   async createPortalSession(@CurrentUser() userId: string) {
     const url = await this.subscriptionService.createPortalSession(userId);
     return { url };
   }
 
   @Post('checkout')
-  @ApiCreatedWrappedResponse({ type: SessionUrlDto })
+  @ApiCreatedResponse({ type: SessionUrlDto })
   async createCheckout(
     @CurrentUser() userId: string,
     @CurrentRestaurant() restaurantId: string,

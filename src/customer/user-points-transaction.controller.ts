@@ -1,7 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { CustomerService } from './customer.service';
@@ -19,7 +18,7 @@ export class UserPointsTransactionController {
    */
   @Get()
   @Serialize(PointsTransactionPageDto)
-  @ApiOkWrappedResponse({ type: PointsTransactionPageDto })
+  @ApiOkResponse({ type: PointsTransactionPageDto })
   getPointsTransactions(
     @CurrentUser() userId: string,
     @Param('restaurantId', ParseUUIDPipe) restaurantId: string,

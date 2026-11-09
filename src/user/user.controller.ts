@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Patch } from '@nestjs/common';
+import { ApiOkResponse } from '@nestjs/swagger';
 
-import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EnrichmentStatusDto, UserDto } from './dto/user.dto';
@@ -11,20 +11,20 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
-  @ApiOkWrappedResponse({ type: UserDto })
+  @ApiOkResponse({ type: UserDto })
   getMe(@CurrentUser() userId: string) {
     return this.userService.getMe(userId);
   }
 
   @Get('me/enrichment-status')
-  @ApiOkWrappedResponse({ type: EnrichmentStatusDto })
+  @ApiOkResponse({ type: EnrichmentStatusDto })
   getEnrichmentStatus(@CurrentUser() userId: string) {
     return this.userService.getEnrichmentStatus(userId);
   }
 
   /** Profil (Person) et langue ; l'email et le mot de passe se changent via Better Auth */
   @Patch('me')
-  @ApiOkWrappedResponse({ type: UserDto })
+  @ApiOkResponse({ type: UserDto })
   updateMe(@CurrentUser() userId: string, @Body() dto: UpdateUserDto) {
     return this.userService.updateMe(userId, dto);
   }

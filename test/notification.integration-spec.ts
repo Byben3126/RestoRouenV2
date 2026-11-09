@@ -71,21 +71,21 @@ describe('UserNotificationController (integration)', () => {
       const page1 = await request(app.getHttpServer())
         .get('/users/me/notifications?limit=2')
         .expect(200);
-      expect(headingsOf(page1.body.data.items)).toEqual(['third', 'second']);
-      expect(page1.body.data.items[0]).toMatchObject({
+      expect(headingsOf(page1.body.items)).toEqual(['third', 'second']);
+      expect(page1.body.items[0]).toMatchObject({
         contents: { en: 'third content' },
         data: { type: 'points.added', restaurantId },
         restaurant: { id: restaurantId, name: 'Test Restaurant' },
         readAt: null,
       });
-      expect(page1.body.data.nextCursor).toEqual(expect.any(String));
+      expect(page1.body.nextCursor).toEqual(expect.any(String));
 
       const page2 = await request(app.getHttpServer())
         .get('/users/me/notifications')
-        .query({ limit: 2, after: page1.body.data.nextCursor })
+        .query({ limit: 2, after: page1.body.nextCursor })
         .expect(200);
-      expect(headingsOf(page2.body.data.items)).toEqual(['first']);
-      expect(page2.body.data.nextCursor).toBeNull();
+      expect(headingsOf(page2.body.items)).toEqual(['first']);
+      expect(page2.body.nextCursor).toBeNull();
     });
 
     it('rejects an unreadable cursor', async () => {
@@ -104,13 +104,13 @@ describe('UserNotificationController (integration)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/users/me/notifications/${notification.id}/read`)
         .expect(200);
-      expect(res.body.data).toMatchObject({ id: notification.id, readAt: expect.any(String) });
+      expect(res.body).toMatchObject({ id: notification.id, readAt: expect.any(String) });
 
       // L'autre n'est pas lue
       const unread = await request(app.getHttpServer())
         .get('/users/me/notifications/has-unread')
         .expect(200);
-      expect(unread.body.data).toEqual({ hasUnread: true });
+      expect(unread.body).toEqual({ hasUnread: true });
     });
 
     it('returns 404 for a notification that does not exist', async () => {
@@ -127,7 +127,7 @@ describe('UserNotificationController (integration)', () => {
       const unread = await request(app.getHttpServer())
         .get('/users/me/notifications/has-unread')
         .expect(200);
-      expect(unread.body.data).toEqual({ hasUnread: false });
+      expect(unread.body).toEqual({ hasUnread: false });
     });
   });
 
@@ -138,7 +138,7 @@ describe('UserNotificationController (integration)', () => {
     async function getSentNotifications(): Promise<unknown[]> {
       for (let i = 0; i < 100; i++) {
         const res = await request(app.getHttpServer()).get('/users/me/notifications').expect(200);
-        if (res.body.data.items.length > 0) return res.body.data.items as unknown[];
+        if (res.body.items.length > 0) return res.body.items as unknown[];
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       throw new Error('No notification sent after 10 s');
@@ -199,7 +199,7 @@ describe('UserNotificationController (integration)', () => {
       await RequestContext.create(orm.em, () => app.get(NotificationService).purgeOld());
 
       const res = await request(app.getHttpServer()).get('/users/me/notifications').expect(200);
-      expect(headingsOf(res.body.data.items)).toEqual(['recent']);
+      expect(headingsOf(res.body.items)).toEqual(['recent']);
     });
   });
 });

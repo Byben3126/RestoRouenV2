@@ -1,7 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { PromotionDto } from './dto/promotion.dto';
@@ -15,7 +14,7 @@ export class RestaurantPromotionController {
 
   @Get()
   @Serialize(PromotionDto)
-  @ApiOkWrappedResponse({ type: PromotionDto, isArray: true })
+  @ApiOkResponse({ type: PromotionDto, isArray: true })
   getAvailablePromotions(
     @CurrentUser() userId: string,
     @Param('restaurantId', ParseUUIDPipe) restaurantId: string,

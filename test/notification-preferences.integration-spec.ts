@@ -54,7 +54,7 @@ describe('UserNotificationPreferencesController (integration)', () => {
         .get('/users/me/notification-preferences')
         .expect(200);
 
-      expect(res.body.data).toEqual({
+      expect(res.body).toEqual({
         points: true,
         rewards: true,
         promotions: true,
@@ -69,7 +69,7 @@ describe('UserNotificationPreferencesController (integration)', () => {
         .patch('/users/me/notification-preferences')
         .send({ promotions: false })
         .expect(200);
-      expect(res.body.data).toEqual({
+      expect(res.body).toEqual({
         points: true,
         rewards: true,
         promotions: false,
@@ -84,7 +84,7 @@ describe('UserNotificationPreferencesController (integration)', () => {
       const saved = await request(app.getHttpServer())
         .get('/users/me/notification-preferences')
         .expect(200);
-      expect(saved.body.data).toMatchObject({ promotions: false, ratings: false });
+      expect(saved.body).toMatchObject({ promotions: false, ratings: false });
     });
 
     it('rejects a value that is not a boolean', async () => {
@@ -111,7 +111,7 @@ describe('UserNotificationPreferencesController (integration)', () => {
       const res = await request(app.getHttpServer())
         .get(`/users/me/notification-preferences/restaurants/${restaurantId}`)
         .expect(200);
-      expect(res.body.data).toEqual({
+      expect(res.body).toEqual({
         restaurant: { id: restaurantId, name: 'Test Restaurant' },
         enabled: true,
       });
@@ -124,7 +124,7 @@ describe('UserNotificationPreferencesController (integration)', () => {
       const saved = await request(app.getHttpServer())
         .get(`/users/me/notification-preferences/restaurants/${restaurantId}`)
         .expect(200);
-      expect(saved.body.data.enabled).toBe(false);
+      expect(saved.body.enabled).toBe(false);
     });
 
     it('turns off then back on every notification of a restaurant', async () => {
@@ -132,7 +132,7 @@ describe('UserNotificationPreferencesController (integration)', () => {
         .patch(`/users/me/notification-preferences/restaurants/${restaurantId}`)
         .send({ enabled: false })
         .expect(200);
-      expect(disabled.body.data).toEqual({
+      expect(disabled.body).toEqual({
         restaurant: { id: restaurantId, name: 'Test Restaurant' },
         enabled: false,
       });
@@ -145,7 +145,7 @@ describe('UserNotificationPreferencesController (integration)', () => {
         .patch(`/users/me/notification-preferences/restaurants/${restaurantId}`)
         .send({ enabled: true })
         .expect(200);
-      expect(enabled.body.data.enabled).toBe(true);
+      expect(enabled.body.enabled).toBe(true);
     });
 
     it('returns 404 for a restaurant the user is not a customer of', async () => {

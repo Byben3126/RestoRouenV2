@@ -1,7 +1,6 @@
 import { Body, Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiCreatedWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { CreateRatingDto, RatingDto } from './dto';
@@ -16,7 +15,7 @@ export class UserRatingController {
   /** Note la dernière visite : une note par visite, possible quand loyalty.canSubmitRating est true */
   @Post()
   @Serialize(RatingDto)
-  @ApiCreatedWrappedResponse({ type: RatingDto })
+  @ApiCreatedResponse({ type: RatingDto })
   rateRestaurant(
     @CurrentUser() userId: string,
     @Param('restaurantId', ParseUUIDPipe) restaurantId: string,

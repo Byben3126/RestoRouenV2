@@ -50,8 +50,7 @@ describe('OwnerRewardController (integration)', () => {
     it('returns 200 with empty list when no rewards exist', async () => {
       const res = await request(app.getHttpServer()).get('/rewards').expect(200);
 
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toEqual([]);
+      expect(res.body).toEqual([]);
     });
 
     it('returns rewards after creation', async () => {
@@ -61,9 +60,9 @@ describe('OwnerRewardController (integration)', () => {
 
       const res = await request(app.getHttpServer()).get('/rewards').expect(200);
 
-      expect(res.body.data).toHaveLength(1);
-      expect(res.body.data[0].name).toBe('Café offert');
-      expect(res.body.data[0].usedCount).toBe(0);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].name).toBe('Café offert');
+      expect(res.body[0].usedCount).toBe(0);
     });
   });
 
@@ -89,7 +88,7 @@ describe('OwnerRewardController (integration)', () => {
         .get(`/restaurant/${restaurantId}/rewards`)
         .expect(200);
 
-      const rewards = res.body.data as { name: string; usedCount?: number; medias: unknown[] }[];
+      const rewards = res.body as { name: string; usedCount?: number; medias: unknown[] }[];
       expect(rewards.map((r) => r.name)).toEqual(['Café offert', 'Dessert offert']);
       expect(rewards[0]).not.toHaveProperty('usedCount');
       expect(rewards[0].medias).toEqual([]);
@@ -184,7 +183,7 @@ describe('OwnerRewardController (integration)', () => {
       request(app.getHttpServer())
         .get(`/users/me/rewards/${await rewardId(name)}/token`)
         .expect(status);
-    const tokenFor = async (name: string) => (await getToken(name, 200)).body.data.token as string;
+    const tokenFor = async (name: string) => (await getToken(name, 200)).body.token as string;
     const useReward = (token: string) =>
       request(app.getHttpServer()).post('/rewards/use').send({ token });
     const customerA = () =>
@@ -195,8 +194,8 @@ describe('OwnerRewardController (integration)', () => {
 
       const res = await useReward(token).expect(200);
 
-      expect(res.body.data.name).toBe('Café offert');
-      expect(res.body.data).not.toHaveProperty('usedCount');
+      expect(res.body.name).toBe('Café offert');
+      expect(res.body).not.toHaveProperty('usedCount');
       const customer = await customerA();
       expect(customer.points).toBe(50);
       expect(customer.totalPointsGained).toBe(150);
@@ -279,11 +278,10 @@ describe('OwnerRewardController (integration)', () => {
         .send({ name: 'Café offert', pointRequired: 100 })
         .expect(201);
 
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.id).toBeDefined();
-      expect(res.body.data.name).toBe('Café offert');
-      expect(res.body.data.pointRequired).toBe(100);
-      expect(res.body.data.status).toBe(RewardStatus.ACTIVE);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.name).toBe('Café offert');
+      expect(res.body.pointRequired).toBe(100);
+      expect(res.body.status).toBe(RewardStatus.ACTIVE);
     });
 
     it('creates a reward with DRAFT status', async () => {
@@ -292,7 +290,7 @@ describe('OwnerRewardController (integration)', () => {
         .send({ name: 'Dessert offert', pointRequired: 200, status: 'draft' })
         .expect(201);
 
-      expect(res.body.data.status).toBe(RewardStatus.DRAFT);
+      expect(res.body.status).toBe(RewardStatus.DRAFT);
     });
 
     it('returns 400 when name is missing', async () => {
@@ -316,7 +314,7 @@ describe('OwnerRewardController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/rewards')
         .send({ name: 'Café offert', pointRequired: 100 });
-      rewardId = res.body.data.id;
+      rewardId = res.body.id;
     });
 
     it('updates the reward name', async () => {
@@ -325,7 +323,7 @@ describe('OwnerRewardController (integration)', () => {
         .send({ name: 'Nouveau nom', pointRequired: 100 })
         .expect(200);
 
-      expect(res.body.data.name).toBe('Nouveau nom');
+      expect(res.body.name).toBe('Nouveau nom');
     });
 
     it('updates the pointRequired', async () => {
@@ -334,7 +332,7 @@ describe('OwnerRewardController (integration)', () => {
         .send({ name: 'Café offert', pointRequired: 150 })
         .expect(200);
 
-      expect(res.body.data.pointRequired).toBe(150);
+      expect(res.body.pointRequired).toBe(150);
     });
 
     it('returns 404 for unknown reward id', async () => {
@@ -354,7 +352,7 @@ describe('OwnerRewardController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/rewards')
         .send({ name: 'Café offert', pointRequired: 100 });
-      rewardId = res.body.data.id;
+      rewardId = res.body.id;
     });
 
     it('archives the reward', async () => {
@@ -362,7 +360,7 @@ describe('OwnerRewardController (integration)', () => {
         .patch(`/rewards/${rewardId}/archive`)
         .expect(200);
 
-      expect(res.body.data.status).toBe(RewardStatus.ARCHIVED);
+      expect(res.body.status).toBe(RewardStatus.ARCHIVED);
     });
 
     it('returns 404 for unknown reward id', async () => {
@@ -381,7 +379,7 @@ describe('OwnerRewardController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/rewards')
         .send({ name: 'Café offert', pointRequired: 100, status: 'draft' });
-      rewardId = res.body.data.id;
+      rewardId = res.body.id;
     });
 
     it('sets reward back to draft', async () => {
@@ -391,7 +389,7 @@ describe('OwnerRewardController (integration)', () => {
         .patch(`/rewards/${rewardId}/draft`)
         .expect(200);
 
-      expect(res.body.data.status).toBe(RewardStatus.DRAFT);
+      expect(res.body.status).toBe(RewardStatus.DRAFT);
     });
   });
 
@@ -404,7 +402,7 @@ describe('OwnerRewardController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/rewards')
         .send({ name: 'Café offert', pointRequired: 100, status: 'draft' });
-      rewardId = res.body.data.id;
+      rewardId = res.body.id;
     });
 
     it('publishes the reward', async () => {
@@ -412,7 +410,7 @@ describe('OwnerRewardController (integration)', () => {
         .patch(`/rewards/${rewardId}/publish`)
         .expect(200);
 
-      expect(res.body.data.status).toBe(RewardStatus.ACTIVE);
+      expect(res.body.status).toBe(RewardStatus.ACTIVE);
     });
   });
 });

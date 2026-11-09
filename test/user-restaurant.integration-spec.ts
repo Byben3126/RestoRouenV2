@@ -141,7 +141,7 @@ describe('UserRestaurantController (integration)', () => {
 
   const getRestaurants = async (query = '') => {
     const res = await request(app.getHttpServer()).get(`/users/me/restaurants${query}`).expect(200);
-    return res.body.data as UserRestaurants;
+    return res.body as UserRestaurants;
   };
   const names = ({ items }: UserRestaurants) => items.map((restaurant) => restaurant.name);
 
@@ -189,8 +189,8 @@ describe('UserRestaurantController (integration)', () => {
   it('adds the card to the search results, null where the user has none', async () => {
     const res = await request(app.getHttpServer()).get('/restaurant/search?q=Other').expect(200);
 
-    expect(res.body.data.items).toHaveLength(2);
-    expect(res.body.data.items).toEqual(
+    expect(res.body.items).toHaveLength(2);
+    expect(res.body.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: otherRestaurantId,
@@ -207,7 +207,7 @@ describe('UserRestaurantController (integration)', () => {
       .query({ latitude: LAT, longitude: LON, radius: 5 })
       .expect(200);
 
-    expect(res.body.data.items).toEqual([
+    expect(res.body.items).toEqual([
       expect.objectContaining({
         id: otherRestaurantId,
         loyalty: expect.objectContaining({
@@ -224,7 +224,7 @@ describe('UserRestaurantController (integration)', () => {
     const withCard = await request(app.getHttpServer())
       .get(`/restaurant/${otherRestaurantId}`)
       .expect(200);
-    expect(withCard.body.data.loyalty).toMatchObject({
+    expect(withCard.body.loyalty).toMatchObject({
       points: 120,
       nextReward: { pointRequired: 150 },
     });
@@ -232,7 +232,7 @@ describe('UserRestaurantController (integration)', () => {
     const withoutCard = await request(app.getHttpServer())
       .get(`/restaurant/${noCardRestaurantId}`)
       .expect(200);
-    expect(withoutCard.body.data.loyalty).toBeNull();
+    expect(withoutCard.body.loyalty).toBeNull();
   });
 
   describe('GET /users/me/restaurants/:restaurantId/points-transactions', () => {
@@ -243,17 +243,15 @@ describe('UserRestaurantController (integration)', () => {
 
     it("pages through the user's history, newest first", async () => {
       const first = await getHistory(otherRestaurantId, { limit: 1 }).expect(200);
-      expect(first.body.data.items).toMatchObject([
-        { type: 'loss', amount: 30, reason: 'loss 30' },
-      ]);
-      expect(first.body.data.nextCursor).toEqual(expect.any(String));
+      expect(first.body.items).toMatchObject([{ type: 'loss', amount: 30, reason: 'loss 30' }]);
+      expect(first.body.nextCursor).toEqual(expect.any(String));
 
       const second = await getHistory(otherRestaurantId, {
         limit: 1,
-        after: first.body.data.nextCursor,
+        after: first.body.nextCursor,
       }).expect(200);
       // La transaction de l'autre client du restaurant ne remonte pas
-      expect(second.body.data).toMatchObject({
+      expect(second.body).toMatchObject({
         items: [{ type: 'gain', amount: 150, reason: 'gain 150' }],
         nextCursor: null,
       });
@@ -262,7 +260,7 @@ describe('UserRestaurantController (integration)', () => {
     it('returns an empty history where the user has no card', async () => {
       const res = await getHistory(noCardRestaurantId).expect(200);
 
-      expect(res.body.data).toEqual({ items: [], nextCursor: null });
+      expect(res.body).toEqual({ items: [], nextCursor: null });
     });
 
     it('rejects an invalid cursor', async () => {

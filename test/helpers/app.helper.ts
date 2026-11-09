@@ -10,7 +10,6 @@ import type { RequestHandler } from 'express';
 import { ADMIN_ROUTER } from '../../src/admin/admin.router';
 import { AppModule } from '../../src/app.module';
 import { User } from '../../src/auth/entities/user.entity';
-import { TransformInterceptor } from '../../src/common/interceptors/transform.interceptor';
 import { Restaurant } from '../../src/restaurant/entities/restaurant.entity';
 import { AppUser } from '../../src/user/entities/app-user.entity';
 import { Person } from '../../src/user/entities/person.entity';
@@ -53,7 +52,6 @@ export async function createTestApp(options?: {
 
   const app = moduleFixture.createNestApplication();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.useGlobalInterceptors(new TransformInterceptor());
   await app.init();
 
   const orm = moduleFixture.get(MikroORM);

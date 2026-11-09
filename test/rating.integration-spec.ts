@@ -59,7 +59,7 @@ describe('UserRatingController (integration)', () => {
   it('rates the last visit and updates the restaurant average', async () => {
     const res = await rate(restaurantId, { globalRating: 2 }).expect(201);
 
-    expect(res.body.data).toEqual({
+    expect(res.body).toEqual({
       id: expect.any(String),
       globalRating: 2,
       createdAt: expect.any(String),
@@ -71,7 +71,7 @@ describe('UserRatingController (integration)', () => {
     await rate(restaurantId, { globalRating: 5 }).expect(403);
 
     const loyalty = await request(app.getHttpServer()).get(`/restaurant/${restaurantId}`);
-    expect(loyalty.body.data.loyalty.canSubmitRating).toBe(false);
+    expect(loyalty.body.loyalty.canSubmitRating).toBe(false);
   });
 
   it('allows a new rating after the next visit', async () => {
@@ -81,7 +81,7 @@ describe('UserRatingController (integration)', () => {
     await fork.flush();
 
     const loyalty = await request(app.getHttpServer()).get(`/restaurant/${restaurantId}`);
-    expect(loyalty.body.data.loyalty.canSubmitRating).toBe(true);
+    expect(loyalty.body.loyalty.canSubmitRating).toBe(true);
 
     await rate(restaurantId, { globalRating: 5 }).expect(201);
     const restaurant = await findRestaurant();

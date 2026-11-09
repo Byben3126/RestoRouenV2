@@ -62,14 +62,13 @@ describe('CustomerController (integration)', () => {
     it('returns 200 with paginated customers', async () => {
       const res = await request(app.getHttpServer()).get('/customers').expect(200);
 
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.items).toHaveLength(1);
-      expect(res.body.data.total).toBe(1);
+      expect(res.body.items).toHaveLength(1);
+      expect(res.body.total).toBe(1);
     });
 
     it('customer contains expected fields', async () => {
       const { body } = await request(app.getHttpServer()).get('/customers').expect(200);
-      const customer = body.data.items[0];
+      const customer = body.items[0];
 
       expect(customer.id).toBeDefined();
       expect(customer.points).toBe(50);
@@ -78,15 +77,15 @@ describe('CustomerController (integration)', () => {
     it('supports pagination params', async () => {
       const res = await request(app.getHttpServer()).get('/customers?page=1&limit=5').expect(200);
 
-      expect(res.body.data.page).toBe(1);
-      expect(res.body.data.limit).toBe(5);
+      expect(res.body.page).toBe(1);
+      expect(res.body.limit).toBe(5);
     });
 
     it('returns empty items on page 2 when only 1 customer exists', async () => {
       const res = await request(app.getHttpServer()).get('/customers?page=2&limit=10').expect(200);
 
-      expect(res.body.data.items).toHaveLength(0);
-      expect(res.body.data.total).toBe(1);
+      expect(res.body.items).toHaveLength(0);
+      expect(res.body.total).toBe(1);
     });
 
     it('filters by search term matching email', async () => {
@@ -94,14 +93,14 @@ describe('CustomerController (integration)', () => {
         .get('/customers?search=customer@test')
         .expect(200);
 
-      expect(res.body.data.total).toBe(1);
+      expect(res.body.total).toBe(1);
     });
 
     it('returns empty when search does not match', async () => {
       const res = await request(app.getHttpServer()).get('/customers?search=nobody').expect(200);
 
-      expect(res.body.data.total).toBe(0);
-      expect(res.body.data.items).toHaveLength(0);
+      expect(res.body.total).toBe(0);
+      expect(res.body.items).toHaveLength(0);
     });
   });
 
@@ -116,7 +115,7 @@ describe('CustomerController (integration)', () => {
         .send({ amount: 10, reason: 'Repas' })
         .expect(201);
 
-      expect(res.body.data).toMatchObject({ points: 60, totalPointsGained: 110 });
+      expect(res.body).toMatchObject({ points: 60, totalPointsGained: 110 });
       const transactions = await em.fork().find(PointsTransaction, { customer: customer.id });
       expect(transactions).toMatchObject([
         {

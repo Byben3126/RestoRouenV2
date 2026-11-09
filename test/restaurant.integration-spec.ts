@@ -51,10 +51,9 @@ describe('RestaurantController (integration)', () => {
         .send({ name: 'Mon Restaurant' })
         .expect(201);
 
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.id).toBeDefined();
-      expect(res.body.data.name).toBe('Mon Restaurant');
-      expect(Array.isArray(res.body.data.outlets)).toBe(true);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.name).toBe('Mon Restaurant');
+      expect(Array.isArray(res.body.outlets)).toBe(true);
     });
 
     it('calls ensureStripeCustomer on creation', async () => {
@@ -90,7 +89,7 @@ describe('RestaurantController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/restaurant')
         .send({ name: 'Mon Restaurant' });
-      restaurantId = res.body.data.id;
+      restaurantId = res.body.id;
     });
 
     afterAll(async () => {
@@ -100,15 +99,15 @@ describe('RestaurantController (integration)', () => {
     it('returns the current user restaurant', async () => {
       const res = await request(app.getHttpServer()).get('/restaurant/me').expect(200);
 
-      expect(res.body.data.id).toBe(restaurantId);
-      expect(res.body.data.name).toBe('Mon Restaurant');
-      expect(res.body.data.isActive).toBe(true);
+      expect(res.body.id).toBe(restaurantId);
+      expect(res.body.name).toBe('Mon Restaurant');
+      expect(res.body.isActive).toBe(true);
     });
 
     it('returns media array in response', async () => {
       const { body } = await request(app.getHttpServer()).get('/restaurant/me').expect(200);
 
-      expect(Array.isArray(body.data.medias)).toBe(true);
+      expect(Array.isArray(body.medias)).toBe(true);
     });
   });
 
@@ -121,7 +120,7 @@ describe('RestaurantController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/restaurant')
         .send({ name: 'Mon Restaurant' });
-      restaurantId = res.body.data.id;
+      restaurantId = res.body.id;
     });
 
     afterAll(async () => {
@@ -134,7 +133,7 @@ describe('RestaurantController (integration)', () => {
         .send({ name: 'Nouveau Nom' })
         .expect(200);
 
-      expect(res.body.data.name).toBe('Nouveau Nom');
+      expect(res.body.name).toBe('Nouveau Nom');
     });
 
     it('updates mediaIds alongside name', async () => {
@@ -143,8 +142,8 @@ describe('RestaurantController (integration)', () => {
         .send({ name: 'Autre Nom', mediaIds: [] })
         .expect(200);
 
-      expect(res.body.data.name).toBe('Autre Nom');
-      expect(res.body.data.medias).toEqual([]);
+      expect(res.body.name).toBe('Autre Nom');
+      expect(res.body.medias).toEqual([]);
     });
   });
 
@@ -171,7 +170,7 @@ describe('RestaurantController (integration)', () => {
     const search = (query: Record<string, unknown>) =>
       request(app.getHttpServer()).get('/restaurant/search').query(query);
     const namesOf = (res: request.Response) =>
-      (res.body.data.items as { name: string }[]).map((r) => r.name);
+      (res.body.items as { name: string }[]).map((r) => r.name);
 
     it('ignores accents and case, and excludes inactive restaurants', async () => {
       const res = await search({ q: 'CAFE' }).expect(200);
@@ -179,13 +178,13 @@ describe('RestaurantController (integration)', () => {
       const found = namesOf(res);
       expect(found).toEqual(expect.arrayContaining(['Le Café des Arts', 'La Cafétéria']));
       expect(found).not.toContain('Café Fermé');
-      expect(res.body.data.total).toBe(2);
+      expect(res.body.total).toBe(2);
     });
 
     it('ranks names starting with the query first', async () => {
       const res = await search({ q: 'la caf' }).expect(200);
 
-      expect(res.body.data.items[0].name).toBe('La Cafétéria');
+      expect(res.body.items[0].name).toBe('La Cafétéria');
     });
 
     it('tolerates typos', async () => {
@@ -197,8 +196,8 @@ describe('RestaurantController (integration)', () => {
     it('paginates the results', async () => {
       const res = await search({ q: 'cafe', limit: 1, page: 2 }).expect(200);
 
-      expect(res.body.data.items).toHaveLength(1);
-      expect(res.body.data).toMatchObject({ total: 2, page: 2, limit: 1 });
+      expect(res.body.items).toHaveLength(1);
+      expect(res.body).toMatchObject({ total: 2, page: 2, limit: 1 });
     });
 
     it('returns 400 when the query is too short', async () => {
@@ -255,18 +254,18 @@ describe('RestaurantController (integration)', () => {
     it('returns active restaurants within the radius, closest first', async () => {
       const res = await nearby({ latitude: lat, longitude: lon, radius: 10 }).expect(200);
 
-      const items = res.body.data.items as NearbyItem[];
+      const items = res.body.items as NearbyItem[];
       expect(items.map((r) => r.name)).toEqual(['Tout Près', 'Deux Adresses']);
       expect(items[0].outlets[0].distance).toBe(0);
       expect(items[1].outlets[0].distance).toBeGreaterThan(2000);
       expect(items[1].outlets[0].distance).toBeLessThan(2400);
-      expect(res.body.data.total).toBe(2);
+      expect(res.body.total).toBe(2);
     });
 
     it('returns only the outlets within the radius, closest first', async () => {
       const res = await nearby({ latitude: lat, longitude: lon, radius: 10 }).expect(200);
 
-      const outlets = (res.body.data.items as NearbyItem[])[1].outlets;
+      const outlets = (res.body.items as NearbyItem[])[1].outlets;
       expect(outlets.map((o) => o.name)).toEqual(['Proche', 'Aussi Proche']);
       expect(outlets[0].distance).toBeLessThan(outlets[1].distance);
     });
@@ -274,7 +273,7 @@ describe('RestaurantController (integration)', () => {
     it('includes the farther outlet once the radius covers it', async () => {
       const res = await nearby({ latitude: lat, longitude: lon, radius: 50 }).expect(200);
 
-      const outlets = (res.body.data.items as NearbyItem[]).find(
+      const outlets = (res.body.items as NearbyItem[]).find(
         (r) => r.name === 'Deux Adresses',
       )!.outlets;
       expect(outlets.map((o) => o.name)).toEqual(['Proche', 'Aussi Proche', 'Loin']);
@@ -283,15 +282,15 @@ describe('RestaurantController (integration)', () => {
     it('excludes restaurants outside a smaller radius', async () => {
       const res = await nearby({ latitude: lat, longitude: lon, radius: 1 }).expect(200);
 
-      const items = res.body.data.items as { name: string }[];
+      const items = res.body.items as { name: string }[];
       expect(items.map((r) => r.name)).toEqual(['Tout Près']);
     });
 
     it('paginates the results', async () => {
       const res = await nearby({ latitude: lat, longitude: lon, limit: 1, page: 2 }).expect(200);
 
-      expect(res.body.data.items[0].name).toBe('Deux Adresses');
-      expect(res.body.data).toMatchObject({ total: 2, page: 2, limit: 1 });
+      expect(res.body.items[0].name).toBe('Deux Adresses');
+      expect(res.body).toMatchObject({ total: 2, page: 2, limit: 1 });
     });
 
     it('returns 400 when coordinates are missing or invalid', async () => {
@@ -314,7 +313,7 @@ describe('RestaurantController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/restaurant')
         .send({ name: 'Mon Restaurant' });
-      restaurantId = res.body.data.id;
+      restaurantId = res.body.id;
     });
 
     afterAll(async () => {
@@ -329,11 +328,11 @@ describe('RestaurantController (integration)', () => {
         .send({ name: 'Centre', latitude: 49.44, longitude: 1.09 })
         .expect(201);
 
-      outletId = res.body.data.id;
+      outletId = res.body.id;
       expect(outletId).toBeDefined();
-      expect(res.body.data.latitude).toBe(49.44);
-      expect(res.body.data.longitude).toBe(1.09);
-      expect(res.body.data.isActive).toBe(true);
+      expect(res.body.latitude).toBe(49.44);
+      expect(res.body.longitude).toBe(1.09);
+      expect(res.body.isActive).toBe(true);
     });
 
     it('returns 400 when latitude is out of range', async () => {
@@ -346,8 +345,8 @@ describe('RestaurantController (integration)', () => {
     it('lists the outlets of the current restaurant', async () => {
       const res = await request(app.getHttpServer()).get('/restaurant/me/outlets').expect(200);
 
-      expect(res.body.data).toHaveLength(1);
-      expect(res.body.data[0].id).toBe(outletId);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].id).toBe(outletId);
     });
 
     it('updates the outlet latitude', async () => {
@@ -356,8 +355,8 @@ describe('RestaurantController (integration)', () => {
         .send({ latitude: 48.85 })
         .expect(200);
 
-      expect(res.body.data.latitude).toBe(48.85);
-      expect(res.body.data.longitude).toBe(1.09);
+      expect(res.body.latitude).toBe(48.85);
+      expect(res.body.longitude).toBe(1.09);
     });
 
     it('deletes the outlet', async () => {

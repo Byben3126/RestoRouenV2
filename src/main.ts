@@ -7,7 +7,6 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { MikroORM, RequestContext } from '@mikro-orm/core';
 
 import { AppModule } from './app.module';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { setupSwagger } from './config/swagger.config';
 
 async function bootstrap() {
@@ -30,7 +29,6 @@ async function bootstrap() {
     RequestContext.create(orm.em, next);
   });
 
-  app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

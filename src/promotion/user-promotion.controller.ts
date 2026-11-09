@@ -1,7 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiOkWrappedResponse } from '../common/decorators/api-response.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { GetUserPromotionsQueryDto } from './dto/get-user-promotions-query.dto';
@@ -18,7 +17,7 @@ export class UserPromotionController {
   /** Toutes les promotions disponibles, y compris celles qui ciblent l'utilisateur */
   @Get()
   @Serialize(PaginatedUserPromotionsDto)
-  @ApiOkWrappedResponse({ type: PaginatedUserPromotionsDto })
+  @ApiOkResponse({ type: PaginatedUserPromotionsDto })
   getAllPromotions(@CurrentUser() userId: string, @Query() query: GetUserPromotionsQueryDto) {
     return this.promotionService.getAllPromotions(userId, query);
   }
@@ -26,7 +25,7 @@ export class UserPromotionController {
   /** Promotions qui ciblent l'utilisateur (TARGETED ou INACTIVE) */
   @Get('targeted')
   @Serialize(PaginatedUserPromotionsDto)
-  @ApiOkWrappedResponse({ type: PaginatedUserPromotionsDto })
+  @ApiOkResponse({ type: PaginatedUserPromotionsDto })
   getTargetedPromotions(@CurrentUser() userId: string, @Query() query: GetUserPromotionsQueryDto) {
     return this.promotionService.getTargetedPromotions(userId, query);
   }
@@ -34,7 +33,7 @@ export class UserPromotionController {
   /** Token signé prouvant que l'utilisateur demande à utiliser cette promotion (QR code, 10 min) */
   @Get(':id/token')
   @Serialize(PromotionTokenDto)
-  @ApiOkWrappedResponse({ type: PromotionTokenDto })
+  @ApiOkResponse({ type: PromotionTokenDto })
   createPromotionToken(
     @CurrentUser() userId: string,
     @Param('id', ParseUUIDPipe) promotionId: string,

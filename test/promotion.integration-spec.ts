@@ -54,8 +54,7 @@ describe('OwnerPromotionController (integration)', () => {
     it('returns 200 with empty list when no promotions exist', async () => {
       const res = await request(app.getHttpServer()).get('/promotions').expect(200);
 
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toEqual([]);
+      expect(res.body).toEqual([]);
     });
 
     it('returns promotions after creation', async () => {
@@ -63,8 +62,8 @@ describe('OwnerPromotionController (integration)', () => {
 
       const res = await request(app.getHttpServer()).get('/promotions').expect(200);
 
-      expect(res.body.data).toHaveLength(1);
-      expect(res.body.data[0].name).toBe('Happy Hour');
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].name).toBe('Happy Hour');
     });
   });
 
@@ -74,11 +73,10 @@ describe('OwnerPromotionController (integration)', () => {
     it('creates a promotion and returns 201', async () => {
       const res = await request(app.getHttpServer()).post('/promotions').send(BASE_DTO).expect(201);
 
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.id).toBeDefined();
-      expect(res.body.data.name).toBe('Happy Hour');
-      expect(res.body.data.audience).toBe(PromotionAudience.ALL);
-      expect(res.body.data.status).toBe(PromotionStatus.ACTIVE);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.name).toBe('Happy Hour');
+      expect(res.body.audience).toBe(PromotionAudience.ALL);
+      expect(res.body.status).toBe(PromotionStatus.ACTIVE);
     });
 
     it('creates a promotion with DRAFT status', async () => {
@@ -87,7 +85,7 @@ describe('OwnerPromotionController (integration)', () => {
         .send({ ...BASE_DTO, status: PromotionInternalStatus.DRAFT })
         .expect(201);
 
-      expect(res.body.data.status).toBe(PromotionStatus.DRAFT);
+      expect(res.body.status).toBe(PromotionStatus.DRAFT);
     });
 
     it('creates an INACTIVE audience promotion', async () => {
@@ -96,7 +94,7 @@ describe('OwnerPromotionController (integration)', () => {
         .send({ name: 'Promo inactifs', audience: PromotionAudience.INACTIVE })
         .expect(201);
 
-      expect(res.body.data.audience).toBe(PromotionAudience.INACTIVE);
+      expect(res.body.audience).toBe(PromotionAudience.INACTIVE);
     });
 
     it('returns 400 when name is missing', async () => {
@@ -191,7 +189,7 @@ describe('OwnerPromotionController (integration)', () => {
     const getPromotions = (id = restaurantId) =>
       request(app.getHttpServer()).get(`/restaurant/${id}/promotions`);
     const namesOf = (res: request.Response) =>
-      (res.body.data as { name: string }[]).map((p) => p.name).sort();
+      (res.body as { name: string }[]).map((p) => p.name).sort();
 
     it('shows only promotions for everyone when the user is not a customer', async () => {
       await seedPromotions();
@@ -227,7 +225,7 @@ describe('OwnerPromotionController (integration)', () => {
 
       const res = await getPromotions().expect(200);
 
-      const promotion = (res.body.data as Record<string, unknown>[])[0];
+      const promotion = (res.body as Record<string, unknown>[])[0];
       expect(promotion).toHaveProperty('audience');
       expect(promotion).not.toHaveProperty('targetedCustomers');
       expect(promotion).not.toHaveProperty('usedCount');
@@ -317,7 +315,7 @@ describe('OwnerPromotionController (integration)', () => {
     type UserPromotion = { name: string; restaurant: { id: string; name: string } };
     /** Ne garde que les promotions des restaurants du test (la base peut en contenir d'autres) */
     const ownItems = (res: request.Response) =>
-      (res.body.data.items as UserPromotion[]).filter((p) =>
+      (res.body.items as UserPromotion[]).filter((p) =>
         [restaurantId, restaurantBId].includes(p.restaurant.id),
       );
 
@@ -353,9 +351,9 @@ describe('OwnerPromotionController (integration)', () => {
         .query({ page: 2, limit: 1 })
         .expect(200);
 
-      expect(res.body.data.items).toHaveLength(1);
-      expect(res.body.data).toMatchObject({ page: 2, limit: 1 });
-      expect(res.body.data.total).toBeGreaterThanOrEqual(2);
+      expect(res.body.items).toHaveLength(1);
+      expect(res.body).toMatchObject({ page: 2, limit: 1 });
+      expect(res.body.total).toBeGreaterThanOrEqual(2);
     });
 
     it('returns 400 when limit exceeds 50', async () => {
@@ -376,8 +374,8 @@ describe('OwnerPromotionController (integration)', () => {
         .get(`/users/me/promotions/${await promotionId('A ciblée')}/token`)
         .expect(200);
 
-      expect(typeof res.body.data.token).toBe('string');
-      expect(new Date(res.body.data.expiresAt).getTime()).toBeGreaterThan(Date.now());
+      expect(typeof res.body.token).toBe('string');
+      expect(new Date(res.body.expiresAt).getTime()).toBeGreaterThan(Date.now());
     });
 
     it.each(['A utilisée', 'A expirée', 'B à venir', 'B inactifs'])(
@@ -395,7 +393,7 @@ describe('OwnerPromotionController (integration)', () => {
       const res = await request(app.getHttpServer())
         .get(`/users/me/promotions/${await promotionId(name)}/token`)
         .expect(200);
-      return res.body.data.token as string;
+      return res.body.token as string;
     };
 
     it('marks the promotion as used, only once', async () => {
@@ -406,7 +404,7 @@ describe('OwnerPromotionController (integration)', () => {
         .send({ token })
         .expect(200);
 
-      expect(res.body.data.name).toBe('A ciblée');
+      expect(res.body.name).toBe('A ciblée');
       const usages = await em.fork().count(PromotionUsed, {
         promotion: { name: 'A ciblée', restaurant: restaurantId },
         customer: { user: TEST_USER_ID },
@@ -463,7 +461,7 @@ describe('OwnerPromotionController (integration)', () => {
 
     beforeEach(async () => {
       const res = await request(app.getHttpServer()).post('/promotions').send(BASE_DTO);
-      promotionId = res.body.data.id;
+      promotionId = res.body.id;
     });
 
     it('updates the promotion name', async () => {
@@ -472,7 +470,7 @@ describe('OwnerPromotionController (integration)', () => {
         .send({ name: 'Nouveau nom', audience: PromotionAudience.ALL })
         .expect(200);
 
-      expect(res.body.data.name).toBe('Nouveau nom');
+      expect(res.body.name).toBe('Nouveau nom');
     });
   });
 
@@ -483,7 +481,7 @@ describe('OwnerPromotionController (integration)', () => {
 
     beforeEach(async () => {
       const res = await request(app.getHttpServer()).post('/promotions').send(BASE_DTO);
-      promotionId = res.body.data.id;
+      promotionId = res.body.id;
     });
 
     it('archives the promotion', async () => {
@@ -491,7 +489,7 @@ describe('OwnerPromotionController (integration)', () => {
         .patch(`/promotions/${promotionId}/archive`)
         .expect(200);
 
-      expect(res.body.data.status).toBe(PromotionStatus.ARCHIVED);
+      expect(res.body.status).toBe(PromotionStatus.ARCHIVED);
     });
   });
 
@@ -504,7 +502,7 @@ describe('OwnerPromotionController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/promotions')
         .send({ ...BASE_DTO, status: PromotionInternalStatus.ACTIVE });
-      promotionId = res.body.data.id;
+      promotionId = res.body.id;
     });
 
     it('sets promotion to draft', async () => {
@@ -512,7 +510,7 @@ describe('OwnerPromotionController (integration)', () => {
         .patch(`/promotions/${promotionId}/draft`)
         .expect(200);
 
-      expect(res.body.data.status).toBe(PromotionStatus.DRAFT);
+      expect(res.body.status).toBe(PromotionStatus.DRAFT);
     });
   });
 
@@ -525,7 +523,7 @@ describe('OwnerPromotionController (integration)', () => {
       const res = await request(app.getHttpServer())
         .post('/promotions')
         .send({ ...BASE_DTO, status: PromotionInternalStatus.DRAFT });
-      promotionId = res.body.data.id;
+      promotionId = res.body.id;
     });
 
     it('publishes the promotion', async () => {
@@ -533,7 +531,7 @@ describe('OwnerPromotionController (integration)', () => {
         .patch(`/promotions/${promotionId}/publish`)
         .expect(200);
 
-      expect(res.body.data.status).toBe(PromotionStatus.ACTIVE);
+      expect(res.body.status).toBe(PromotionStatus.ACTIVE);
     });
   });
 });

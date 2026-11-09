@@ -1,10 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreatedWrappedResponse,
-  ApiOkWrappedResponse,
-} from '../common/decorators/api-response.decorator';
 import { CurrentRestaurant } from '../common/decorators/current-restaurant.decorator';
 import { Serialize } from '../common/decorators/serialize.decorator';
 import { RestaurantOwnerGuard } from '../common/guards/restaurant-owner.guard';
@@ -23,21 +19,21 @@ export class OwnerPromotionController {
 
   @Get()
   @Serialize(PromotionDto, ['owner'])
-  @ApiOkWrappedResponse({ type: PromotionDto, isArray: true })
+  @ApiOkResponse({ type: PromotionDto, isArray: true })
   async getRestaurantPromotions(@CurrentRestaurant() restaurantId: string) {
     return this.promotionService.getRestaurantPromotions(restaurantId);
   }
 
   @Post()
   @Serialize(PromotionDto, ['owner'])
-  @ApiCreatedWrappedResponse({ type: PromotionDto })
+  @ApiCreatedResponse({ type: PromotionDto })
   createPromotion(@CurrentRestaurant() restaurantId: string, @Body() dto: CreatePromotionDto) {
     return this.promotionService.createPromotion(restaurantId, dto);
   }
 
   @Patch(':id')
   @Serialize(PromotionDto, ['owner'])
-  @ApiOkWrappedResponse({ type: PromotionDto })
+  @ApiOkResponse({ type: PromotionDto })
   updatePromotion(
     @CurrentRestaurant() restaurantId: string,
     @Param('id') promotionId: string,
@@ -48,21 +44,21 @@ export class OwnerPromotionController {
 
   @Patch(':id/archive')
   @Serialize(PromotionDto, ['owner'])
-  @ApiOkWrappedResponse({ type: PromotionDto })
+  @ApiOkResponse({ type: PromotionDto })
   archivePromotion(@CurrentRestaurant() restaurantId: string, @Param('id') promotionId: string) {
     return this.promotionService.archivePromotion(restaurantId, promotionId);
   }
 
   @Patch(':id/draft')
   @Serialize(PromotionDto, ['owner'])
-  @ApiOkWrappedResponse({ type: PromotionDto })
+  @ApiOkResponse({ type: PromotionDto })
   draftPromotion(@CurrentRestaurant() restaurantId: string, @Param('id') promotionId: string) {
     return this.promotionService.draftPromotion(restaurantId, promotionId);
   }
 
   @Patch(':id/publish')
   @Serialize(PromotionDto, ['owner'])
-  @ApiOkWrappedResponse({ type: PromotionDto })
+  @ApiOkResponse({ type: PromotionDto })
   publishPromotion(@CurrentRestaurant() restaurantId: string, @Param('id') promotionId: string) {
     return this.promotionService.publishPromotion(restaurantId, promotionId);
   }
@@ -71,7 +67,7 @@ export class OwnerPromotionController {
   @Post('use')
   @HttpCode(200)
   @Serialize(PromotionDto)
-  @ApiOkWrappedResponse({ type: PromotionDto })
+  @ApiOkResponse({ type: PromotionDto })
   usePromotion(@CurrentRestaurant() restaurantId: string, @Body() dto: UsePromotionDto) {
     return this.promotionService.usePromotion(restaurantId, dto.token);
   }
