@@ -11,6 +11,7 @@ import { CustomerModule } from './customer/customer.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseModule } from './database';
 import { DevModule } from './dev/dev.module';
+import { GoogleModule } from './google/google.module';
 import { MediaModule } from './media/media.module';
 import { NotificationModule } from './notification/notification.module';
 import { PromotionModule } from './promotion/promotion.module';
@@ -50,6 +51,7 @@ import { WalletModule } from './wallet/wallet.module';
     AdminModule,
     DevModule,
     WalletModule,
+    GoogleModule,
   ],
   controllers: [AppController],
   providers: [AppService],
