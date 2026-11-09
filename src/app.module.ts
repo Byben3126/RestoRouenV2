@@ -20,6 +20,7 @@ import { RestaurantModule } from './restaurant/restaurant.module';
 import { RewardModule } from './reward/reward.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { UserModule } from './user/user.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UserModule } from './user/user.module';
     RealtimeModule,
     AdminModule,
     DevModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [AppService],

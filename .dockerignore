@@ -1,0 +1,2 @@
+# Secrets : jamais dans l'image, montés au lancement
+assets/wallet/certs

@@ -59,6 +59,10 @@ services:
       S3_BUCKET: ${S3_BUCKET}
       ONESIGNAL_APP_ID: ${ONESIGNAL_APP_ID}
       ONESIGNAL_REST_API_KEY: ${ONESIGNAL_REST_API_KEY}
+      WALLET_P12_PASSWORD: ${WALLET_P12_PASSWORD}
+    volumes:
+      # Certificats Apple Wallet (pass_certificate.p12, wwdr.pem), hors git et hors image
+      - ./assets/wallet/certs:/app/assets/wallet/certs:ro
     ports:
       # API_HOST=0.0.0.0 dans le .env pour l'ouvrir au réseau local (tests sur téléphone)
       - '${API_HOST:-127.0.0.1}:3080:${PORT}'

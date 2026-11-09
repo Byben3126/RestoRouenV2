@@ -17,6 +17,8 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
+# Images du pass Apple Wallet ; les certificats sont montés au lancement (assets/wallet/certs)
+COPY --from=builder /app/assets/wallet/images ./assets/wallet/images
 
 
 CMD ["dist/main.js"]

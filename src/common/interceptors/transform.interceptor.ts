@@ -1,4 +1,10 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  StreamableFile,
+} from '@nestjs/common';
 
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -10,14 +16,18 @@ export interface Response<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, Response<T> | StreamableFile> {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<Response<T> | StreamableFile> {
     return next.handle().pipe(
-      map((data: T) => ({
-        success: true,
-        data,
-        timestamp: new Date().toISOString(),
-      })),
+      // Un fichier (ex. pass Apple Wallet) est envoyé tel quel, sans enveloppe JSON
+      map((data: T) =>
+        data instanceof StreamableFile
+          ? data
+          : { success: true, data, timestamp: new Date().toISOString() },
+      ),
     );
   }
 }
