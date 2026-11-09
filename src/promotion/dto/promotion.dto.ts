@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
 
 import { CustomerDto } from '../../customer/dto/customer.dto';
-import { PromotionAudience, PromotionStatus } from '../entities/promotion.entity';
+import { Promotion, PromotionAudience, PromotionStatus } from '../entities/promotion.entity';
 
 @Exclude()
 export class PromotionDto {
@@ -22,10 +21,10 @@ export class PromotionDto {
 
   @ApiProperty({ type: () => CustomerDto, isArray: true })
   @Expose({ groups: ['owner'] })
-  @Transform(({ obj }) =>
+  @Transform(({ obj }: { obj: Promotion }) =>
     plainToInstance(
       CustomerDto,
-      obj.targetedCustomers.getItems(false).map((pt: any) => pt.customer),
+      obj.targetedCustomers.getItems(false).map((pt) => pt.customer),
     ),
   )
   targetedCustomers!: CustomerDto[];
@@ -41,7 +40,7 @@ export class PromotionRestaurantDto {
 @Exclude()
 export class UserPromotionDto extends PromotionDto {
   @Expose()
-  @Transform(({ obj }) =>
+  @Transform(({ obj }: { obj: Promotion }) =>
     plainToInstance(PromotionRestaurantDto, obj.restaurant, { excludeExtraneousValues: true }),
   )
   restaurant!: PromotionRestaurantDto;
@@ -50,8 +49,8 @@ export class UserPromotionDto extends PromotionDto {
 @Exclude()
 export class PaginatedUserPromotionsDto {
   @Expose()
-  @Transform(({ obj }) =>
-    plainToInstance(UserPromotionDto, obj.items ?? [], { excludeExtraneousValues: true }),
+  @Transform(({ obj }: { obj: { items: Promotion[] } }) =>
+    plainToInstance(UserPromotionDto, obj.items, { excludeExtraneousValues: true }),
   )
   items!: UserPromotionDto[];
 

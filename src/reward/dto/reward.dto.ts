@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Exclude, Expose, Transform, plainToInstance } from 'class-transformer';
 
 import { MediaDto } from '../../common/dto/media.dto';
-import { RewardStatus } from '../entities/reward.entity';
+import { Reward, RewardStatus } from '../entities/reward.entity';
 
 export { MediaDto };
 
@@ -19,7 +18,7 @@ export class RewardDto {
   @Expose() updatedAt!: Date;
 
   @Expose()
-  @Transform(({ obj }) =>
+  @Transform(({ obj }: { obj: Reward }) =>
     plainToInstance(MediaDto, obj.medias.getItems(false), { excludeExtraneousValues: true }),
   )
   medias!: MediaDto[];

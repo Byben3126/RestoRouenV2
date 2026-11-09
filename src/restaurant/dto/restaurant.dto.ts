@@ -1,10 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Exclude, Expose, Transform, Type, plainToInstance } from 'class-transformer';
 
 import { MediaDto } from '../../common/dto/media.dto';
 import { RewardDto } from '../../reward/dto/reward.dto';
+import type { Restaurant } from '../entities/restaurant.entity';
+import type { NearbyRestaurant } from '../repositories/restaurant.repository';
 import { NearbyOutletDto, OutletDto } from './outlet.dto';
 
 @Exclude()
@@ -20,14 +21,14 @@ export class RestaurantDto {
   @Expose() updatedAt!: Date;
 
   @Expose()
-  @Transform(({ obj }) =>
+  @Transform(({ obj }: { obj: Restaurant }) =>
     plainToInstance(MediaDto, obj.medias ?? [], { excludeExtraneousValues: true }),
   )
   medias!: MediaDto[];
 
   @Expose()
-  @Transform(({ obj }) =>
-    plainToInstance(OutletDto, obj.outlets?.isInitialized?.() ? obj.outlets.getItems() : [], {
+  @Transform(({ obj }: { obj: Restaurant }) =>
+    plainToInstance(OutletDto, obj.outlets.isInitialized() ? obj.outlets.getItems() : [], {
       excludeExtraneousValues: true,
     }),
   )
@@ -65,8 +66,8 @@ export class UserRestaurantDto extends RestaurantDto {
 export class NearbyRestaurantDto extends UserRestaurantDto {
   /** Uniquement les points de vente du rayon, du plus proche au plus loin */
   @Expose()
-  @Transform(({ obj }) =>
-    plainToInstance(NearbyOutletDto, obj.nearbyOutlets ?? [], { excludeExtraneousValues: true }),
+  @Transform(({ obj }: { obj: NearbyRestaurant }) =>
+    plainToInstance(NearbyOutletDto, obj.nearbyOutlets, { excludeExtraneousValues: true }),
   )
   override outlets: NearbyOutletDto[] = [];
 }
@@ -74,8 +75,8 @@ export class NearbyRestaurantDto extends UserRestaurantDto {
 @Exclude()
 export class PaginatedNearbyRestaurantsDto {
   @Expose()
-  @Transform(({ obj }) =>
-    plainToInstance(NearbyRestaurantDto, obj.items ?? [], { excludeExtraneousValues: true }),
+  @Transform(({ obj }: { obj: { items: NearbyRestaurant[] } }) =>
+    plainToInstance(NearbyRestaurantDto, obj.items, { excludeExtraneousValues: true }),
   )
   items!: NearbyRestaurantDto[];
 
@@ -87,8 +88,8 @@ export class PaginatedNearbyRestaurantsDto {
 @Exclude()
 export class PaginatedRestaurantsDto {
   @Expose()
-  @Transform(({ obj }) =>
-    plainToInstance(UserRestaurantDto, obj.items ?? [], { excludeExtraneousValues: true }),
+  @Transform(({ obj }: { obj: { items: Restaurant[] } }) =>
+    plainToInstance(UserRestaurantDto, obj.items, { excludeExtraneousValues: true }),
   )
   items!: UserRestaurantDto[];
 
