@@ -5,6 +5,7 @@ import {
   Formula,
   Index,
   ManyToOne,
+  ObjectQuery,
   OneToMany,
   PrimaryKey,
   Property,
@@ -77,12 +78,9 @@ export class Customer {
   @Property({ onCreate: () => new Date(), onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 
+  /** Jamais venu, ou pas de visite depuis INACTIVE_THRESHOLD_DAYS jours (30 par défaut) */
   get isInactive(): boolean {
-    if (!this.lastVisitDate) return true;
-    const days = Number(process.env.INACTIVE_THRESHOLD_DAYS ?? 30);
-    const threshold = new Date();
-    threshold.setDate(threshold.getDate() - days);
-    return this.lastVisitDate < threshold;
+    return !this.lastVisitDate || this.lastVisitDate < Customer.inactiveThreshold();
   }
 
   static inactiveThreshold(): Date {
@@ -90,6 +88,13 @@ export class Customer {
     const d = new Date();
     d.setDate(d.getDate() - days);
     return d;
+  }
+
+  /** La règle de isInactive, en filtre de requête : les deux se modifient ensemble */
+  static inactiveFilter(): ObjectQuery<Customer> {
+    return {
+      $or: [{ lastVisitDate: null }, { lastVisitDate: { $lt: Customer.inactiveThreshold() } }],
+    };
   }
 
   hasEnoughPoints(amount: number): boolean {

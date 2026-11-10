@@ -50,9 +50,7 @@ export class CustomerRepository extends EntityRepository<Customer> {
     }
 
     if (onlyInactive) {
-      andConditions.push({
-        $or: [{ lastVisitDate: { $lt: Customer.inactiveThreshold() } }, { lastVisitDate: null }],
-      });
+      andConditions.push(Customer.inactiveFilter());
     }
 
     where.$and = andConditions;
