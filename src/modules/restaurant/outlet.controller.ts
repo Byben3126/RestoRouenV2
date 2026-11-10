@@ -1,5 +1,11 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Serialize } from '../../common/decorators/serialize.decorator';
@@ -39,6 +45,7 @@ export class OutletController {
   @Delete(':id')
   @HttpCode(204)
   @ApiNoContentResponse()
+  @ApiConflictResponse({ description: 'The restaurant must keep at least one active outlet' })
   deleteOutlet(@CurrentUser() userId: string, @Param('id') id: string) {
     return this.outletService.deleteOutlet(userId, id);
   }

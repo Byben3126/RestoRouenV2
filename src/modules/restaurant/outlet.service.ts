@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { EntityManager } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -53,6 +53,15 @@ export class OutletService {
 
     const outlet = await this.outletRepository.findOne({ id: outletId, restaurant: restaurant.id });
     if (!outlet) throw new NotFoundException('Outlet not found');
+
+    // Un restaurant garde toujours au moins un point de vente actif (ceux que liste findByRestaurant)
+    if (outlet.isActive) {
+      const activeCount = await this.outletRepository.count({
+        restaurant: restaurant.id,
+        isActive: true,
+      });
+      if (activeCount <= 1) throw new ConflictException('Cannot delete the last outlet');
+    }
 
     await this.em.removeAndFlush(outlet);
   }
