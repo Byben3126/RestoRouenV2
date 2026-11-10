@@ -21,7 +21,7 @@ export class UserDto {
   @Expose() isActive!: boolean;
   @Expose() isRestaurantOwner!: boolean;
   @Expose() stripeCustomerId?: string;
-  @Expose() role?: string;
+  @Expose() roles!: string[];
 }
 
 export class EnrichmentStatusDto {

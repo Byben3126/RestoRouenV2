@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiForbiddenResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+
+import { Roles } from '@thallesp/nestjs-better-auth';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Serialize } from '../../common/decorators/serialize.decorator';
@@ -21,8 +23,10 @@ export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
 
   @Post()
+  @Roles(['restaurateur'])
   @Serialize(RestaurantDto, ['owner'])
   @ApiCreatedResponse({ type: RestaurantDto })
+  @ApiForbiddenResponse({ description: 'Missing the restaurateur role' })
   createMyRestaurant(@CurrentUser() userId: string, @Body() dto: CreateRestaurantDto) {
     return this.restaurantService.createMyRestaurant(userId, dto);
   }

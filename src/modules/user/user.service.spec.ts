@@ -93,6 +93,24 @@ describe('UserService', () => {
 
       expect(dto.isRestaurantOwner).toBe(true);
     });
+
+    it('returns the roles as an array', async () => {
+      const appUser = makeAppUser();
+      appUser.authUser!.role = 'user, restaurateur';
+      mockRepo.findByAuthUserId.mockResolvedValue(appUser);
+
+      const dto = await service.getMe('user-1');
+
+      expect(dto.roles).toEqual(['user', 'restaurateur']);
+    });
+
+    it('returns an empty array when the user has no role', async () => {
+      mockRepo.findByAuthUserId.mockResolvedValue(makeAppUser());
+
+      const dto = await service.getMe('user-1');
+
+      expect(dto.roles).toEqual([]);
+    });
   });
 
   // ── updateMe ────────────────────────────────────────────────────────────────

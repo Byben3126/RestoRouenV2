@@ -2,6 +2,7 @@
 import { INestApplication } from '@nestjs/common';
 
 import { EntityManager } from '@mikro-orm/postgresql';
+import { AuthService as BetterAuthService } from '@thallesp/nestjs-better-auth';
 import request from 'supertest';
 
 import { User } from '../src/modules/auth/entities/user.entity';
@@ -21,6 +22,10 @@ const mockSubscriptionService = {
 describe('RestaurantController (integration)', () => {
   let app: INestApplication;
   let em: EntityManager;
+  let getSession: jest.Mock;
+
+  const signIn = (role: string) =>
+    getSession.mockResolvedValue({ user: { id: TEST_USER_ID, role }, session: {} });
 
   beforeAll(async () => {
     const ctx = await createTestApp({
@@ -29,6 +34,9 @@ describe('RestaurantController (integration)', () => {
     });
     app = ctx.app;
     em = ctx.em;
+    getSession = app.get<BetterAuthService, { api: { getSession: jest.Mock } }>(BetterAuthService)
+      .api.getSession;
+    signIn('user,restaurateur');
     await seedUserOnly(em);
   });
 
@@ -43,6 +51,16 @@ describe('RestaurantController (integration)', () => {
     afterEach(async () => {
       await em.fork().nativeDelete(Restaurant, { user: TEST_USER_ID });
       jest.clearAllMocks();
+      signIn('user,restaurateur');
+    });
+
+    it('answers 403 without the restaurateur role', async () => {
+      signIn('user');
+
+      await request(app.getHttpServer())
+        .post('/restaurant')
+        .send({ name: 'Mon Restaurant' })
+        .expect(403);
     });
 
     it('creates a restaurant and returns 201', async () => {
@@ -359,13 +377,44 @@ describe('RestaurantController (integration)', () => {
       expect(res.body.longitude).toBe(1.09);
     });
 
-    it('deletes the outlet', async () => {
-      await request(app.getHttpServer()).delete(`/restaurant/me/outlets/${outletId}`).expect(204);
+    it('refuses to delete the last outlet', async () => {
+      await request(app.getHttpServer()).delete(`/restaurant/me/outlets/${outletId}`).expect(409);
 
+      const res = await request(app.getHttpServer()).get('/restaurant/me/outlets').expect(200);
+      expect(res.body).toHaveLength(1);
+    });
+
+    it('still refuses when the only other outlet is inactive', async () => {
+      const { body: inactive } = (await request(app.getHttpServer())
+        .post('/restaurant/me/outlets')
+        .send({ name: 'Fermé' })
+        .expect(201)) as { body: { id: string } };
+      await request(app.getHttpServer())
+        .patch(`/restaurant/me/outlets/${inactive.id}`)
+        .send({ isActive: false })
+        .expect(200);
+
+      await request(app.getHttpServer()).delete(`/restaurant/me/outlets/${outletId}`).expect(409);
+      // L'inactif, lui, se supprime
+      await request(app.getHttpServer())
+        .delete(`/restaurant/me/outlets/${inactive.id}`)
+        .expect(204);
+    });
+
+    it('deletes an outlet when another one remains', async () => {
+      const { body: other } = (await request(app.getHttpServer())
+        .post('/restaurant/me/outlets')
+        .send({ name: 'Saint-Sever' })
+        .expect(201)) as { body: { id: string } };
+
+      await request(app.getHttpServer()).delete(`/restaurant/me/outlets/${outletId}`).expect(204);
       await request(app.getHttpServer())
         .patch(`/restaurant/me/outlets/${outletId}`)
         .send({ name: 'X' })
         .expect(404);
+
+      const res = await request(app.getHttpServer()).get('/restaurant/me/outlets').expect(200);
+      expect((res.body as { id: string }[]).map((o) => o.id)).toEqual([other.id]);
     });
   });
 });

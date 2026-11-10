@@ -23,7 +23,10 @@ export class UserMapper {
       linkCode: appUser.linkCode,
       isActive: appUser.isActive,
       isRestaurantOwner: appUser.isRestaurantOwner,
-      role: appUser.authUser.role,
+      roles: (appUser.authUser.role ?? '')
+        .split(',')
+        .map((role) => role.trim())
+        .filter((role) => role),
     };
   }
 
