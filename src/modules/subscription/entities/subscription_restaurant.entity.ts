@@ -22,6 +22,12 @@ export enum SubscriptionStatus {
   PAUSED = 'paused',
 }
 
+/** Statuts qui donnent accès aux fonctions payantes : seule définition, pour les guards et le service */
+export const ACTIVE_SUBSCRIPTION_STATUSES = [
+  SubscriptionStatus.ACTIVE,
+  SubscriptionStatus.TRIALING,
+];
+
 export enum SubscriptionPlan {
   STARTER = 'starter',
   GROWTH = 'growth',

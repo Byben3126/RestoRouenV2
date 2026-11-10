@@ -10,6 +10,7 @@ import { AppUser } from '../user/entities/app-user.entity';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import {
+  ACTIVE_SUBSCRIPTION_STATUSES,
   Subscription,
   SubscriptionPlan,
   SubscriptionStatus,
@@ -65,10 +66,7 @@ export class SubscriptionService {
     plan: SubscriptionPlan,
   ): Promise<string> {
     const existing = await this.subscriptionRepository.findByRestaurantId(restaurantId);
-    if (
-      existing &&
-      [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING].includes(existing.status)
-    ) {
+    if (existing && ACTIVE_SUBSCRIPTION_STATUSES.includes(existing.status)) {
       throw new ConflictException('An active subscription already exists for this restaurant');
     }
 
