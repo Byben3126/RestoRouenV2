@@ -6,6 +6,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { AppUser } from './entities/app-user.entity';
+import { USER_CREATED_EVENT, UserCreatedEvent } from './events/user-created.event';
 import { USER_DELETED_EVENT, UserDeletedEvent } from './events/user-deleted.event';
 import { PersonNotFoundException } from './exceptions/person-not-found.exception';
 import { UserMapper } from './mappers/user.mapper';
@@ -68,6 +69,12 @@ export class UserService {
     firstName: string;
     lastName?: string;
   }): Promise<void> {
-    await this.appUserRepo.createFromAuthUser(payload);
+    const created = await this.appUserRepo.createFromAuthUser(payload);
+    if (created) {
+      this.eventEmitter.emit(
+        USER_CREATED_EVENT,
+        new UserCreatedEvent(payload.userId, payload.email),
+      );
+    }
   }
 }

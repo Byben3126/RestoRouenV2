@@ -11,6 +11,7 @@ import { User } from '../src/modules/auth/entities/user.entity';
 import { Customer } from '../src/modules/customer/entities/customer.entity';
 import { PointsTransaction } from '../src/modules/customer/entities/points-transaction.entity';
 import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
+import { SubscriptionService } from '../src/modules/subscription/subscription.service';
 import { AppUser } from '../src/modules/user/entities/app-user.entity';
 import { Person } from '../src/modules/user/entities/person.entity';
 import { UserService } from '../src/modules/user/user.service';
@@ -21,6 +22,8 @@ import {
   seedBaseFixtures,
 } from './helpers/app.helper';
 
+const mockSubscriptionService = { ensureStripeCustomer: jest.fn() };
+
 describe('UserController (integration)', () => {
   let app: INestApplication;
   let orm: MikroORM;
@@ -28,7 +31,10 @@ describe('UserController (integration)', () => {
   let restaurantId: string;
 
   beforeAll(async () => {
-    const ctx = await createTestApp();
+    const ctx = await createTestApp({
+      extraOverrides: (builder) =>
+        builder.overrideProvider(SubscriptionService).useValue(mockSubscriptionService),
+    });
     app = ctx.app;
     orm = ctx.orm;
     em = ctx.em;
@@ -219,6 +225,16 @@ describe('UserController (integration)', () => {
       const person = await em.fork().findOneOrFail(Person, { user: SIGN_UP_USER_ID });
       expect(person).toMatchObject({ firstName: 'Jean', lastName: 'Dupont' });
       expect(await em.fork().count(AppUser, { authUser: SIGN_UP_USER_ID })).toBe(1);
+    });
+
+    it('creates the Stripe customer of the new user', async () => {
+      mockSubscriptionService.ensureStripeCustomer.mockClear();
+
+      await signUp({ userId: SIGN_UP_USER_ID, email: 'sign-up@test.com', firstName: 'Jean' });
+      // Le listener est asynchrone : il s'exécute au tour de boucle suivant
+      await new Promise(setImmediate);
+
+      expect(mockSubscriptionService.ensureStripeCustomer).toHaveBeenCalledWith(SIGN_UP_USER_ID);
     });
 
     it('fails without leaving an AppUser when the creation fails', async () => {
