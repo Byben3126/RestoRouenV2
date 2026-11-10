@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 
-import { ADMIN_ROUTER } from './../src/admin/admin.router';
+import { ADMIN_ROUTER } from '../src/modules/admin/admin.router';
 import { AppModule } from './../src/app.module';
 import { fakeAdminRouter } from './helpers/app.helper';
 

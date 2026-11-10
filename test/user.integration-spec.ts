@@ -5,15 +5,15 @@ import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import { Account } from '../src/auth/entities/account.entity';
-import { Session } from '../src/auth/entities/session.entity';
-import { User } from '../src/auth/entities/user.entity';
-import { Customer } from '../src/customer/entities/customer.entity';
-import { PointsTransaction } from '../src/customer/entities/points-transaction.entity';
-import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
-import { AppUser } from '../src/user/entities/app-user.entity';
-import { Person } from '../src/user/entities/person.entity';
-import { UserService } from '../src/user/user.service';
+import { Account } from '../src/modules/auth/entities/account.entity';
+import { Session } from '../src/modules/auth/entities/session.entity';
+import { User } from '../src/modules/auth/entities/user.entity';
+import { Customer } from '../src/modules/customer/entities/customer.entity';
+import { PointsTransaction } from '../src/modules/customer/entities/points-transaction.entity';
+import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
+import { AppUser } from '../src/modules/user/entities/app-user.entity';
+import { Person } from '../src/modules/user/entities/person.entity';
+import { UserService } from '../src/modules/user/user.service';
 import {
   TEST_USER_ID,
   cleanBaseFixtures,

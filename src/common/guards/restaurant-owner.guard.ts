@@ -8,7 +8,7 @@ import {
 
 import { EntityManager } from '@mikro-orm/core';
 
-import { Restaurant } from '../../restaurant/entities/restaurant.entity';
+import { Restaurant } from '../../modules/restaurant/entities/restaurant.entity';
 
 @Injectable()
 export class RestaurantOwnerGuard implements CanActivate {

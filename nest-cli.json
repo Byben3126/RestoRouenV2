@@ -9,5 +9,8 @@
     "tsConfigPath": "tsconfig.build.json",
     "webpackConfigPath": "webpack.config.js",
     "plugins": ["@nestjs/swagger"]
+  },
+  "generateOptions": {
+    "baseDir": "modules"
   }
 }

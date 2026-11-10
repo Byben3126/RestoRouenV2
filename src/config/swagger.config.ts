@@ -3,9 +3,9 @@ import { DocumentBuilder, OpenAPIObject, SwaggerModule, getSchemaPath } from '@n
 
 import { AuthService } from '@thallesp/nestjs-better-auth';
 
-import { auth } from '../auth/auth';
-import { SignUpDto } from '../auth/dto/sign-up.dto';
-import { UserDto } from '../user/dto/user.dto';
+import { auth } from '../modules/auth/auth';
+import { SignUpDto } from '../modules/auth/dto/sign-up.dto';
+import { UserDto } from '../modules/user/dto/user.dto';
 
 type AppAuthService = AuthService<ReturnType<typeof auth>>;
 

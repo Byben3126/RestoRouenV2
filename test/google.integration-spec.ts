@@ -5,7 +5,7 @@ import type { Redis } from 'ioredis';
 import nock from 'nock';
 import request from 'supertest';
 
-import { REDIS_CLIENT } from '../src/redis/redis.constants';
+import { REDIS_CLIENT } from '../src/infrastructure/redis/redis.constants';
 import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
 describe('GoogleController (integration)', () => {

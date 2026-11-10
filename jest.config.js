@@ -13,10 +13,10 @@ module.exports = {
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
   moduleNameMapper: {
-    '^better-auth$': '<rootDir>/auth/__mocks__/better-auth.js',
-    '^better-auth/api$': '<rootDir>/auth/__mocks__/better-auth-api.js',
-    '^better-auth-mikro-orm$': '<rootDir>/auth/__mocks__/better-auth-mikro-orm.js',
-    '^better-auth/plugins$': '<rootDir>/auth/__mocks__/better-auth-plugins.js',
-    '^better-auth/node$': '<rootDir>/auth/__mocks__/better-auth-node.js',
+    '^better-auth$': '<rootDir>/modules/auth/__mocks__/better-auth.js',
+    '^better-auth/api$': '<rootDir>/modules/auth/__mocks__/better-auth-api.js',
+    '^better-auth-mikro-orm$': '<rootDir>/modules/auth/__mocks__/better-auth-mikro-orm.js',
+    '^better-auth/plugins$': '<rootDir>/modules/auth/__mocks__/better-auth-plugins.js',
+    '^better-auth/node$': '<rootDir>/modules/auth/__mocks__/better-auth-node.js',
   },
 };

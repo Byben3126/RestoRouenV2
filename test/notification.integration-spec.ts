@@ -5,10 +5,10 @@ import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import { NotificationPreferences } from '../src/notification/entities/notification-preferences.entity';
-import { Notification } from '../src/notification/entities/notification.entity';
-import { NotificationService } from '../src/notification/notification.service';
-import { AppUser } from '../src/user/entities/app-user.entity';
+import { NotificationPreferences } from '../src/modules/notification/entities/notification-preferences.entity';
+import { Notification } from '../src/modules/notification/entities/notification.entity';
+import { NotificationService } from '../src/modules/notification/notification.service';
+import { AppUser } from '../src/modules/user/entities/app-user.entity';
 import {
   TEST_USER_ID,
   cleanBaseFixtures,

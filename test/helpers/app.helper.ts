@@ -7,12 +7,12 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { AuthService as BetterAuthService } from '@thallesp/nestjs-better-auth';
 import type { RequestHandler } from 'express';
 
-import { ADMIN_ROUTER } from '../../src/admin/admin.router';
 import { AppModule } from '../../src/app.module';
-import { User } from '../../src/auth/entities/user.entity';
-import { Restaurant } from '../../src/restaurant/entities/restaurant.entity';
-import { AppUser } from '../../src/user/entities/app-user.entity';
-import { Person } from '../../src/user/entities/person.entity';
+import { ADMIN_ROUTER } from '../../src/modules/admin/admin.router';
+import { User } from '../../src/modules/auth/entities/user.entity';
+import { Restaurant } from '../../src/modules/restaurant/entities/restaurant.entity';
+import { AppUser } from '../../src/modules/user/entities/app-user.entity';
+import { Person } from '../../src/modules/user/entities/person.entity';
 
 export const TEST_USER_ID = 'test-user-integration';
 

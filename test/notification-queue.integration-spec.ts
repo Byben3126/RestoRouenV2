@@ -6,13 +6,13 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { Job, Queue } from 'bullmq';
 import request from 'supertest';
 
-import { User } from '../src/auth/entities/user.entity';
-import { Customer } from '../src/customer/entities/customer.entity';
-import { PointsTransaction } from '../src/customer/entities/points-transaction.entity';
-import { Notification } from '../src/notification/entities/notification.entity';
-import { RATING_REQUEST_DELAY_MS } from '../src/notification/listeners/customer-points.listener';
-import { NOTIFICATIONS_QUEUE } from '../src/notification/queue/notification.constants';
-import { AppUser } from '../src/user/entities/app-user.entity';
+import { User } from '../src/modules/auth/entities/user.entity';
+import { Customer } from '../src/modules/customer/entities/customer.entity';
+import { PointsTransaction } from '../src/modules/customer/entities/points-transaction.entity';
+import { Notification } from '../src/modules/notification/entities/notification.entity';
+import { RATING_REQUEST_DELAY_MS } from '../src/modules/notification/listeners/customer-points.listener';
+import { NOTIFICATIONS_QUEUE } from '../src/modules/notification/queue/notification.constants';
+import { AppUser } from '../src/modules/user/entities/app-user.entity';
 import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
 const CUSTOMER_USER_ID = 'test-queue-customer-user';

@@ -4,16 +4,16 @@ import { INestApplication } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import { User } from '../src/auth/entities/user.entity';
-import { Customer } from '../src/customer/entities/customer.entity';
+import { User } from '../src/modules/auth/entities/user.entity';
+import { Customer } from '../src/modules/customer/entities/customer.entity';
 import {
   PointsTransaction,
   PointsTransactionType,
-} from '../src/customer/entities/points-transaction.entity';
-import { Outlet } from '../src/restaurant/entities/outlet.entity';
-import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
-import { Reward, RewardStatus } from '../src/reward/entities/reward.entity';
-import { AppUser } from '../src/user/entities/app-user.entity';
+} from '../src/modules/customer/entities/points-transaction.entity';
+import { Outlet } from '../src/modules/restaurant/entities/outlet.entity';
+import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
+import { Reward, RewardStatus } from '../src/modules/reward/entities/reward.entity';
+import { AppUser } from '../src/modules/user/entities/app-user.entity';
 import {
   TEST_USER_ID,
   cleanBaseFixtures,

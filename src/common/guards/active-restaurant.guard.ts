@@ -10,11 +10,11 @@ import {
 
 import { EntityManager } from '@mikro-orm/core';
 
-import { Restaurant } from '../../restaurant/entities/restaurant.entity';
+import { Restaurant } from '../../modules/restaurant/entities/restaurant.entity';
 import {
   Subscription,
   SubscriptionStatus,
-} from '../../subscription/entities/subscription_restaurant.entity';
+} from '../../modules/subscription/entities/subscription_restaurant.entity';
 
 const ACTIVE_STATUSES = [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING];
 

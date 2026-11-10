@@ -5,18 +5,18 @@ import { JwtService } from '@nestjs/jwt';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import { User } from '../src/auth/entities/user.entity';
-import { Customer } from '../src/customer/entities/customer.entity';
-import { PromotionTarget } from '../src/promotion/entities/promotion-target.entity';
-import { PromotionUsed } from '../src/promotion/entities/promotion-used.entity';
+import { User } from '../src/modules/auth/entities/user.entity';
+import { Customer } from '../src/modules/customer/entities/customer.entity';
+import { PromotionTarget } from '../src/modules/promotion/entities/promotion-target.entity';
+import { PromotionUsed } from '../src/modules/promotion/entities/promotion-used.entity';
 import {
   Promotion,
   PromotionAudience,
   PromotionInternalStatus,
   PromotionStatus,
-} from '../src/promotion/entities/promotion.entity';
-import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
-import { AppUser } from '../src/user/entities/app-user.entity';
+} from '../src/modules/promotion/entities/promotion.entity';
+import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
+import { AppUser } from '../src/modules/user/entities/app-user.entity';
 import {
   TEST_USER_ID,
   cleanBaseFixtures,

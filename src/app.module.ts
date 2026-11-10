@@ -3,26 +3,26 @@ import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 
-import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
 import { redisConnection } from './config/redis.config';
-import { CustomerModule } from './customer/customer.module';
-import { DashboardModule } from './dashboard/dashboard.module';
-import { DatabaseModule } from './database';
-import { DevModule } from './dev/dev.module';
-import { GoogleModule } from './google/google.module';
-import { MediaModule } from './media/media.module';
-import { NotificationModule } from './notification/notification.module';
-import { PromotionModule } from './promotion/promotion.module';
-import { RatingModule } from './rating/rating.module';
-import { RealtimeModule } from './realtime/realtime.module';
-import { RestaurantModule } from './restaurant/restaurant.module';
-import { RewardModule } from './reward/reward.module';
-import { SubscriptionModule } from './subscription/subscription.module';
-import { UserModule } from './user/user.module';
-import { WalletModule } from './wallet/wallet.module';
+import { DatabaseModule } from './infrastructure/database';
+import { AdminModule } from './modules/admin/admin.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DevModule } from './modules/dev/dev.module';
+import { GoogleModule } from './modules/google/google.module';
+import { MediaModule } from './modules/media/media.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { PromotionModule } from './modules/promotion/promotion.module';
+import { RatingModule } from './modules/rating/rating.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { RestaurantModule } from './modules/restaurant/restaurant.module';
+import { RewardModule } from './modules/reward/reward.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { UserModule } from './modules/user/user.module';
+import { WalletModule } from './modules/wallet/wallet.module';
 
 @Module({
   imports: [

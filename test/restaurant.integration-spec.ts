@@ -4,11 +4,11 @@ import { INestApplication } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import request from 'supertest';
 
-import { User } from '../src/auth/entities/user.entity';
-import { Outlet } from '../src/restaurant/entities/outlet.entity';
-import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
-import { SubscriptionService } from '../src/subscription/subscription.service';
-import { AppUser } from '../src/user/entities/app-user.entity';
+import { User } from '../src/modules/auth/entities/user.entity';
+import { Outlet } from '../src/modules/restaurant/entities/outlet.entity';
+import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
+import { SubscriptionService } from '../src/modules/subscription/subscription.service';
+import { AppUser } from '../src/modules/user/entities/app-user.entity';
 import { TEST_USER_ID, cleanBaseFixtures, createTestApp, seedUserOnly } from './helpers/app.helper';
 
 const mockSubscriptionService = {

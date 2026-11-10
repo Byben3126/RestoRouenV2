@@ -9,10 +9,10 @@
   },
   "transformIgnorePatterns": ["/node_modules/(?!@thallesp/nestjs-better-auth/)"],
   "moduleNameMapper": {
-    "^better-auth$": "<rootDir>/src/auth/__mocks__/better-auth.js",
-    "^better-auth/api$": "<rootDir>/src/auth/__mocks__/better-auth-api.js",
-    "^better-auth/node$": "<rootDir>/src/auth/__mocks__/better-auth-node.js",
-    "^better-auth/plugins$": "<rootDir>/src/auth/__mocks__/better-auth-plugins.js",
-    "^better-auth-mikro-orm$": "<rootDir>/src/auth/__mocks__/better-auth-mikro-orm.js"
+    "^better-auth$": "<rootDir>/src/modules/auth/__mocks__/better-auth.js",
+    "^better-auth/api$": "<rootDir>/src/modules/auth/__mocks__/better-auth-api.js",
+    "^better-auth/node$": "<rootDir>/src/modules/auth/__mocks__/better-auth-node.js",
+    "^better-auth/plugins$": "<rootDir>/src/modules/auth/__mocks__/better-auth-plugins.js",
+    "^better-auth-mikro-orm$": "<rootDir>/src/modules/auth/__mocks__/better-auth-mikro-orm.js"
   }
 }

@@ -5,11 +5,11 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { randomUUID } from 'crypto';
 import request from 'supertest';
 
-import { Customer } from '../src/customer/entities/customer.entity';
-import { PointsTransaction } from '../src/customer/entities/points-transaction.entity';
-import { Rating } from '../src/rating/entities/rating.entity';
-import { Restaurant } from '../src/restaurant/entities/restaurant.entity';
-import { AppUser } from '../src/user/entities/app-user.entity';
+import { Customer } from '../src/modules/customer/entities/customer.entity';
+import { PointsTransaction } from '../src/modules/customer/entities/points-transaction.entity';
+import { Rating } from '../src/modules/rating/entities/rating.entity';
+import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
+import { AppUser } from '../src/modules/user/entities/app-user.entity';
 import {
   TEST_USER_ID,
   cleanBaseFixtures,
