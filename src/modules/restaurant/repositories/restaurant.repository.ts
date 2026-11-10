@@ -2,6 +2,7 @@ import { EntityRepository, QueryOrder } from '@mikro-orm/postgresql';
 
 import { Customer } from '../../customer/entities/customer.entity';
 import { Media } from '../../media/entities/media.entity';
+import { AppUser } from '../../user/entities/app-user.entity';
 import { UserRestaurantSortBy } from '../dto/get-user-restaurants-query.dto';
 import { UpdateRestaurantDto } from '../dto/update-restaurant.dto';
 import { Outlet } from '../entities/outlet.entity';
@@ -21,15 +22,21 @@ const USER_RESTAURANT_ORDER = {
 };
 
 export class RestaurantRepository extends EntityRepository<Restaurant> {
+  /** Crée le restaurant et marque l'utilisateur comme restaurateur (isRestaurantOwner), en une transaction */
   async createOne(userId: string, data: Pick<Restaurant, 'name'>): Promise<Restaurant> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const restaurant = this.em.create(Restaurant, { user: userId as any, ...data } as any);
-    await this.em.flush();
-    return restaurant;
+    return this.em.transactional(async (em) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const restaurant = em.create(Restaurant, { user: userId as any, ...data } as any);
+      const user = await em.findOneOrFail(AppUser, userId);
+      user.isRestaurantOwner = true;
+      await em.flush();
+      return restaurant;
+    });
   }
 
+  /** Restaurant du restaurateur, avec ses établissements (sinon RestaurantDto.outlets serait vide) */
   async findByUserId(userId: string): Promise<Restaurant | null> {
-    const restaurant = await this.findOne({ user: userId });
+    const restaurant = await this.findOne({ user: userId }, { populate: ['outlets'] });
     if (!restaurant) return null;
     return this.loadWithMedias(restaurant);
   }
@@ -45,7 +52,7 @@ export class RestaurantRepository extends EntityRepository<Restaurant> {
 
   async updateForUser(userId: string, dto: UpdateRestaurantDto): Promise<Restaurant | null> {
     const { mediaIds, ...fields } = dto;
-    const restaurant = await this.findOne({ user: userId });
+    const restaurant = await this.findOne({ user: userId }, { populate: ['outlets'] });
     if (!restaurant) return null;
 
     this.em.assign(restaurant, fields);

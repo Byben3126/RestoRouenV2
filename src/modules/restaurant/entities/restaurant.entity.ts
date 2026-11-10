@@ -27,7 +27,8 @@ export class Restaurant {
   @Property()
   name!: string;
 
-  @OneToMany(() => Outlet, (outlet) => outlet.restaurant)
+  /** Du plus ancien au plus récent : le premier est l'établissement principal (celui géré par l'app mobile) */
+  @OneToMany(() => Outlet, (outlet) => outlet.restaurant, { orderBy: { createdAt: 'asc' } })
   outlets = new Collection<Outlet>(this);
 
   @Property({ type: 'json', nullable: true })
