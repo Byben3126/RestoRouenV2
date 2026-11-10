@@ -1,9 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 
 import { EntityManager } from '@mikro-orm/postgresql';
+import type { Redis } from 'ioredis';
 import nock from 'nock';
 import request from 'supertest';
 
+import { REDIS_CLIENT } from '../src/redis/redis.constants';
 import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
 describe('GoogleController (integration)', () => {
@@ -83,5 +85,52 @@ describe('GoogleController (integration)', () => {
 
   it('rejects a place id that would leave /places', async () => {
     await request(app.getHttpServer()).get('/google/places/%2E%2E').expect(400);
+  });
+
+  describe('GET /google/places/:placeId/details', () => {
+    const FIELDS = 'nationalPhoneNumber,regularOpeningHours,websiteUri';
+    const details = { nationalPhoneNumber: '02 35 00 00 00', websiteUri: 'https://chezmomo.fr' };
+    let redis: Redis;
+
+    beforeAll(() => {
+      redis = app.get<Redis>(REDIS_CLIENT);
+    });
+
+    beforeEach(async () => {
+      await redis.del('google:place-details:ChIJ-1:fr', 'google:place-details:ChIJ-1:en');
+    });
+
+    it('calls Google once per place and language, then answers from Redis', async () => {
+      google()
+        .get('/places/ChIJ-1')
+        .query({ fields: FIELDS, languageCode: 'en' })
+        .once()
+        .reply(200, details);
+
+      for (let i = 0; i < 2; i++) {
+        const res = await request(app.getHttpServer())
+          .get('/google/places/ChIJ-1/details')
+          .query({ language: 'en' })
+          .expect(200);
+        expect(res.body).toEqual(details);
+      }
+      expect(await redis.ttl('google:place-details:ChIJ-1:en')).toBeGreaterThan(0);
+    });
+
+    it('asks Google in French by default', async () => {
+      google()
+        .get('/places/ChIJ-1')
+        .query({ fields: FIELDS, languageCode: 'fr' })
+        .reply(200, details);
+
+      await request(app.getHttpServer()).get('/google/places/ChIJ-1/details').expect(200);
+    });
+
+    it('rejects an invalid language', async () => {
+      await request(app.getHttpServer())
+        .get('/google/places/ChIJ-1/details')
+        .query({ language: 'pas une langue' })
+        .expect(400);
+    });
   });
 });

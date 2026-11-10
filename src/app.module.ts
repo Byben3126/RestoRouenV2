@@ -7,6 +7,7 @@ import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { redisConnection } from './config/redis.config';
 import { CustomerModule } from './customer/customer.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseModule } from './database';
@@ -28,14 +29,7 @@ import { WalletModule } from './wallet/wallet.module';
     DatabaseModule,
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
-    BullModule.forRootAsync({
-      useFactory: () => ({
-        connection: {
-          host: process.env.REDIS_HOST ?? 'localhost',
-          port: Number(process.env.REDIS_PORT ?? 6379),
-        },
-      }),
-    }),
+    BullModule.forRootAsync({ useFactory: () => ({ connection: redisConnection() }) }),
     AuthModule,
     UserModule,
     RestaurantModule,
