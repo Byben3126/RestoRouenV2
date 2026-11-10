@@ -7,6 +7,7 @@ import { getRepositoryToken } from '@mikro-orm/nestjs';
 
 import { AppUser } from './entities/app-user.entity';
 import { Language } from './entities/app-user.entity';
+import { USER_CREATED_EVENT, UserCreatedEvent } from './events/user-created.event';
 import { USER_DELETED_EVENT, UserDeletedEvent } from './events/user-deleted.event';
 import { PersonNotFoundException } from './exceptions/person-not-found.exception';
 import { UserService } from './user.service';
@@ -46,6 +47,7 @@ describe('UserService', () => {
     updateProfile: jest.fn(),
     anonymize: jest.fn(),
     hasActivity: jest.fn(),
+    createFromAuthUser: jest.fn(),
   };
   const mockEventEmitter = { emit: jest.fn() };
 
@@ -196,6 +198,32 @@ describe('UserService', () => {
         USER_DELETED_EVENT,
         new UserDeletedEvent('user-1'),
       );
+    });
+  });
+
+  // ── createFromAuthUser ──────────────────────────────────────────────────────
+
+  describe('createFromAuthUser', () => {
+    const payload = { userId: 'user-1', email: 'john@example.com', firstName: 'John' };
+
+    it('tells the other modules about the new user', async () => {
+      mockRepo.createFromAuthUser.mockResolvedValue(true);
+
+      await service.createFromAuthUser(payload);
+
+      expect(mockRepo.createFromAuthUser).toHaveBeenCalledWith(payload);
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        USER_CREATED_EVENT,
+        new UserCreatedEvent('user-1', 'john@example.com'),
+      );
+    });
+
+    it('stays silent when the AppUser already exists', async () => {
+      mockRepo.createFromAuthUser.mockResolvedValue(false);
+
+      await service.createFromAuthUser(payload);
+
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
   });
 });

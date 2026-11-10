@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
 
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/postgresql';
@@ -8,7 +7,6 @@ import Stripe from 'stripe';
 
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { AppUser } from '../user/entities/app-user.entity';
-import { UserCreatedEvent } from '../user/events/user-created.event';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import {
@@ -28,15 +26,6 @@ export class SubscriptionService {
     private readonly subscriptionRepository: SubscriptionRepository,
     private readonly em: EntityManager,
   ) {}
-
-  @OnEvent('user.created')
-  async handleUserCreated(event: UserCreatedEvent): Promise<void> {
-    try {
-      await this.ensureStripeCustomer(event.userId);
-    } catch {
-      // best-effort — will be created lazily at onboarding
-    }
-  }
 
   async ensureStripeCustomer(userId: string): Promise<string> {
     const appUser = await this.em.findOne(
