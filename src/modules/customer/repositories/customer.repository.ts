@@ -1,5 +1,11 @@
-import { EntityManager, EntityRepository, FilterQuery } from '@mikro-orm/postgresql';
+import {
+  EntityManager,
+  EntityRepository,
+  FilterQuery,
+  RequiredEntityData,
+} from '@mikro-orm/postgresql';
 
+import { AppUser } from '../../user/entities/app-user.entity';
 import { AddCustomerPointsDto } from '../dto/add-customer-points.dto';
 import { CustomerSortBy, GetCustomersQueryDto } from '../dto/get-customers-query.dto';
 import { Customer } from '../entities/customer.entity';
@@ -86,6 +92,26 @@ export class CustomerRepository extends EntityRepository<Customer> {
 
     await this.em.flush();
     return customer;
+  }
+
+  /**
+   * Client du restaurant dont la carte porte ce code, créé au premier scan.
+   * null si aucun utilisateur n'a ce code.
+   */
+  async findOrCreateByLinkCode(restaurantId: string, linkCode: string): Promise<Customer | null> {
+    const user = await this.em.findOne(AppUser, { linkCode });
+    if (!user) return null;
+
+    const populate = ['user', 'user.authUser', 'user.person'] as const;
+    const existing = await this.findOne({ user, restaurant: restaurantId }, { populate });
+    if (existing) return existing;
+
+    const customer = this.create({
+      user,
+      restaurant: restaurantId,
+    } as RequiredEntityData<Customer>);
+    await this.em.flush();
+    return this.findOneOrFail({ id: customer.id }, { populate, refresh: true });
   }
 
   async findPointsTransactions(

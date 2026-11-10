@@ -56,6 +56,13 @@ export class CustomerService {
     return customer;
   }
 
+  /** Scan de la carte client par le restaurant : le retrouve, ou l'ajoute à ses clients au premier passage */
+  async scanCustomer(restaurantId: string, linkCode: string): Promise<Customer> {
+    const customer = await this.customerRepository.findOrCreateByLinkCode(restaurantId, linkCode);
+    if (!customer) throw new NotFoundException('No user with this link code');
+    return customer;
+  }
+
   async getPointsTransactions(
     restaurantId: string,
     customerId: string,

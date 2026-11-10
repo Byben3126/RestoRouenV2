@@ -30,6 +30,7 @@ describe('CustomerService', () => {
   const mockRepo = {
     findPaginated: jest.fn(),
     addPointsForRestaurant: jest.fn(),
+    findOrCreateByLinkCode: jest.fn(),
   };
   const mockEventEmitter = { emit: jest.fn() };
 
@@ -111,6 +112,26 @@ describe('CustomerService', () => {
         NotFoundException,
       );
       expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── scanCustomer ────────────────────────────────────────────────────────────
+
+  describe('scanCustomer', () => {
+    it('returns the customer found or created for the link code', async () => {
+      const customer = makeCustomer();
+      mockRepo.findOrCreateByLinkCode.mockResolvedValue(customer);
+
+      const result = await service.scanCustomer('resto-1', 'AB12CD34');
+
+      expect(mockRepo.findOrCreateByLinkCode).toHaveBeenCalledWith('resto-1', 'AB12CD34');
+      expect(result).toBe(customer);
+    });
+
+    it('throws NotFoundException when no user has this link code', async () => {
+      mockRepo.findOrCreateByLinkCode.mockResolvedValue(null);
+
+      await expect(service.scanCustomer('resto-1', 'UNKNOWN0')).rejects.toThrow(NotFoundException);
     });
   });
 });

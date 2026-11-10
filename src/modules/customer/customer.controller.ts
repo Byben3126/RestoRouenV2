@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentRestaurant } from '../../common/decorators/current-restaurant.decorator';
@@ -11,6 +11,7 @@ import {
   GetCustomersQueryDto,
   PaginatedCustomersDto,
   PointsTransactionDto,
+  ScanCustomerDto,
 } from './dto';
 
 @ApiTags('Customers')
@@ -27,6 +28,15 @@ export class CustomerController {
     @Query() query: GetCustomersQueryDto,
   ) {
     return this.customerService.getRestaurantCustomers(restaurantId, query);
+  }
+
+  /** Scan de la carte client (QR code ou code saisi) : renvoie le client, créé au premier passage */
+  @Post('scan')
+  @HttpCode(200)
+  @Serialize(CustomerDto, ['owner'])
+  @ApiOkResponse({ type: CustomerDto })
+  scanCustomer(@CurrentRestaurant() restaurantId: string, @Body() dto: ScanCustomerDto) {
+    return this.customerService.scanCustomer(restaurantId, dto.linkCode);
   }
 
   @Post(':id/points')
