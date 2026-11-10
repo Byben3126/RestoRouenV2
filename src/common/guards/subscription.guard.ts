@@ -9,11 +9,9 @@ import {
 import { EntityManager } from '@mikro-orm/core';
 
 import {
+  ACTIVE_SUBSCRIPTION_STATUSES,
   Subscription,
-  SubscriptionStatus,
 } from '../../modules/subscription/entities/subscription_restaurant.entity';
-
-const ACTIVE_STATUSES = [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING];
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
@@ -24,7 +22,7 @@ export class SubscriptionGuard implements CanActivate {
 
     const subscription = await this.em.findOne(Subscription, {
       restaurant: request.restaurantId,
-      status: { $in: ACTIVE_STATUSES },
+      status: { $in: ACTIVE_SUBSCRIPTION_STATUSES },
     });
 
     if (!subscription)
