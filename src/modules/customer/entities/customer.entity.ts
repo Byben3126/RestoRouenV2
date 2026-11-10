@@ -117,6 +117,12 @@ export class Customer {
     return transaction;
   }
 
+  /** Une visite au restaurant (points, récompense ou promotion) : le client peut la noter */
+  recordVisit(): void {
+    this.lastVisitDate = new Date();
+    this.canSubmitRating = true;
+  }
+
   private recordTransaction(
     type: PointsTransactionType,
     amount: number,
@@ -125,8 +131,7 @@ export class Customer {
     // Créée avant de mettre à jour la date de visite (calcul de reactivatedCustomer)
     const transaction = new PointsTransaction({ customer: this, type, amount, reason });
     this.pointsTransactions.add(transaction);
-    this.lastVisitDate = new Date();
-    this.canSubmitRating = true;
+    this.recordVisit();
     return transaction;
   }
 }

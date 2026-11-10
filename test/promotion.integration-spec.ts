@@ -410,11 +410,13 @@ describe('OwnerPromotionController (integration)', () => {
         customer: { user: TEST_USER_ID },
       });
       expect(usages).toBe(1);
-      // Utiliser une promotion compte comme une visite : le client inactif redevient actif
+      // Utiliser une promotion compte comme une visite : le client inactif redevient actif,
+      // et il peut noter le restaurant
       const customer = await em
         .fork()
         .findOneOrFail(Customer, { user: TEST_USER_ID, restaurant: restaurantId });
       expect(customer.isInactive).toBe(false);
+      expect(customer.canSubmitRating).toBe(true);
 
       await request(app.getHttpServer()).post('/promotions/use').send({ token }).expect(409);
     });

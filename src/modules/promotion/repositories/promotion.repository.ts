@@ -230,7 +230,7 @@ export class PromotionRepository extends EntityRepository<Promotion> {
           user: userId,
           restaurant: restaurantId,
         } as RequiredEntityData<Customer>);
-      customer.lastVisitDate = new Date();
+      customer.recordVisit();
 
       em.create(PromotionUsed, { promotion, customer } as RequiredEntityData<PromotionUsed>);
       await em.flush();
