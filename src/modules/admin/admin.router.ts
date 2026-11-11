@@ -2,7 +2,7 @@ import type { MikroORM } from '@mikro-orm/core';
 import type { RecordActionResponse } from 'adminjs';
 import { Router } from 'express';
 
-import { Restaurant } from '../restaurant/entities/restaurant.entity';
+import { Outlet } from '../restaurant/entities/outlet.entity';
 
 /** Router Express d'AdminJS, injecté dans AdminController */
 export const ADMIN_ROUTER = Symbol('ADMIN_ROUTER');
@@ -22,7 +22,7 @@ export async function createAdminRouter(orm: MikroORM): Promise<Router> {
     // Ressources personnalisées : elles remplacent celles que databases crée par défaut
     resources: [
       {
-        resource: { model: Restaurant, orm },
+        resource: { model: Outlet, orm },
         options: {
           properties: {
             // Champ calculé par show.after ; en richtext pour qu'AdminJS affiche le lien en HTML
@@ -46,13 +46,13 @@ export async function createAdminRouter(orm: MikroORM): Promise<Router> {
   return Router().use('/admin', AdminJSExpress.buildRouter(admin));
 }
 
-/** Lien vers l'autorisation HubRise du restaurant ; HubRise revient ensuite sur le callback de l'API */
-function hubriseConnectLink(restaurantId: string): string {
+/** Lien vers l'autorisation HubRise de l'établissement ; HubRise revient ensuite sur le callback de l'API */
+function hubriseConnectLink(outletId: string): string {
   const clientId = process.env.HUBRISE_CLIENT_ID;
   if (!clientId) return 'HUBRISE_CLIENT_ID non configuré';
 
   const params = new URLSearchParams({
-    redirect_uri: `${process.env.API_URL}/hubrize/oauth/callback/${restaurantId}`,
+    redirect_uri: `${process.env.API_URL}/hubrize/oauth/callback/${outletId}`,
     client_id: clientId,
     scope: 'location[orders.read]',
   });

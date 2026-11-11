@@ -6,6 +6,7 @@ import { createHmac } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
 
+import { Outlet } from '../src/modules/restaurant/entities/outlet.entity';
 import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
 import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
 
@@ -13,6 +14,7 @@ describe('HubriseController (integration)', () => {
   let app: INestApplication;
   let em: EntityManager;
   let restaurantId: string;
+  let outletId: string;
   const previousEnv = { ...process.env };
 
   beforeAll(async () => {
@@ -27,6 +29,13 @@ describe('HubriseController (integration)', () => {
     app = ctx.app;
     em = ctx.em;
     ({ restaurantId } = await seedBaseFixtures(em));
+    const fork = em.fork();
+    const outlet = fork.create(Outlet, {
+      restaurant: fork.getReference(Restaurant, restaurantId),
+      name: 'Test Outlet',
+    } as any);
+    await fork.flush();
+    outletId = outlet.id;
     // HubRise renvoie le navigateur de l'admin, sans garantie de session sur ce domaine
     app
       .get<BetterAuthService, { api: { getSession: jest.Mock } }>(BetterAuthService)
@@ -34,6 +43,7 @@ describe('HubriseController (integration)', () => {
   });
 
   afterAll(async () => {
+    await em.fork().nativeDelete(Outlet, { restaurant: restaurantId });
     await cleanBaseFixtures(em, restaurantId);
     await app.close();
     nock.enableNetConnect();
@@ -45,48 +55,48 @@ describe('HubriseController (integration)', () => {
     nock.cleanAll();
   });
 
-  it('connects the restaurant to its HubRise location without a session', async () => {
+  it('connects the outlet to its HubRise location without a session', async () => {
     nock('https://manager.hubrise.com')
       .post('/oauth2/v1/token', 'code=the-code&client_id=client-id&client_secret=client-secret')
       .reply(200, { access_token: 'the-token', location_id: 'loc-1' });
     nock('https://api.hubrise.com/v1', { reqheaders: { 'X-Access-Token': 'the-token' } })
       .post('/callback', {
-        url: `https://api.example.com/hubrize/order/${restaurantId}`,
+        url: `https://api.example.com/hubrize/order/${outletId}`,
         events: { order: ['create', 'update'] },
       })
       .reply(200, {});
 
     await request(app.getHttpServer())
-      .get(`/hubrize/oauth/callback/${restaurantId}`)
+      .get(`/hubrize/oauth/callback/${outletId}`)
       .query({ code: 'the-code' })
       .expect(200, { connected: true });
 
-    const restaurant = await em.fork().findOneOrFail(Restaurant, restaurantId);
-    expect(restaurant).toMatchObject({
+    const outlet = await em.fork().findOneOrFail(Outlet, outletId);
+    expect(outlet).toMatchObject({
       hubriseAccessToken: 'the-token',
       hubriseLocationId: 'loc-1',
     });
   });
 
   it('answers 400 without a code', async () => {
-    await request(app.getHttpServer()).get(`/hubrize/oauth/callback/${restaurantId}`).expect(400);
+    await request(app.getHttpServer()).get(`/hubrize/oauth/callback/${outletId}`).expect(400);
   });
 
-  it('answers 404 for an unknown restaurant', async () => {
+  it('answers 404 for an unknown outlet', async () => {
     await request(app.getHttpServer())
       .get('/hubrize/oauth/callback/00000000-0000-4000-8000-000000000000')
       .query({ code: 'the-code' })
       .expect(404);
   });
 
-  describe('POST /hubrize/order/:restaurantId', () => {
+  describe('POST /hubrize/order/:outletId', () => {
     const event = { resource_type: 'order', event_type: 'create', order_id: 'o-1' };
     const body = JSON.stringify(event);
     const sign = (payload: string, secret = 'client-secret') =>
       createHmac('sha256', secret).update(payload).digest('hex');
     const sendEvent = (payload: string, signature?: string) => {
       const req = request(app.getHttpServer())
-        .post(`/hubrize/order/${restaurantId}`)
+        .post(`/hubrize/order/${outletId}`)
         .set('Content-Type', 'application/json');
       if (signature) req.set('X-HubRise-Hmac-SHA256', signature);
       return req.send(payload);

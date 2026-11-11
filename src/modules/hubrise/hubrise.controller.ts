@@ -26,26 +26,26 @@ export class HubriseController {
 
   constructor(private readonly hubriseService: HubriseService) {}
 
-  /** HubRise y renvoie le navigateur une fois l'accès autorisé depuis la fiche restaurant de l'admin */
-  @Get('oauth/callback/:restaurantId')
+  /** HubRise y renvoie le navigateur une fois l'accès autorisé depuis la fiche établissement de l'admin */
+  @Get('oauth/callback/:outletId')
   async oauthCallback(
-    @Param('restaurantId', ParseUUIDPipe) restaurantId: string,
+    @Param('outletId', ParseUUIDPipe) outletId: string,
     @Query() { code }: HubriseCallbackQueryDto,
   ) {
-    await this.hubriseService.connect(restaurantId, code);
+    await this.hubriseService.connect(outletId, code);
     return { connected: true };
   }
 
   /** HubRise y envoie les commandes de l'établissement connecté par connect() */
-  @Post('order/:restaurantId')
+  @Post('order/:outletId')
   @UseGuards(HubriseSignatureGuard)
   @HttpCode(200)
   receiveOrderEvent(
-    @Param('restaurantId', ParseUUIDPipe) restaurantId: string,
+    @Param('outletId', ParseUUIDPipe) outletId: string,
     @Body() event: HubriseEvent,
   ) {
     this.logger.log(
-      `${event.resource_type}.${event.event_type} ${event.order_id} pour le restaurant ${restaurantId}`,
+      `${event.resource_type}.${event.event_type} ${event.order_id} pour l'établissement ${outletId}`,
     );
     return { received: true };
   }

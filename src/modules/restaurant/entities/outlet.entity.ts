@@ -35,6 +35,12 @@ export class Outlet {
   @Property()
   isActive: boolean = true;
 
+  @Property({ nullable: true })
+  hubriseAccessToken?: string;
+
+  @Property({ nullable: true })
+  hubriseLocationId?: string;
+
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();
 
