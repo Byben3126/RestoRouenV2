@@ -1,15 +1,29 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Logger,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
-import { HubriseCallbackQueryDto } from './dto/hubrise.dto';
+import { HubriseSignatureGuard } from '../../common/guards/hubrise-signature.guard';
+import { HubriseCallbackQueryDto, type HubriseEvent } from './dto/hubrise.dto';
 import { HubriseService } from './hubrise.service';
 
 @ApiTags('HubRise')
 @AllowAnonymous()
 @Controller('hubrize')
 export class HubriseController {
+  private readonly logger = new Logger(HubriseController.name);
+
   constructor(private readonly hubriseService: HubriseService) {}
 
   /** HubRise y renvoie le navigateur une fois l'accès autorisé depuis la fiche restaurant de l'admin */
@@ -20,5 +34,19 @@ export class HubriseController {
   ) {
     await this.hubriseService.connect(restaurantId, code);
     return { connected: true };
+  }
+
+  /** HubRise y envoie les commandes de l'établissement connecté par connect() */
+  @Post('order/:restaurantId')
+  @UseGuards(HubriseSignatureGuard)
+  @HttpCode(200)
+  receiveOrderEvent(
+    @Param('restaurantId', ParseUUIDPipe) restaurantId: string,
+    @Body() event: HubriseEvent,
+  ) {
+    this.logger.log(
+      `${event.resource_type}.${event.event_type} ${event.order_id} pour le restaurant ${restaurantId}`,
+    );
+    return { received: true };
   }
 }

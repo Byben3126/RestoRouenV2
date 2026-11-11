@@ -50,7 +50,8 @@ export async function createTestApp(options?: {
     session: {},
   });
 
-  const app = moduleFixture.createNestApplication();
+  // Comme main.ts : le middleware de better-auth lit le body et garde req.rawBody (webhooks signés)
+  const app = moduleFixture.createNestApplication({ bodyParser: false });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   await app.init();
 

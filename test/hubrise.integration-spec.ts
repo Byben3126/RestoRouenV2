@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 
 import { EntityManager } from '@mikro-orm/postgresql';
 import { AuthService as BetterAuthService } from '@thallesp/nestjs-better-auth';
+import { createHmac } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
 
@@ -76,5 +77,41 @@ describe('HubriseController (integration)', () => {
       .get('/hubrize/oauth/callback/00000000-0000-4000-8000-000000000000')
       .query({ code: 'the-code' })
       .expect(404);
+  });
+
+  describe('POST /hubrize/order/:restaurantId', () => {
+    const event = { resource_type: 'order', event_type: 'create', order_id: 'o-1' };
+    const body = JSON.stringify(event);
+    const sign = (payload: string, secret = 'client-secret') =>
+      createHmac('sha256', secret).update(payload).digest('hex');
+    const sendEvent = (payload: string, signature?: string) => {
+      const req = request(app.getHttpServer())
+        .post(`/hubrize/order/${restaurantId}`)
+        .set('Content-Type', 'application/json');
+      if (signature) req.set('X-HubRise-Hmac-SHA256', signature);
+      return req.send(payload);
+    };
+
+    it('accepts an event signed by HubRise', async () => {
+      await sendEvent(body, sign(body)).expect(200, { received: true });
+    });
+
+    it('answers 401 without the HubRise signature', async () => {
+      await sendEvent(body).expect(401);
+    });
+
+    it('answers 401 when the body was not signed with the client secret', async () => {
+      await sendEvent(body, sign(body, 'other-secret')).expect(401);
+      await sendEvent(JSON.stringify({ ...event, event_type: 'update' }), sign(body)).expect(401);
+    });
+
+    it('refuses everything while the client secret is empty', async () => {
+      process.env.HUBRISE_CLIENT_SECRET = '';
+      try {
+        await sendEvent(body, sign(body, '')).expect(500);
+      } finally {
+        process.env.HUBRISE_CLIENT_SECRET = 'client-secret';
+      }
+    });
   });
 });
