@@ -60,6 +60,12 @@ export class Restaurant {
   @Property({ nullable: true })
   cloudwaitressWebhookAuthSecret?: string;
 
+  @Property({ nullable: true })
+  hubriseAccessToken?: string;
+
+  @Property({ nullable: true })
+  hubriseLocationId?: string;
+
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();
 

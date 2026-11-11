@@ -13,6 +13,7 @@ import { CustomerModule } from './modules/customer/customer.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DevModule } from './modules/dev/dev.module';
 import { GoogleModule } from './modules/google/google.module';
+import { HubriseModule } from './modules/hubrise/hubrise.module';
 import { MediaModule } from './modules/media/media.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
@@ -46,6 +47,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
     DevModule,
     WalletModule,
     GoogleModule,
+    HubriseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
