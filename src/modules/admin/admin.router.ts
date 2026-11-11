@@ -56,5 +56,5 @@ function hubriseConnectLink(restaurantId: string): string {
     client_id: clientId,
     scope: 'location[orders.read]',
   });
-  return `<a href="https://manager.hubrise.com/oauth2/v1/authorize?${params.toString()}">Connecter HubRise</a>`;
+  return `<a href="https://manager.hubrise.com/oauth2/v1/authorize?${params.toString()}" target="_blank">Connecter HubRise</a>`;
 }
