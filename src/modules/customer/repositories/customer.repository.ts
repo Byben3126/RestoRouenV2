@@ -2,9 +2,11 @@ import {
   EntityManager,
   EntityRepository,
   FilterQuery,
+  LockMode,
   RequiredEntityData,
 } from '@mikro-orm/postgresql';
 
+import { Restaurant } from '../../restaurant/entities/restaurant.entity';
 import { AppUser } from '../../user/entities/app-user.entity';
 import { AddCustomerPointsDto } from '../dto/add-customer-points.dto';
 import { CustomerSortBy, GetCustomersQueryDto } from '../dto/get-customers-query.dto';
@@ -112,6 +114,17 @@ export class CustomerRepository extends EntityRepository<Customer> {
     } as RequiredEntityData<Customer>);
     await this.em.flush();
     return this.findOneOrFail({ id: customer.id }, { populate, refresh: true });
+  }
+
+  /**
+   * Client verrouillé jusqu'à la fin de la transaction en cours, créé s'il n'existe pas encore.
+   * Deux crédits en parallèle s'additionnent au lieu de s'écraser.
+   */
+  async findOrCreateLocked(user: AppUser, restaurant: Restaurant): Promise<Customer> {
+    return (
+      (await this.findOne({ user, restaurant }, { lockMode: LockMode.PESSIMISTIC_WRITE })) ??
+      this.create({ user, restaurant } as RequiredEntityData<Customer>)
+    );
   }
 
   async findPointsTransactions(
