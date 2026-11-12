@@ -6,6 +6,7 @@ import { createHmac } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
 
+import { Order } from '../src/modules/hubrise/entities';
 import { Outlet } from '../src/modules/restaurant/entities/outlet.entity';
 import { Restaurant } from '../src/modules/restaurant/entities/restaurant.entity';
 import { cleanBaseFixtures, createTestApp, seedBaseFixtures } from './helpers/app.helper';
@@ -43,6 +44,7 @@ describe('HubriseController (integration)', () => {
   });
 
   afterAll(async () => {
+    await em.fork().nativeDelete(Order, { restaurant: restaurantId });
     await em.fork().nativeDelete(Outlet, { restaurant: restaurantId });
     await cleanBaseFixtures(em, restaurantId);
     await app.close();
@@ -122,6 +124,68 @@ describe('HubriseController (integration)', () => {
       } finally {
         process.env.HUBRISE_CLIENT_SECRET = 'client-secret';
       }
+    });
+
+    describe('with the order', () => {
+      const HUBRISE_ORDER_ID = 'it-hubrise-order';
+      const sendOrder = (state: Record<string, unknown> = {}, eventType = 'create') => {
+        const payload = JSON.stringify({
+          resource_type: 'order',
+          event_type: eventType,
+          order_id: HUBRISE_ORDER_ID,
+          new_state: {
+            id: HUBRISE_ORDER_ID,
+            location_id: 'loc-1',
+            status: 'new',
+            total: '50.60 EUR',
+            ref: '42',
+            created_at: '2026-11-12T12:30:00+01:00',
+            ...state,
+          },
+        });
+        return sendEvent(payload, sign(payload));
+      };
+      const findOrders = () => em.fork().find(Order, { hubriseOrderId: HUBRISE_ORDER_ID });
+
+      beforeAll(async () => {
+        await em.fork().nativeUpdate(Outlet, { id: outletId }, { hubriseLocationId: 'loc-1' });
+      });
+
+      afterEach(async () => {
+        await em.fork().nativeDelete(Order, { restaurant: restaurantId });
+      });
+
+      it('saves the order on the restaurant and the outlet, in cents', async () => {
+        await sendOrder().expect(200, { received: true });
+
+        const [order] = await findOrders();
+        expect(order).toMatchObject({
+          status: 'new',
+          ref: '42',
+          total: 5060,
+          currency: 'EUR',
+          points: 50,
+          orderedAt: new Date('2026-11-12T11:30:00Z'),
+        });
+        expect(order.restaurant.id).toBe(restaurantId);
+        expect(order.outlet?.id).toBe(outletId);
+        expect(order.claimedAt).toBeNull();
+      });
+
+      it('updates the same order on the next events', async () => {
+        await sendOrder().expect(200);
+        await sendOrder({ status: 'completed', total: '52.00 EUR' }, 'update').expect(200);
+
+        const orders = await findOrders();
+        expect(orders).toHaveLength(1);
+        expect(orders[0]).toMatchObject({ status: 'completed', total: 5200, points: 52 });
+      });
+
+      it('ignores an order of another location', async () => {
+        await sendOrder({ location_id: 'loc-2' }).expect(200);
+
+        expect(await findOrders()).toHaveLength(0);
+      });
     });
   });
 });

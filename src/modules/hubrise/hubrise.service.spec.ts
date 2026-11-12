@@ -5,6 +5,7 @@ import nock from 'nock';
 
 import type { Outlet } from '../restaurant/entities/outlet.entity';
 import type { OutletRepository } from '../restaurant/repositories/outlet.repository';
+import type { HubriseEvent } from './dto/hubrise.dto';
 import { HubriseService } from './hubrise.service';
 import type { OrderRepository } from './repositories/order.repository';
 
@@ -14,6 +15,7 @@ describe('HubriseService', () => {
   let service: HubriseService;
   let outlet: Partial<Outlet>;
   const outletRepository = { findOne: jest.fn() };
+  const orderRepository = { saveFromHubrise: jest.fn() };
   const em = { flush: jest.fn() };
 
   const hubriseToken = () =>
@@ -37,7 +39,7 @@ describe('HubriseService', () => {
     service = new HubriseService(
       outletRepository as unknown as OutletRepository,
       em as unknown as EntityManager,
-      {} as OrderRepository,
+      orderRepository as unknown as OrderRepository,
     );
     nock.disableNetConnect();
   });
@@ -85,5 +87,72 @@ describe('HubriseService', () => {
     await expect(service.connect(OUTLET_ID, 'the-code')).rejects.toThrow(HttpException);
     expect(outlet.hubriseAccessToken).toBeUndefined();
     expect(em.flush).not.toHaveBeenCalled();
+  });
+
+  describe('saveOrder', () => {
+    const orderEvent = (state: Partial<HubriseEvent['new_state']> = {}): HubriseEvent => ({
+      resource_type: 'order',
+      event_type: 'create',
+      new_state: {
+        id: 'o-1',
+        location_id: 'loc-1',
+        status: 'new',
+        total: '50.60 EUR',
+        ref: '42',
+        created_at: '2026-11-12T12:30:00+01:00',
+        ...state,
+      },
+    });
+
+    beforeEach(() => {
+      outlet.hubriseLocationId = 'loc-1';
+    });
+
+    it('saves the order of the connected location, in cents with 1 point per whole euro', async () => {
+      await service.saveOrder(OUTLET_ID, orderEvent());
+
+      expect(orderRepository.saveFromHubrise).toHaveBeenCalledWith({
+        hubriseOrderId: 'o-1',
+        outlet,
+        orderedAt: new Date('2026-11-12T11:30:00Z'),
+        status: 'new',
+        ref: '42',
+        total: 5060,
+        currency: 'EUR',
+        points: 50,
+      });
+    });
+
+    it('saves an order without ref', async () => {
+      await service.saveOrder(OUTLET_ID, orderEvent({ ref: null, total: '0.99 EUR' }));
+
+      expect(orderRepository.saveFromHubrise).toHaveBeenCalledWith(
+        expect.objectContaining({ ref: undefined, total: 99, points: 0 }),
+      );
+    });
+
+    it('ignores an order of another location', async () => {
+      await service.saveOrder(OUTLET_ID, orderEvent({ location_id: 'loc-2' }));
+
+      expect(orderRepository.saveFromHubrise).not.toHaveBeenCalled();
+    });
+
+    it('ignores an order for an unknown outlet', async () => {
+      outletRepository.findOne.mockResolvedValue(null);
+
+      await service.saveOrder(OUTLET_ID, orderEvent());
+
+      expect(orderRepository.saveFromHubrise).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['another resource', { ...orderEvent(), resource_type: 'customer' }],
+      ['no order state', { resource_type: 'order', event_type: 'create' }],
+    ])('ignores an event with %s', async (_, event: HubriseEvent) => {
+      await service.saveOrder(OUTLET_ID, event);
+
+      expect(outletRepository.findOne).not.toHaveBeenCalled();
+      expect(orderRepository.saveFromHubrise).not.toHaveBeenCalled();
+    });
   });
 });
