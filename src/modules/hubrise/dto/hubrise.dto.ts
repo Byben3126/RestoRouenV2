@@ -14,4 +14,16 @@ export interface HubriseEvent {
   resource_type: string;
   event_type: string;
   order_id?: string;
+  /** La commande après la modification (événements create et update) */
+  new_state?: HubriseOrderState;
+}
+
+export interface HubriseOrderState {
+  id: string;
+  location_id: string;
+  status: string;
+  /** Montant et devise, « 50.60 EUR » */
+  total: string;
+  ref: string | null;
+  created_at: string;
 }

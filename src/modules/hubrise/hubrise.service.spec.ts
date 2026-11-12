@@ -6,6 +6,7 @@ import nock from 'nock';
 import type { Outlet } from '../restaurant/entities/outlet.entity';
 import type { OutletRepository } from '../restaurant/repositories/outlet.repository';
 import { HubriseService } from './hubrise.service';
+import type { OrderRepository } from './repositories/order.repository';
 
 const OUTLET_ID = '35544ebb-a62c-4585-a51d-3d49eeb5bdc6';
 
@@ -36,6 +37,7 @@ describe('HubriseService', () => {
     service = new HubriseService(
       outletRepository as unknown as OutletRepository,
       em as unknown as EntityManager,
+      {} as OrderRepository,
     );
     nock.disableNetConnect();
   });

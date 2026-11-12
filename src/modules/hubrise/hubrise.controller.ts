@@ -40,13 +40,15 @@ export class HubriseController {
   @Post('order/:outletId')
   @UseGuards(HubriseSignatureGuard)
   @HttpCode(200)
-  receiveOrderEvent(
+  async receiveOrderEvent(
     @Param('outletId', ParseUUIDPipe) outletId: string,
     @Body() event: HubriseEvent,
   ) {
     this.logger.log(
       `${event.resource_type}.${event.event_type} ${event.order_id} pour l'établissement ${outletId}`,
     );
+    // Attendu avant de répondre : en cas d'erreur, la 500 fait renvoyer l'événement par HubRise
+    await this.hubriseService.saveOrder(outletId, event);
     return { received: true };
   }
 }
