@@ -23,6 +23,7 @@ describe('HubriseController (integration)', () => {
       HUBRISE_CLIENT_ID: 'client-id',
       HUBRISE_CLIENT_SECRET: 'client-secret',
       PUBLIC_API_URL: 'https://api.example.com',
+      ORDER_TOKEN_SECRET: 'order-token-secret',
     });
     nock.disableNetConnect();
     nock.enableNetConnect('127.0.0.1');

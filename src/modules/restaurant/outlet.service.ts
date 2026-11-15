@@ -47,6 +47,19 @@ export class OutletService {
     return outlet;
   }
 
+  /** Token de la tablette du point de vente, renvoyé une seule fois : seul son hash est gardé */
+  async generateTabletToken(userId: string, outletId: string): Promise<{ token: string }> {
+    const restaurant = await this.restaurantRepository.findOne({ user: userId });
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+
+    const outlet = await this.outletRepository.findOne({ id: outletId, restaurant: restaurant.id });
+    if (!outlet) throw new NotFoundException('Outlet not found');
+
+    const token = outlet.generateTabletToken();
+    await this.em.flush();
+    return { token };
+  }
+
   async deleteOutlet(userId: string, outletId: string): Promise<void> {
     const restaurant = await this.restaurantRepository.findOne({ user: userId });
     if (!restaurant) throw new NotFoundException('Restaurant not found');

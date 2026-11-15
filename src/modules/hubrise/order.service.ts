@@ -11,6 +11,7 @@ import {
 import { AppUser } from '../user/entities/app-user.entity';
 import { AppUserRepository } from '../user/repositories/app-user.repository';
 import { Order } from './entities';
+import { ORDER_COMPLETED_EVENT, OrderCompletedEvent } from './events/order-completed.event';
 import { OrderRepository } from './repositories/order.repository';
 
 /** Contenu du token de récupération des points d'une commande */
@@ -28,6 +29,19 @@ export class OrderService {
     private readonly jwtService: JwtService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  /** Envoie aux tablettes du point de vente le token qui permet au client de récupérer ses points */
+  async sendClaimToken(order: Order, outletId: string): Promise<void> {
+    if (!order.points || order.claimedAt) return;
+
+    const payload: OrderTokenPayload = { orderId: order.id };
+    const token = await this.jwtService.signAsync(payload);
+    const { exp } = this.jwtService.decode<{ exp: number }>(token);
+    this.eventEmitter.emit(
+      ORDER_COMPLETED_EVENT,
+      new OrderCompletedEvent(outletId, token, new Date(exp * 1000), order.points, order.ref),
+    );
+  }
 
   /** Crédite les points de la commande à l'utilisateur connecté */
   async claimPoints(token: string, userId: string): Promise<{ points: number }> {

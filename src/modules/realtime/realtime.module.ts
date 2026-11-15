@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 
-import { RealtimeGateway } from './realtime.gateway';
-import { RealtimeListener } from './realtime.listener';
+import { TabletListener } from './listeners/tablet.listener';
+import { UserListener } from './listeners/user.listener';
+import { TabletGateway } from './tablet.gateway';
+import { UserGateway } from './user.gateway';
 
 @Module({
-  providers: [RealtimeGateway, RealtimeListener],
+  providers: [UserGateway, UserListener, TabletGateway, TabletListener],
 })
 export class RealtimeModule {}

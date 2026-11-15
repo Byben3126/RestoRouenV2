@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MikroORM } from '@mikro-orm/core';
 import { AuthService } from '@thallesp/nestjs-better-auth';
 
-import { RealtimeGateway } from './realtime.gateway';
+import { UserGateway } from './user.gateway';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,8 +17,8 @@ function makeClient(handshake: { headers?: Record<string, string>; auth?: object
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
-describe('RealtimeGateway', () => {
-  let gateway: RealtimeGateway;
+describe('UserGateway', () => {
+  let gateway: UserGateway;
 
   const mockAuthService = {
     api: { getSession: jest.fn<Promise<unknown>, [{ headers: Headers }]>() },
@@ -30,13 +30,13 @@ describe('RealtimeGateway', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        RealtimeGateway,
+        UserGateway,
         { provide: MikroORM, useValue: { em: { fork: jest.fn() } } },
         { provide: AuthService, useValue: mockAuthService },
       ],
     }).compile();
 
-    gateway = module.get(RealtimeGateway);
+    gateway = module.get(UserGateway);
   });
 
   // ── handleConnection ────────────────────────────────────────────────────────

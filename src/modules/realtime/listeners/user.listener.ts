@@ -4,15 +4,18 @@ import { OnEvent } from '@nestjs/event-emitter';
 import {
   CUSTOMER_POINTS_ADDED_EVENT,
   CustomerPointsAddedEvent,
-} from '../customer/events/customer-points-added.event';
-import { PROMOTION_USED_EVENT, PromotionUsedEvent } from '../promotion/events/promotion-used.event';
-import { REWARD_USED_EVENT, RewardUsedEvent } from '../reward/events/reward-used.event';
-import { RealtimeGateway } from './realtime.gateway';
+} from '../../customer/events/customer-points-added.event';
+import {
+  PROMOTION_USED_EVENT,
+  PromotionUsedEvent,
+} from '../../promotion/events/promotion-used.event';
+import { REWARD_USED_EVENT, RewardUsedEvent } from '../../reward/events/reward-used.event';
+import { UserGateway } from '../user.gateway';
 
 /** Relaie les événements métier vers les appareils connectés de l'utilisateur concerné */
 @Injectable()
-export class RealtimeListener {
-  constructor(private readonly gateway: RealtimeGateway) {}
+export class UserListener {
+  constructor(private readonly gateway: UserGateway) {}
 
   @OnEvent(CUSTOMER_POINTS_ADDED_EVENT)
   handlePointsAdded({ userId, ...payload }: CustomerPointsAddedEvent) {

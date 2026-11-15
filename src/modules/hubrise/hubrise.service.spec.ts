@@ -7,6 +7,7 @@ import type { Outlet } from '../restaurant/entities/outlet.entity';
 import type { OutletRepository } from '../restaurant/repositories/outlet.repository';
 import type { HubriseEvent } from './dto/hubrise.dto';
 import { HubriseService } from './hubrise.service';
+import type { OrderService } from './order.service';
 import type { OrderRepository } from './repositories/order.repository';
 
 const OUTLET_ID = '35544ebb-a62c-4585-a51d-3d49eeb5bdc6';
@@ -16,6 +17,7 @@ describe('HubriseService', () => {
   let outlet: Partial<Outlet>;
   const outletRepository = { findOne: jest.fn() };
   const orderRepository = { saveFromHubrise: jest.fn() };
+  const orderService = { sendClaimToken: jest.fn() };
   const em = { flush: jest.fn() };
 
   const hubriseToken = () =>
@@ -40,6 +42,7 @@ describe('HubriseService', () => {
       outletRepository as unknown as OutletRepository,
       em as unknown as EntityManager,
       orderRepository as unknown as OrderRepository,
+      orderService as unknown as OrderService,
     );
     nock.disableNetConnect();
   });
@@ -106,6 +109,7 @@ describe('HubriseService', () => {
 
     beforeEach(() => {
       outlet.hubriseLocationId = 'loc-1';
+      orderRepository.saveFromHubrise.mockResolvedValue({ order: {}, completed: false });
     });
 
     it('saves the order of the connected location, in cents with 1 point per whole euro', async () => {

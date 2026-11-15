@@ -15,6 +15,13 @@ export class OutletDto {
   @Expose() updatedAt!: Date;
 }
 
+/** Point de vente vu par son restaurateur */
+@Exclude()
+export class OwnerOutletDto extends OutletDto {
+  @Expose() isHubriseConnected!: boolean;
+  @Expose() hasTabletToken!: boolean;
+}
+
 @Exclude()
 export class NearbyOutletDto extends OutletDto {
   /** Distance en mètres depuis le point de recherche */

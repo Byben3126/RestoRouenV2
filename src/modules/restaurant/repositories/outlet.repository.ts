@@ -9,4 +9,9 @@ export class OutletRepository extends EntityRepository<Outlet> {
       { orderBy: { createdAt: 'ASC' } },
     );
   }
+
+  /** Point de vente actif de la tablette qui présente ce token */
+  findByTabletToken(token: string): Promise<Outlet | null> {
+    return this.findOne({ tabletTokenHash: Outlet.hashTabletToken(token), isActive: true });
+  }
 }

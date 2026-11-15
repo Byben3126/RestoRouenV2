@@ -9,7 +9,7 @@ import {
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Serialize } from '../../common/decorators/serialize.decorator';
-import { CreateOutletDto, OutletDto, UpdateOutletDto } from './dto/outlet.dto';
+import { CreateOutletDto, OwnerOutletDto, UpdateOutletDto } from './dto/outlet.dto';
 import { OutletService } from './outlet.service';
 
 @ApiTags('Restaurant')
@@ -18,28 +18,34 @@ export class OutletController {
   constructor(private readonly outletService: OutletService) {}
 
   @Get()
-  @Serialize(OutletDto)
-  @ApiOkResponse({ type: [OutletDto] })
+  @Serialize(OwnerOutletDto)
+  @ApiOkResponse({ type: [OwnerOutletDto] })
   listOutlets(@CurrentUser() userId: string) {
     return this.outletService.listOutlets(userId);
   }
 
   @Post()
-  @Serialize(OutletDto)
-  @ApiCreatedResponse({ type: OutletDto })
+  @Serialize(OwnerOutletDto)
+  @ApiCreatedResponse({ type: OwnerOutletDto })
   createOutlet(@CurrentUser() userId: string, @Body() dto: CreateOutletDto) {
     return this.outletService.createOutlet(userId, dto);
   }
 
   @Patch(':id')
-  @Serialize(OutletDto)
-  @ApiOkResponse({ type: OutletDto })
+  @Serialize(OwnerOutletDto)
+  @ApiOkResponse({ type: OwnerOutletDto })
   updateOutlet(
     @CurrentUser() userId: string,
     @Param('id') id: string,
     @Body() dto: UpdateOutletDto,
   ) {
     return this.outletService.updateOutlet(userId, id, dto);
+  }
+
+  /** Remplace le token de la tablette face au client ; à saisir sur la tablette, il n'est plus affiché ensuite */
+  @Post(':id/tablet-token')
+  generateTabletToken(@CurrentUser() userId: string, @Param('id') id: string) {
+    return this.outletService.generateTabletToken(userId, id);
   }
 
   @Delete(':id')

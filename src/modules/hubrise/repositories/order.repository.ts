@@ -15,17 +15,25 @@ import { PendingPoints } from '../entities/pending-points.entity';
 /** Ce qu'un événement HubRise met à jour sur la commande */
 type OrderUpdate = Pick<Order, 'status' | 'ref' | 'total' | 'currency' | 'points'>;
 
+const COMPLETED_STATUS = 'completed';
+
 /** Statuts HubRise d'une commande qui n'a pas été payée */
 const UNPAID_STATUSES = ['rejected', 'cancelled', 'delivery_failed'];
 
 export class OrderRepository extends EntityRepository<Order> {
-  /** Crée la commande à son premier événement, puis la met à jour */
+  /**
+   * Crée la commande à son premier événement, puis la met à jour.
+   * completed : la commande vient de passer à « completed » avec cet événement.
+   */
   async saveFromHubrise({
     hubriseOrderId,
     outlet,
     orderedAt,
     ...update
-  }: OrderUpdate & { hubriseOrderId: string; outlet: Outlet; orderedAt: Date }): Promise<Order> {
+  }: OrderUpdate & { hubriseOrderId: string; outlet: Outlet; orderedAt: Date }): Promise<{
+    order: Order;
+    completed: boolean;
+  }> {
     const order =
       (await this.findOne({ hubriseOrderId })) ??
       this.create({
@@ -34,9 +42,10 @@ export class OrderRepository extends EntityRepository<Order> {
         outlet,
         orderedAt,
       } as RequiredEntityData<Order>);
+    const wasCompleted = order.status === COMPLETED_STATUS;
     this.assign(order, update);
     await this.em.flush();
-    return order;
+    return { order, completed: !wasCompleted && order.status === COMPLETED_STATUS };
   }
 
   /** Crédite les points de la commande au client du restaurant. null si elle n'est pas récupérable. */

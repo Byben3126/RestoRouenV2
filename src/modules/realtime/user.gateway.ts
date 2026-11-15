@@ -10,7 +10,7 @@ import { Server, Socket } from 'socket.io';
 export const userRoom = (userId: string) => `user:${userId}`;
 
 /**
- * Point d'entrée WebSocket (Socket.IO) de l'app.
+ * WebSocket (Socket.IO) des utilisateurs de l'app.
  * Le client s'authentifie à la connexion, avec le token de session better-auth
  * (`auth: { token }`, app React Native) ou le cookie de session.
  * Le socket ne fait que prévenir le client : l'état fait foi via l'API REST,
@@ -19,8 +19,8 @@ export const userRoom = (userId: string) => `user:${userId}`;
 @WebSocketGateway({
   cors: { origin: process.env.FRONTEND_URL, credentials: true },
 })
-export class RealtimeGateway implements OnGatewayConnection {
-  private readonly logger = new Logger(RealtimeGateway.name);
+export class UserGateway implements OnGatewayConnection {
+  private readonly logger = new Logger(UserGateway.name);
 
   @WebSocketServer()
   private readonly server!: Server;

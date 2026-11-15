@@ -8,6 +8,7 @@ import { Outlet } from '../restaurant/entities/outlet.entity';
 import { OutletRepository } from '../restaurant/repositories/outlet.repository';
 import { HubriseEvent } from './dto/hubrise.dto';
 import { Order } from './entities';
+import { OrderService } from './order.service';
 import { OrderRepository } from './repositories/order.repository';
 
 const HUBRISE_TOKEN_URL = 'https://manager.hubrise.com/oauth2/v1/token';
@@ -29,6 +30,7 @@ export class HubriseService {
     private readonly em: EntityManager,
     @InjectRepository(Order)
     private readonly orderRepository: OrderRepository,
+    private readonly orderService: OrderService,
   ) {
     this.hubriseClient.interceptors.response.use(undefined, (error: AxiosError) => {
       if (!error.response) throw error;
@@ -54,7 +56,7 @@ export class HubriseService {
     // HubRise donne toujours 2 décimales : « 50.60 » vaut 5060 centimes, sans passer par un flottant
     const total = Number(amount.replace('.', ''));
 
-    await this.orderRepository.saveFromHubrise({
+    const { order, completed } = await this.orderRepository.saveFromHubrise({
       hubriseOrderId: state.id,
       outlet,
       orderedAt: new Date(state.created_at),
@@ -65,6 +67,7 @@ export class HubriseService {
       // 1 point par euro entier
       points: Math.floor(total / 100),
     });
+    if (completed) await this.orderService.sendClaimToken(order, outlet.id);
   }
 
   /** Échange le code OAuth contre le token de l'établissement HubRise, puis s'abonne à ses commandes */
